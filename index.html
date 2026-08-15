@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Persua">
+<meta name="theme-color" content="#4f46e5">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<title>Persua · mon parcours</title>
+<style>
+  :root{--indigo:#4f46e5;--indigo-d:#3730a3;--ink:#0e1020;--muted:#7a7f92;--line:#eceef6;
+    --bg:#f6f7fb;--card:#fff;--green:#16a34a;--amber:#d97706;--red:#dc2626;--warm:#f59e0b;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0e1020;color:var(--ink)}
+  .device{max-width:420px;height:100dvh;max-height:900px;margin:0 auto;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
+  @media(min-width:440px){body{display:flex;align-items:center;justify-content:center;padding:18px}
+    .device{height:860px;border-radius:44px;border:11px solid #0b0c16;box-shadow:0 30px 80px rgba(0,0,0,.5)}}
+  .statusbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;color:#fff;background:var(--indigo-d)}
+  .appbar{background:linear-gradient(135deg,var(--indigo-d),var(--indigo));color:#fff;padding:10px 18px 18px}
+  .appbar .hi{font-size:20px;font-weight:700;letter-spacing:-.3px}
+  .appbar .sub{font-size:12px;color:#cdd0f2}
+  .hdrrow{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+  .chip{background:rgba(255,255,255,.16);border-radius:12px;padding:8px 12px;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .chip b{font-size:15px}
+  .screen{flex:1;overflow-y:auto;padding:14px 14px 84px;-webkit-overflow-scrolling:touch}
+  h3.sh{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:16px 4px 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:11px}
+  .nm{font-size:15px;font-weight:600}.mt{font-size:12.5px;color:var(--muted)}
+  .axes{margin-top:4px}
+  .axrow{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .axrow .lb{width:82px;font-size:12.5px;font-weight:600}
+  .axrow .bar{flex:1;height:8px;border-radius:5px;background:#eceef6;overflow:hidden}
+  .axrow .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--indigo),#818cf8)}
+  .axrow .vv{width:30px;text-align:right;font-size:12px;color:var(--muted);font-weight:600}
+  .geste{background:linear-gradient(135deg,#eef0ff,#f5f6ff);border:1px solid #e0e3ff}
+  .geste .k{font-size:11px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.4px}
+  .geste .txt{font-size:15px;font-weight:600;margin-top:5px;line-height:1.35}
+  /* path modules */
+  .mod{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+  .node{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:none;color:#fff}
+  .n-done{background:var(--green)}.n-cur{background:var(--indigo);box-shadow:0 0 0 5px #e0e3ff}.n-lock{background:#cbd0dc}
+  .modc{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px}
+  .modc .t{font-size:14px;font-weight:600}.modc .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .pbar{height:6px;border-radius:4px;background:#eceef6;overflow:hidden;margin-top:7px}.pbar i{display:block;height:100%;background:var(--indigo)}
+  /* habits */
+  .hab{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  .hab:last-child{border-bottom:0}
+  .chk{width:26px;height:26px;border-radius:8px;border:2px solid #d3d8e4;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff}
+  .hab.done .chk{background:var(--green);border-color:var(--green)}
+  .hab.done .ht{text-decoration:line-through;color:var(--muted)}
+  .ht{font-size:14px;font-weight:600}
+  .habhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+  .streakbig{font-size:13px;color:var(--warm);font-weight:700}
+  /* copilote */
+  .feu{display:flex;gap:8px;margin:10px 0}
+  .feu div{flex:1;border-radius:12px;padding:10px;text-align:center;font-size:12px;font-weight:700}
+  .go{background:#dcfce7;color:#166534}.ad{background:#fef3c7;color:#92400e}.ev{background:#fee2e2;color:#991b1b}
+  .obj{background:#0e1020;color:#fff;border-radius:14px;padding:13px;margin-bottom:11px}
+  .obj .q{font-size:14px;font-weight:600}.obj .a{font-size:13px;color:#cdd0f2;margin-top:8px;line-height:1.45}
+  .taccard .row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+  .taccard .row:last-child{border-bottom:0}
+  .taccard .q{font-size:13px;font-weight:600;flex:none;width:96px}
+  .taccard .r{font-size:12.5px;color:#2a2e3d}
+  /* coach chat */
+  .bub{max-width:82%;padding:10px 13px;border-radius:16px;font-size:13.5px;line-height:1.4;margin-bottom:9px}
+  .me{background:var(--indigo);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
+  .co{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .coachbar{display:flex;gap:8px;margin-top:6px}
+  .coachbar input{flex:1;border:1px solid var(--line);border-radius:14px;padding:11px 13px;font-size:13px;background:#fff}
+  .coachbar button{background:var(--indigo);color:#fff;border:0;border-radius:12px;padding:0 15px;font-size:16px}
+  .cta{display:block;width:100%;margin-top:6px;background:var(--indigo);color:#fff;font-size:13.5px;font-weight:600;padding:12px;border-radius:13px;border:0;text-align:center}
+  .daychips,.slots{display:flex;gap:8px;flex-wrap:wrap}
+  .dc,.sl{border:1px solid var(--line);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:600;background:#fff;cursor:pointer}
+  .dc.on,.sl.on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+  .rr{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .rr:last-child{border-bottom:0}.rr .g{flex:1}.rr .rl{font-size:11px;color:var(--indigo);font-weight:700}
+  .overlay{position:absolute;inset:0;background:var(--bg);z-index:20;transform:translateY(100%);transition:transform .28s ease;display:flex;flex-direction:column}
+  .overlay.open{transform:translateY(0)}
+  .ov-bar{background:#0e1020;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:700}
+  .ov-bar .x{background:rgba(255,255,255,.15);border:0;color:#fff;width:30px;height:30px;border-radius:9px;font-size:16px;cursor:pointer}
+  .ov-body{flex:1;overflow-y:auto;padding:16px 16px 30px}
+  .pchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+  .pchip{background:#eef0ff;color:#3730a3;font-size:12px;font-weight:700;padding:6px 10px;border-radius:10px}
+  .plabel{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+  .soncas{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .soncas>div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11.5px}
+  .qopt{border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:13.5px;margin-top:8px;cursor:pointer;background:#fff}
+  .qopt.on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+  .seg{display:flex;background:#eceef6;border-radius:12px;padding:3px;margin-bottom:12px}
+  .segb{flex:1;border:0;background:transparent;padding:9px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .segb.on{background:#fff;color:var(--indigo);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .composer{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  .composer input{width:100%;border:0;font-size:13.5px;outline:none;background:transparent}
+  .post{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
+  .post .ph{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .av{width:36px;height:36px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;background:var(--indigo)}
+  .post .who{font-size:13.5px;font-weight:600}.post .when{font-size:11.5px;color:var(--muted)}
+  .post .body{font-size:13.5px;color:#2a2e3d;line-height:1.42}
+  .post .acts{display:flex;gap:16px;margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600}
+  .tagchip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eef0ff;color:#3730a3;cursor:pointer}
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:66px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
+  .tab .e{font-size:20px;filter:grayscale(1);opacity:.55}
+  .tab.on{color:var(--indigo)}.tab.on .e{filter:none;opacity:1}
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="statusbar"><span>9:41</span><span>Persua</span><span>●●●● ▮</span></div>
+  <div class="appbar">
+    <div class="hi" id="hi">Salut Marc 👋</div>
+    <div class="sub" id="sub">Jour 34 de ton Mentorat</div>
+    <div class="hdrrow">
+      <div class="chip">🔥 <b>12</b> jours</div>
+      <div class="chip">⭐ Niveau <b>3</b> · 640 XP</div>
+      <div class="chip">🎯 M1 dans <b>4j</b></div>
+    </div>
+  </div>
+  <div class="screen" id="screen"></div>
+  <div class="tabbar" id="tabbar"></div>
+
+  <div class="overlay" id="profil">
+    <div class="ov-bar"><span>Ton profil de vendeur</span><button class="x" onclick="closeProfil()">✕</button></div>
+    <div class="ov-body">
+      <div id="ptest">
+        <div class="card"><div class="plabel">Diagnostic de vendeur · 5 min</div><div class="mt" style="font-size:13px;color:#2a2e3d">12 questions pour révéler ton profil (16 types + DISC) et ton style de vente. Réponds au feeling, il n'y a pas de mauvaise réponse.</div></div>
+        <div class="mt" style="margin:2px 4px 8px">Question 1 sur 12 · Ton fonctionnement</div>
+        <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Après une journée de prospection intense, tu recharges plutôt...</div>
+          <div class="qopt" onclick="pick(this)">En voyant du monde, en échangeant</div>
+          <div class="qopt on" onclick="pick(this)">Au calme, seul, à décompresser</div></div>
+        <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Quand tu prépares un RDV, tu te fies d'abord...</div>
+          <div class="qopt on" onclick="pick(this)">Aux faits concrets et au terrain</div>
+          <div class="qopt" onclick="pick(this)">À ton intuition et à la vision d'ensemble</div></div>
+        <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">En rendez-vous, ton réflexe naturel...</div>
+          <div class="qopt" onclick="pick(this)">Aller droit au résultat, cadrer, closer</div>
+          <div class="qopt on" onclick="pick(this)">Comprendre à fond avant de proposer</div></div>
+        <button class="cta" onclick="showResult()">Voir mon profil de vendeur →</button>
+      </div>
+      <div id="presult" style="display:none">
+        <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="plabel">Ton résultat</div><div class="nm" style="margin-top:3px">L'Expert · ISTP « Le Pragmatique »</div></div>
+        <div class="pchips"><span class="pchip">DISC · C Consciencieux</span><span class="pchip">Archétype · L'Expert</span><span class="pchip">ISTP · Le Pragmatique</span></div>
+        <div class="card"><div class="plabel">Comment tu vends (ta force)</div>
+          <div class="mt" style="font-size:13px;color:#2a2e3d">Tu maîtrises ton offre et tes chiffres. Ta rigueur crée une vraie crédibilité, le client achète ta compétence. Concret et calme, tu vas à l'essentiel sans blabla.</div></div>
+        <div class="card"><div class="plabel">Ton angle mort</div>
+          <div class="mt" style="font-size:13px;color:#2a2e3d">Tu sur-analyses et tu hésites au closing. Le mieux est l'ennemi du closé : décide plus vite, ose demander l'engagement.</div></div>
+        <div class="card"><div class="plabel">Ton moteur</div>
+          <div class="mt" style="font-size:13px;color:#2a2e3d">La maîtrise et l'excellence. Tu te recharges dans un sujet que tu creuses à fond, seul et au calme.</div></div>
+        <h3 class="sh">Lire ton prospect · SONCAS</h3>
+        <div class="soncas">
+          <div><b>Sécurité</b> · rassure, preuves, garanties</div>
+          <div><b>Orgueil</b> · valorise, statut, exclusivité</div>
+          <div><b>Nouveauté</b> · innovation, être le premier</div>
+          <div><b>Confort</b> · simple, sans effort</div>
+          <div><b>Argent</b> · ROI, gain chiffré</div>
+          <div><b>Sympathie</b> · relation, chaleur humaine</div>
+        </div>
+        <button class="cta" onclick="resetTest()">Refaire le test</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Cal.com : embed officiel, calendrier seul (hideEventTypeDetails) */
+(function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar); return; } p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+Cal("init", { origin: "https://cal.com" });
+Cal("ui", { hideEventTypeDetails: true, layout: "month_view", theme: "light" });
+function mountCal(){ if(window.Cal){ Cal("inline", { elementOrSelector: "#cal-inline", calLink: "steven-lfrs-persua/coaching-individuel-persua", config: { layout: "month_view", theme: "light" } }); } }
+
+const S = {
+ accueil:`
+  <div class="card geste">
+    <div class="k">Ton geste du jour</div>
+    <div class="txt">Sur ton prochain appel : pose UNE question de découverte de plus, puis tais-toi 3 secondes. Laisse le silence travailler.</div>
+    <button class="cta">C'est noté, je le fais</button>
+  </div>
+  <h3 class="sh">Ton profil de vendeur</h3>
+  <div class="card" onclick="openProfil()" style="cursor:pointer">
+    <div class="nm">Passe ton diagnostic de vendeur</div>
+    <div class="mt">12 questions, 5 min. Révèle ton profil (16 types + DISC) et ton style de vente.</div>
+    <button class="cta">Commencer le test</button>
+  </div>
+  <h3 class="sh">Ta progression · les 4 axes CALME</h3>
+  <div class="card axes">
+    <div class="axrow"><span class="lb">Découverte</span><span class="bar"><i style="width:70%"></i></span><span class="vv">7/10</span></div>
+    <div class="axrow"><span class="lb">Objections</span><span class="bar"><i style="width:55%"></i></span><span class="vv">5,5</span></div>
+    <div class="axrow"><span class="lb">Closing</span><span class="bar"><i style="width:60%"></i></span><span class="vv">6/10</span></div>
+    <div class="axrow"><span class="lb">Calme</span><span class="bar"><i style="width:75%"></i></span><span class="vv">7,5</span></div>
+  </div>
+  <h3 class="sh">Ta semaine</h3>
+  <div class="card">
+    <div class="nm">Prochaine séance</div><div class="mt">Mardi 19 août · 11h · avec Steven</div>
+    <button class="cta" onclick="go('rdv')">Voir mes séances / réserver un créneau</button>
+  </div>
+  <div class="card">
+    <div class="nm">Jalon M1 dans 4 jours</div><div class="mt">Tu compares où tu en es vs ton entrée. Prépare 1 situation vécue.</div>
+  </div>`,
+
+ parcours:`
+  <h3 class="sh">Ton parcours · 7 modules · 1 quiz/module (70% pour débloquer)</h3>
+  <div class="mod"><div class="node n-done">✓</div><div class="modc"><div class="t">🧠 M1 · Les fondements neuro-comportementaux</div><div class="s">Comment le cerveau de l'acheteur décide vraiment · 5 vidéos</div></div></div>
+  <div class="mod"><div class="node n-done">✓</div><div class="modc"><div class="t">🧲 M2 · L'infiltration subconsciente</div><div class="s">La psychologie de l'acheteur · 6 vidéos</div></div></div>
+  <div class="mod"><div class="node n-cur">3</div><div class="modc"><div class="t">🎯 M3 · Communication persuasive</div><div class="s">Framing, reformulation, charge cognitive, voix · 4/7 vidéos</div><div class="pbar"><i style="width:57%"></i></div></div></div>
+  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🩺 M4 · Le diagnostic clinique</div><div class="s">Le processus de vente : découverte vers closing · 6 vidéos</div></div></div>
+  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🏛️ M5 · L'architecture de l'offre</div><div class="s">Expérience client et fidélisation · 5 vidéos</div></div></div>
+  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🛡️ M6 · La maîtrise des résistances</div><div class="s">Script neuro-optimisé et cas B2B/B2C/distanciel · 7 vidéos</div></div></div>
+  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🚀 M7 · Performance du vendeur</div><div class="s">Stress, intelligence émotionnelle, mindset, plan d'action · 5 vidéos</div></div></div>
+  <button class="cta">Reprendre le module 3</button>`,
+
+ gestes:`
+  <div class="card">
+    <div class="habhead"><div class="nm">Tes gestes du jour</div><div class="streakbig">🔥 série 12</div></div>
+    <div class="mt" id="hcount">2 / 4 aujourd'hui</div>
+    <div class="hab done" onclick="tog(this)"><div class="chk">✓</div><div class="ht">1 vraie question de découverte</div></div>
+    <div class="hab" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Tenir un silence après une objection</div></div>
+    <div class="hab done" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Reformuler avant de répondre</div></div>
+    <div class="hab" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Ne pas baisser mon prix en premier</div></div>
+  </div>
+  <h3 class="sh">Cette semaine</h3>
+  <div class="card">
+    <div class="hab" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Assumer 1 walk-away ("ce n'est pas pour vous")</div></div>
+  </div>
+  <div class="mt" style="text-align:center;padding:6px">Les gestes cochés nourrissent tes 4 axes CALME automatiquement.</div>`,
+
+ rdv:`
+  <h3 class="sh">Ta prochaine séance</h3>
+  <div class="card">
+    <div class="nm">Mardi 19 août · 11h00</div><div class="mt">Coaching avec Steven · visio 45 min</div>
+    <button class="cta">Rejoindre le lien</button>
+  </div>
+  <h3 class="sh">Récap de ta dernière séance · 12 août</h3>
+  <div class="card">
+    <div class="plabel">Ce qu'on a travaillé</div>
+    <div class="mt" style="font-size:13px;color:#2a2e3d">Le "je vais réfléchir" : tu le prenais comme un non et tu lâchais direct. C'est une info qui manque, pas un refus.</div>
+    <div class="plabel" style="margin-top:11px">Tes conseils pour cette semaine</div>
+    <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">1️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">Après un "je vais réfléchir" : "laquelle info te manque pour décider ?" puis silence.</div></div></div>
+    <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">2️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">Ne baisse pas ton prix en premier, ancre d'abord le coût de son problème.</div></div></div>
+    <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">3️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">RDV DAF : une question, puis tais-toi. Laisse-le remplir le silence.</div></div></div>
+  </div>
+  <h3 class="sh">Réserver avec Steven</h3>
+  <div class="card" style="padding:8px"><div id="cal-inline" style="min-height:540px;width:100%"></div></div>
+  <h3 class="sh">Tes séances passées (replays)</h3>
+  <div class="card">
+    <div class="rr"><span style="font-size:20px">▶️</span><div class="g"><div class="nm" style="font-size:14px">Séance du 12 août</div><div class="mt">Traiter "je vais réfléchir"</div></div><span class="rl">revoir</span></div>
+    <div class="rr"><span style="font-size:20px">▶️</span><div class="g"><div class="nm" style="font-size:14px">Séance du 5 août</div><div class="mt">Ta découverte en 4 questions</div></div><span class="rl">revoir</span></div>
+  </div>`,
+
+ assistant:`
+  <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Réponse rapide</button><button class="segb" onclick="amode('chat',this)">💬 Discuter</button></div>
+  <div id="a-quick">
+    <h3 class="sh">Avant ton RDV · teste une phrase</h3>
+    <div class="card">
+      <div class="mt">Tu allais dire : « Notre solution est la meilleure du marché, je vous montre pourquoi. »</div>
+      <div class="feu"><div class="ev">ÉVITE</div><div class="ad">ADAPTE</div><div class="go">GO</div></div>
+      <div class="mt">🔴 Tu pousses ta valeur, son cerveau lit une pression. Reformule en question : « Qu'est-ce qui vous ferait dire qu'une solution est la bonne, pour vous ? »</div>
+    </div>
+    <h3 class="sh">Une objection t'a bloqué ?</h3>
+    <div class="obj">
+      <div class="q">« C'est trop cher. »</div>
+      <div class="a">Ne défends pas ton prix. Ancre le coût de son problème d'abord : « Combien te coûtent, à l'année, les deals que tu perds au moment de vendre ? » Puis silence. Le prix devient une comparaison, pas une dépense.</div>
+    </div>
+    <h3 class="sh">Tes phrases prêtes</h3>
+    <div class="card taccard">
+      <div class="row"><div class="q">"Je vais réfléchir"</div><div class="r">« Ce n'est pas de temps que tu as besoin, c'est d'une info. Laquelle te manque ? »</div></div>
+      <div class="row"><div class="q">"Je suis pas commercial"</div><div class="r">« Justement. On ne va pas faire de toi un vendeur, on va arrêter que tu te sabordes. »</div></div>
+      <div class="row"><div class="q">Silence gênant</div><div class="r">Tiens-le. C'est là qu'il te donne sa vraie raison.</div></div>
+    </div>
+  </div>
+  <div id="a-chat" style="display:none">
+    <div style="padding:4px 2px 10px">
+      <div class="bub co">Salut Marc. Prêt pour ton RDV de demain ? Dis-moi qui tu as en face.</div>
+      <div class="bub me">Un DAF, très analytique, il coupe tout le temps la parole. J'ai peur de me faire écraser.</div>
+      <div class="bub co">Profil Système 2 : il veut du mécanisme et des preuves, pas de l'enthousiasme. Ton avantage, c'est le calme. Ne cours pas derrière lui. Pose une question précise, puis tais-toi. Son besoin de tout analyser va remplir le silence à ta place.</div>
+      <div class="bub me">Et s'il attaque sur le prix direct ?</div>
+      <div class="bub co">Tu ne réponds pas au prix. Tu ramènes au coût de son problème. « Avant le prix : ça vous coûte quoi, aujourd'hui, de ne pas le régler ? » Obstacles avant le prix, toujours.</div>
+    </div>
+    <div class="coachbar"><input placeholder="Pose ta question au coach..." readonly><button>➤</button></div>
+  </div>`,
+
+ communaute:`
+  <div class="composer"><input placeholder="Partage une victoire, une question, un doute..."><div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><div style="display:flex;gap:6px"><span class="tagchip">🏆 Victoire</span><span class="tagchip">❓ Question</span></div><button class="cta" style="width:auto;margin:0;padding:8px 15px">Publier</button></div></div>
+  <div class="post">
+    <div class="ph"><div class="av" style="background:#0e1020">S</div><div><div class="who">Steven · Coach 📌</div><div class="when">Épinglé · il y a 2h</div></div></div>
+    <div class="body">Défi de la semaine : après un "je vais réfléchir", demandez QUELLE info manque, puis taisez-vous. Postez ici ce que ça donne sur vos vrais RDV.</div>
+    <div class="acts"><span>👏 24</span><span>💬 8</span></div>
+  </div>
+  <div class="post">
+    <div class="ph"><div class="av">V</div><div><div class="who">Valérie M.</div><div class="when">il y a 5h · 🏆 Victoire</div></div></div>
+    <div class="body">Premier closing sans baisser mon prix ! J'ai ancré le coût de son problème avant d'annoncer, il a signé direct. Merci pour le déclic.</div>
+    <div class="acts"><span>👏 31</span><span>💬 12</span></div>
+  </div>
+  <div class="post">
+    <div class="ph"><div class="av">T</div><div><div class="who">Thomas C.</div><div class="when">hier · ❓ Question</div></div></div>
+    <div class="body">Un prospect me dit "envoyez-moi une plaquette et je reviens vers vous". J'envoie, ou je creuse ?</div>
+    <div class="acts"><span>👏 6</span><span>💬 15</span></div>
+  </div>
+  <div class="post">
+    <div class="ph"><div class="av">M</div><div><div class="who">Marc D.</div><div class="when">hier · 🏆 Victoire</div></div></div>
+    <div class="body">J'ai tenu le silence 4 secondes après mon prix. Le plus dur de ma vie. Il a rempli le blanc et s'est convaincu tout seul 😅</div>
+    <div class="acts"><span>👏 28</span><span>💬 9</span></div>
+  </div>`,
+};
+
+const TABS=[["accueil","🏠","Accueil"],["parcours","🗺️","Parcours"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];
+const tb=document.getElementById('tabbar');
+tb.innerHTML=TABS.map((t,i)=>`<div class="tab${i===0?' on':''}" data-k="${t[0]}"><span class="e">${t[1]}</span><span>${t[2]}</span></div>`).join('');
+function go(k){document.getElementById('screen').innerHTML=S[k];document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,50);}
+tb.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.k)));
+function tog(el){el.classList.toggle('done');const done=document.querySelectorAll('#screen .card:first-of-type .hab.done').length;const c=document.getElementById('hcount');if(c)c.textContent=done+" / 4 aujourd'hui";}
+function pick(el){[...el.parentElement.children].forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';[...btn.parentElement.children].forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function resetTest(){document.getElementById('ptest').style.display='';document.getElementById('presult').style.display='none';document.querySelector('#profil .ov-body').scrollTop=0;}
+function showResult(){document.getElementById('ptest').style.display='none';document.getElementById('presult').style.display='';document.querySelector('#profil .ov-body').scrollTop=0;}
+function openProfil(){resetTest();document.getElementById('profil').classList.add('open')}
+function closeProfil(){document.getElementById('profil').classList.remove('open')}
+go('accueil');
+</script>
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
+</body>
+</html>
