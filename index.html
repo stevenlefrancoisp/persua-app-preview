@@ -189,7 +189,7 @@ function accueilHTML(){
   </div>
   <h3 class="sh">Ta semaine</h3>
   <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven, quand tu veux</div>
-    <button class="cta" onclick="go('rdv')">Réserver / rejoindre ma séance</button></div>`;
+    <button class="cta" onclick="go('rdv')">Réserver ma séance</button></div>`;
 }
 function parcoursHTML(){
   const head=!ST.eleve?`<h3 class="sh">Accès complet · tous les modules ouverts</h3>`
@@ -216,7 +216,7 @@ function gestesHTML(){
 }
 function rdvHTML(){
   return `
-  <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven. Le jour J tu rejoins ici : c'est la même salle que le lien envoyé par Cal à ta réservation.</div><button class="cta" onclick="window.open('https://meet.google.com/tca-mayc-ayx','_blank','noopener')">🎥 Rejoindre ma séance</button><button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="document.getElementById('cal-inline').scrollIntoView({behavior:'smooth'})">Réserver un créneau</button></div>
+  <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven. Réserve ton créneau ci-dessous, tu reçois ton lien de connexion par email juste après.</div><button class="cta" onclick="document.getElementById('cal-inline').scrollIntoView({behavior:'smooth'})">Réserver un créneau</button></div>
   <h3 class="sh">Récap de ta dernière séance · 12 août</h3>
   <div class="card"><div class="plabel">Ce qu'on a travaillé</div>
     <div class="mt" style="font-size:13px;color:#2a2e3d">Le "je vais réfléchir" : tu le prenais comme un non. C'est une info qui manque, pas un refus.</div>
