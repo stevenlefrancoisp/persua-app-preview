@@ -185,6 +185,9 @@ const BILAN=[
  {ax:'m',q:"Avant un RDV décisif, quelle intention te met dans les meilleures conditions ?",o:["\"Signer aujourd'hui\"","\"Ne pas me faire avoir\"","\"Comprendre son vrai problème en profondeur\"","\"Réussir cette vente coûte que coûte\""],a:2}
 ];
 const AXMOD={d:'m4',o:'m6',c:'m5',m:'m7'};
+const AXMODS={d:['m1','m4'],o:['m4','m6'],c:['m4','m5'],m:['m1','m7']};
+function modComp(mid){var m=M(mid);if(!m)return 0;var req=reqV(m);var done=req.filter(function(v){return ST.done[v.id];}).length;var tot=req.length+1;return tot?(done+(ST.quiz[mid]?1:0))/tot:0;}
+function axProg(ax){var mods=AXMODS[ax]||[];var s=0;mods.forEach(function(mid){s+=modComp(mid);});return mods.length?s/mods.length:0;}
 const DAY=86400000;
 function lastBilan(){return ST.bilans.length?ST.bilans[ST.bilans.length-1]:null;}
 function prevBilan(){return ST.bilans.length>1?ST.bilans[ST.bilans.length-2]:null;}
@@ -218,12 +221,13 @@ function pickBilan(oi){BL.ans[BL.i]=oi;renderBilan();}
 function bilanNav(d){BL.i+=d;renderBilan();}
 function finishBilan(){const sc={d:0,o:0,c:0,m:0},tot={d:0,o:0,c:0,m:0};
   BILAN.forEach(function(q,i){tot[q.ax]++;if(BL.ans[i]===q.a)sc[q.ax]++;});
-  const b={t:Date.now(),d:Math.round(sc.d/tot.d*10),o:Math.round(sc.o/tot.o*10),c:Math.round(sc.c/tot.c*10),m:Math.round(sc.m/tot.m*10)};
+  function wsc(ax){return Math.max(0,Math.min(10,Math.round((sc[ax]/tot[ax]*10)*(0.4+0.6*axProg(ax)))));}
+  const b={t:Date.now(),d:wsc('d'),o:wsc('o'),c:wsc('c'),m:wsc('m')};
   ST.bilans.push(b);save();refreshHeader();
   const p=prevBilan();
-  const msg=p?"Compare à ton dernier bilan, les flèches montrent ton évolution.":"C'est ta base de départ. Reviens dans 21 jours pour mesurer tes progrès.";
+  const msg=(p?"Compare à ton dernier bilan, les flèches montrent ton évolution.":"C'est ta base de départ. Reviens dans 21 jours pour mesurer tes progrès.")+" Ton score croise tes réponses et ta progression réelle dans les modules : plus tu avances, plus ton plafond monte.";
   const weak=AXES.filter(function(a){return b[a[0]]<8;}).sort(function(x,y){return b[x[0]]-b[y[0]];});
-  const reco=weak.length?`<h3 class="sh">Tes cours à refaire en priorité</h3>`+weak.map(function(a){var mid=AXMOD[a[0]],m=M(mid);return `<div class="lrow" onclick="closeModal();openModule('${mid}')"><div class="chk2" style="background:#fff7ed;color:#c2410c">↻</div><div class="g">${a[1]} : ${b[a[0]]}/10<div class="mt">Refais ${m.icon} ${m.num} · ${m.t}</div></div></div>`;}).join(''):`<div class="card" style="background:#dcfce7;border-color:#bbf7d0;color:#166534"><b>Solide sur les 4 axes.</b> Continue le parcours, le prochain palier t'attend.</div>`;
+  const reco=weak.length?`<h3 class="sh">Tes cours à travailler en priorité</h3>`+weak.map(function(a){var mid=AXMOD[a[0]],m=M(mid);return `<div class="lrow" onclick="closeModal();openModule('${mid}')"><div class="chk2" style="background:#fff7ed;color:#c2410c">↻</div><div class="g">${a[1]} : ${b[a[0]]}/10<div class="mt">À travailler : ${m.icon} ${m.num} · ${m.t}</div></div></div>`;}).join(''):`<div class="card" style="background:#dcfce7;border-color:#bbf7d0;color:#166534"><b>Solide sur les 4 axes.</b> Continue le parcours, le prochain palier t'attend.</div>`;
   setM('Ton bilan',`<div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="nm">Bilan enregistré ✓</div><div class="mt">${msg}</div></div>${dashboardHTML()}${reco}<button class="cta" style="margin-top:12px" onclick="closeModal();go('accueil')">Retour à l'accueil</button>`);
   document.querySelector('#modal .ov-body').scrollTop=0;
 }
