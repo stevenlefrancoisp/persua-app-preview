@@ -294,17 +294,16 @@ function openModule(mId){
       <div class="pbar" style="margin-top:8px"><i style="width:${req.length?Math.round(watched/req.length*100):0}%"></i></div>
       <div class="mt" style="margin-top:5px">${watched}/${req.length} complétés${passed?' · quiz validé ✓':''}</div></div>
     ${canQuiz?`<div class="card" style="background:#dcfce7;border-color:#bbf7d0;color:#166534"><b>✅ Vidéos vues.</b> Entraîne-toi, puis valide le quiz.</div>`:`<div class="card" style="background:#fff7ed;border-color:#fdba74;color:#9a3412"><b>👀 Regarde la vidéo avant de répondre.</b> Les questions te font travailler ce que la vidéo t'apprend. Le quiz de validation se débloque une fois les vidéos et fiches vues.</div>`}
-    <h3 class="sh">S'entraîner et se tester</h3>
-    <button class="cta" style="margin-top:0;background:#0e1020" onclick="openTrain('${mId}')">🎮 M'entraîner · ${m.Q.length} cartes, correction immédiate</button>
-    <button class="cta" style="margin-top:8px;${canQuiz?'':'opacity:.45;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'✅ Refaire le quiz de validation':'✅ Quiz de validation ('+m.Q.length+' questions)'} ${canQuiz?'':'🔒'}</button>
-    <h3 class="sh" style="margin-top:16px">Le contenu du module</h3>
+    <h3 class="sh">Le module, vidéo par vidéo</h3>
     ${m.V.map(v=>{
       const t=iType(v),done=!!ST.done[v.id];
       if(t==='atelier') return `<div class="lrow" onclick="bookAtelier('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}" style="${done?'':'background:#fff7ed;color:#c2410c'}">${done?'✓':'📅'}</div><div class="g">${v.title}<div class="mt">${v.num} · Atelier 1:1 avec Steven · Réserver ↗</div></div></div>`;
       if(t==='fiche') return `<div class="lrow" onclick="openFiche('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}" style="${done?'':'background:#eff6ff;color:#1d4ed8'}">${done?'✓':'📄'}</div><div class="g">${v.title}<div class="mt">${v.num} · Fiche pratique à lire</div></div></div>`;
       if(!v.videoUrl) return `<div class="lrow" style="opacity:.55;cursor:default"><div class="chk2">🔒</div><div class="g">${v.title}<div class="mt">${v.num} · bientôt disponible</div></div></div>`;
-      return `<div class="lrow" onclick="watchVideo('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}">${done?'✓':'▶'}</div><div class="g">${v.title}<div class="mt">${v.num} · Regarder la vidéo ↗</div></div></div>`;
-    }).join('')}`);
+      return `<div class="card" style="padding:12px"><div style="display:flex;gap:11px;align-items:center"><div class="chk2 ${done?'ok':''}">${done?'✓':'▶'}</div><div style="flex:1"><div style="font-weight:600;font-size:13.5px;line-height:1.3">${v.title}</div><div class="mt">${v.num}</div></div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="cta" style="margin:0;flex:1;background:#eef0ff;color:#3730a3;font-size:12.5px;padding:10px" onclick="watchVideo('${mId}','${v.id}')">▶ Regarder ↗</button><button class="cta" style="margin:0;flex:1;background:#0e1020;font-size:12.5px;padding:10px" onclick="openTrainV('${mId}','${v.id}')">🎮 Exercice</button></div></div>`;
+    }).join('')}
+    <h3 class="sh" style="margin-top:16px">Valider le module</h3>
+    <button class="cta" style="margin-top:0;${canQuiz?'':'opacity:.45;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'✅ Refaire le quiz de validation':'✅ Quiz de validation ('+m.Q.length+' questions)'} ${canQuiz?'':'🔒'}</button>`);
   openModal();
 }
 function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.videoUrl){window.open(v.videoUrl,'_blank','noopener');}ST.done[vId]=true;save();refreshHeader();openModule(mId);}
@@ -313,12 +312,17 @@ function openFiche(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId
 
 /* Entraînement : jeu d'apprentissage, correction immédiate à chaque carte (sans note, sans blocage) */
 let TR=null;
-function openTrain(mId){TR={mId,i:0,ans:{},rev:{},score:0};renderTrain();openModal();}
+function qForVideo(m,vId){var vids=m.V.filter(function(v){return iType(v)==='video';});var j=vids.findIndex(function(v){return v.id===vId;});if(j<0)return m.Q;var per=Math.max(1,Math.ceil(m.Q.length/(vids.length||1)));var s=m.Q.slice(j*per,j*per+per);return s.length?s:m.Q.slice(0,per);}
+function openTrain(mId){TR={mId:mId,vId:null,qs:M(mId).Q,i:0,ans:{},rev:{},score:0};renderTrain();openModal();}
+function openTrainV(mId,vId){TR={mId:mId,vId:vId,qs:qForVideo(M(mId),vId),i:0,ans:{},rev:{},score:0};renderTrain();openModal();}
 function renderTrain(){
-  const m=M(TR.mId),q=m.Q[TR.i],last=TR.i===m.Q.length-1,rev=!!TR.rev[TR.i],picked=TR.ans[TR.i];
-  setM('Entraînement · '+m.num,`
-    <div class="mt" style="margin-bottom:8px">Carte ${TR.i+1} / ${m.Q.length} · score ${TR.score}</div>
-    <div class="pbar" style="margin-bottom:14px"><i style="width:${Math.round(TR.i/m.Q.length*100)}%"></i></div>
+  const m=M(TR.mId),qs=TR.qs,q=qs[TR.i],last=TR.i===qs.length-1,rev=!!TR.rev[TR.i],picked=TR.ans[TR.i];
+  const v=TR.vId?m.V.find(x=>x.id===TR.vId):null;
+  const vlink=(v&&v.videoUrl)?`<div class="card" style="background:#eef0ff;border-color:#e0e3ff;padding:11px"><div class="mt" style="color:#3730a3;font-weight:600">Exercice sur : ${v.title}</div><button class="cta" style="margin-top:8px;background:#4f46e5" onclick="window.open('${v.videoUrl}','_blank','noopener')">▶ Revoir la vidéo ↗</button></div>`:'';
+  setM('Exercice · '+m.num,`
+    ${vlink}
+    <div class="mt" style="margin-bottom:8px">Carte ${TR.i+1} / ${qs.length} · score ${TR.score}</div>
+    <div class="pbar" style="margin-bottom:14px"><i style="width:${Math.round(TR.i/qs.length*100)}%"></i></div>
     <div class="card"><div class="nm" style="font-size:14px;line-height:1.5">${q.q}</div>
       ${q.o.map((o,oi)=>{let st='';if(rev){if(oi===q.a)st='background:#dcfce7;border-color:#16a34a;color:#166534;font-weight:600';else if(oi===picked)st='background:#fee2e2;border-color:#dc2626;color:#991b1b';}return `<div class="qopt" style="${st}" onclick="pickTrain(${oi})">${o}</div>`;}).join('')}
       ${rev?`<div class="mt" style="margin-top:10px;font-weight:700;color:${picked===q.a?'#166534':'#991b1b'}">${picked===q.a?'✓ Juste. Tu as capté le mécanisme.':"✗ Presque. La bonne réponse est en vert, relis-la, c'est comme ça qu'on apprend."}</div>`:`<div class="mt" style="margin-top:8px">Choisis, la correction s'affiche direct.</div>`}
@@ -326,14 +330,14 @@ function renderTrain(){
     <button class="cta" style="${rev?'':'opacity:.45;pointer-events:none'}" onclick="${last?'finishTrain()':'trainNav()'}">${last?'Voir mon récap':'Carte suivante →'}</button>`);
   document.querySelector('#modal .ov-body').scrollTop=0;
 }
-function pickTrain(oi){if(TR.rev[TR.i])return;TR.ans[TR.i]=oi;TR.rev[TR.i]=true;if(oi===M(TR.mId).Q[TR.i].a)TR.score++;renderTrain();}
+function pickTrain(oi){if(TR.rev[TR.i])return;TR.ans[TR.i]=oi;TR.rev[TR.i]=true;if(oi===TR.qs[TR.i].a)TR.score++;renderTrain();}
 function trainNav(){TR.i++;renderTrain();}
-function finishTrain(){const m=M(TR.mId),n=m.Q.length;
-  setM('Entraînement · '+m.num,`
+function finishTrain(){const m=M(TR.mId),n=TR.qs.length,rejouer=TR.vId?`openTrainV('${TR.mId}','${TR.vId}')`:`openTrain('${TR.mId}')`;
+  setM('Exercice · '+m.num,`
     <div class="card" style="text-align:center;background:#eef0ff;border-color:#e0e3ff">
       <div style="font-size:34px;font-weight:800;color:#3730a3">${TR.score}/${n}</div>
       <div class="mt" style="color:#3730a3;font-weight:600">C'est un entraînement, pas une note. Rejoue autant que tu veux : chaque erreur t'apprend le mécanisme.</div></div>
-    <button class="cta" onclick="openTrain('${TR.mId}')">🎮 Rejouer</button>
+    <button class="cta" onclick="${rejouer}">🎮 Rejouer</button>
     <button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="openModule('${TR.mId}')">← Retour au module</button>`);
   document.querySelector('#modal .ov-body').scrollTop=0;
 }
