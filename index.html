@@ -203,7 +203,7 @@ function lineChart(pts,color,H){H=H||130;var W=320,pad=22,padB=20,n=pts.length;i
   var xf=function(i){return pad+(W-2*pad)*(n===1?0.5:i/(n-1));};
   var yf=function(v){return H-padB-(H-padB-10)*(Math.max(0,Math.min(10,v))/10);};
   var d='';pts.forEach(function(p,i){var X=xf(i),Y=yf(p.y);if(i===0){d='M'+X.toFixed(1)+' '+Y.toFixed(1);}else{var X0=xf(i-1),Y0=yf(pts[i-1].y),cx=((X0+X)/2).toFixed(1);d+=' C'+cx+' '+Y0.toFixed(1)+' '+cx+' '+Y.toFixed(1)+' '+X.toFixed(1)+' '+Y.toFixed(1);}});
-  var grid=[0,5,10].map(function(v){return `<line x1="${pad}" y1="${yf(v).toFixed(1)}" x2="${W-pad}" y2="${yf(v).toFixed(1)}" stroke="#eceef6"/><text x="${pad-6}" y="${(yf(v)+3).toFixed(1)}" font-size="9" fill="#b8bccb" text-anchor="end">${v}</text>`;}).join('');
+  var grid=[0,5,10].map(function(v){return `<line x1="${pad}" y1="${yf(v).toFixed(1)}" x2="${W-pad}" y2="${yf(v).toFixed(1)}" stroke="#eceef6"/><text x="${pad-6}" y="${(yf(v)+3).toFixed(1)}" font-size="9" fill="#b8bccb" text-anchor="end">${v*10}</text>`;}).join('');
   var area=n>1?`<path d="${d} L${xf(n-1).toFixed(1)} ${(H-padB).toFixed(1)} L${xf(0).toFixed(1)} ${(H-padB).toFixed(1)} Z" fill="${color}" opacity="0.09"/>`:'';
   var dots=pts.map(function(p,i){return `<circle cx="${xf(i).toFixed(1)}" cy="${yf(p.y).toFixed(1)}" r="3.2" fill="${color}"/>`;}).join('');
   var labels=pts.map(function(p,i){if(n>5 && i%Math.ceil(n/5)!==0 && i!==n-1)return '';return `<text x="${xf(i).toFixed(1)}" y="${H-5}" font-size="9" fill="#7a7f92" text-anchor="middle">${fmtDate(p.t)}</text>`;}).join('');
@@ -214,14 +214,14 @@ function dashboardHTML(){
   const l=lastBilan(),p=prevBilan();
   if(!l) return `<div class="card"><div class="nm">Ton tableau de bord</div><div class="mt">Fais ton premier bilan pour situer ton niveau, puis suis ton évolution tous les 21 jours.</div><button class="cta" onclick="openBilan()">📊 Faire mon 1er bilan (20 questions)</button></div>`;
   const avg=function(b){return (b.d+b.o+b.c+b.m)/4;};
-  const cur=Math.round(avg(l)*10)/10, prev=p?Math.round(avg(p)*10)/10:null, gdelta=prev==null?null:Math.round((cur-prev)*10)/10;
+  const curP=Math.round(avg(l)*10), prevP=p?Math.round(avg(p)*10):null, gdelta=prevP==null?null:curP-prevP;
   const multi=ST.bilans.length>1;
-  const globalChart=multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:avg(b)};}),'#4f46e5',150):`<div class="mt" style="text-align:center;padding:14px 0">1 bilan enregistré (${cur}/10). Refais-en un pour voir ta courbe se dessiner.</div>`;
+  const globalChart=multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:avg(b)};}),'#4f46e5',150):`<div class="mt" style="text-align:center;padding:14px 0">1 bilan enregistré (${curP}%). Refais-en un pour voir ta courbe se dessiner.</div>`;
   const axCharts=AXES.map(function(a){const k=a[0],v=l[k],pv=p?p[k]:null,dl=pv==null?null:v-pv;
-    return `<div class="plabel" style="margin-top:12px">${a[1]} · ${v}/10 ${arrowHTML(dl)}</div>${multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:b[k]};}),'#6366f1',88):`<div class="pbar" style="margin-top:4px"><i style="width:${v*10}%"></i></div>`}`;
+    return `<div class="plabel" style="margin-top:12px">${a[1]} · ${v*10}% ${arrowHTML(dl==null?null:dl*10)}</div>${multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:b[k]};}),'#6366f1',88):`<div class="pbar" style="margin-top:4px"><i style="width:${v*10}%"></i></div>`}`;
   }).join('');
   const due=bilanDue();
-  return `<div class="card"><div class="habhead"><div class="nm">Ton évolution globale (moyenne)</div><div class="streakbig" style="color:var(--indigo);font-size:16px">${cur}/10 ${arrowHTML(gdelta)}</div></div>
+  return `<div class="card"><div class="habhead"><div class="nm">Ton évolution globale (moyenne)</div><div class="streakbig" style="color:var(--indigo);font-size:16px">${curP}% ${arrowHTML(gdelta)}</div></div>
     ${globalChart}
     <button class="cta" style="background:#eef0ff;color:#3730a3;margin-top:10px" onclick="toggleAxes(this)">📈 Voir le détail par axe</button>
     <div class="axcharts" style="display:none;margin-top:4px">${axCharts}</div>
@@ -247,9 +247,9 @@ function finishBilan(){const sc={d:0,o:0,c:0,m:0},tot={d:0,o:0,c:0,m:0};
   const b={t:Date.now(),d:wsc('d'),o:wsc('o'),c:wsc('c'),m:wsc('m')};
   ST.bilans.push(b);save();refreshHeader();
   const p=prevBilan();
-  const msg=(p?"Compare à ton dernier bilan, les flèches montrent ton évolution.":"C'est ta base de départ. Reviens dans 21 jours pour mesurer tes progrès.")+" Ton score croise tes réponses et ta progression réelle dans les modules : plus tu avances, plus ton plafond monte.";
+  const msg=p?"Compare à ton dernier bilan, les flèches montrent ton évolution.":"C'est ton point de départ. Regarde tes axes à travailler ci-dessous.";
   const weak=AXES.filter(function(a){return b[a[0]]<8;}).sort(function(x,y){return b[x[0]]-b[y[0]];});
-  const reco=weak.length?`<h3 class="sh">Tes cours à travailler en priorité</h3>`+weak.map(function(a){var mid=AXMOD[a[0]],m=M(mid);return `<div class="lrow" onclick="closeModal();openModule('${mid}')"><div class="chk2" style="background:#fff7ed;color:#c2410c">↻</div><div class="g">${a[1]} : ${b[a[0]]}/10<div class="mt">À travailler : ${m.icon} ${m.num} · ${m.t}</div></div></div>`;}).join(''):`<div class="card" style="background:#dcfce7;border-color:#bbf7d0;color:#166534"><b>Solide sur les 4 axes.</b> Continue le parcours, le prochain palier t'attend.</div>`;
+  const reco=weak.length?`<h3 class="sh">Tes cours à travailler en priorité</h3>`+weak.map(function(a){var mid=AXMOD[a[0]],m=M(mid);return `<div class="lrow" onclick="closeModal();openModule('${mid}')"><div class="chk2" style="background:#fff7ed;color:#c2410c">↻</div><div class="g">${a[1]} : ${b[a[0]]*10}%<div class="mt">À travailler : ${m.icon} ${m.num} · ${m.t}</div></div></div>`;}).join(''):`<div class="card" style="background:#dcfce7;border-color:#bbf7d0;color:#166534"><b>Solide sur les 4 axes.</b> Continue le parcours, le prochain palier t'attend.</div>`;
   setM('Ton bilan',`<div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="nm">Bilan enregistré ✓</div><div class="mt">${msg}</div></div>${dashboardHTML()}${reco}<button class="cta" style="margin-top:12px" onclick="closeModal();go('accueil')">Retour à l'accueil</button>`);
   document.querySelector('#modal .ov-body').scrollTop=0;
 }
