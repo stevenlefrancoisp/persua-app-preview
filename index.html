@@ -141,7 +141,7 @@ function scrollToCal(){var s=document.getElementById('screen'),c=document.getEle
 /* État persistant */
 const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
-ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false;
+ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[];
 function save(){localStorage.setItem(KEY,JSON.stringify(ST));}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
 (function(){var h=(location.hash+location.search).toLowerCase();if(h.indexOf('eleve')>=0||h.indexOf('student')>=0){ST.eleve=true;save();}if(h.indexOf('open')>=0||h.indexOf('admin')>=0){ST.eleve=false;save();}})();
@@ -163,6 +163,63 @@ function reqLevel(i){return i+1;}
 function unlocked(i){return !ST.eleve||xp()>=LV[i];}
 function refreshHeader(){document.getElementById('xp').textContent=xp()+' XP';document.getElementById('lvl').textContent='Niveau '+level();}
 
+/* Bilan des 3 semaines + tableau de bord d'évolution (unique par appareil via localStorage) */
+const AXES=[['d','Découverte'],['o','Objections'],['c','Closing'],['m','Méthode CALME']];
+const BILAN=[
+ {ax:'d',q:"Ton prospect dit que son problème lui fait perdre du temps, mais reste vague. Le meilleur réflexe ?",o:["Passer à ta solution","Lui donner ta moyenne marché","Lui faire chiffrer par encadrement (dizaines ? centaines ? milliers ?) puis silence","Lui proposer un devis"],a:2},
+ {ax:'d',q:"Un client répète un besoin de surface (\"améliorer mon CA\"). Pour toucher sa vraie motivation, tu...",o:["Listes tes fonctionnalités","Creuses jusqu'à la motivation profonde puis la raison personnelle","Parles prix","Conclus vite"],a:1},
+ {ax:'d',q:"Quelle part du temps devrais-tu parler en découverte ?",o:["Moins de 30%, le prospect parle","La majorité, pour montrer ton expertise","Environ 50/50","Peu importe"],a:0},
+ {ax:'o',q:"\"C'est trop cher.\" Ton tout premier geste ?",o:["Justifier par les fonctionnalités","Remise immédiate","Accueillir et clarifier : \"trop cher par rapport à quoi ?\"","Comparer à un concurrent"],a:2},
+ {ax:'o',q:"Selon le modèle des 3 craintes, une objection cache un manque de confiance en...",o:["Le budget","Toi, le produit, ou l'entreprise","Le timing","Le concurrent"],a:1},
+ {ax:'o',q:"\"Je vais réfléchir\" signifie le plus souvent...",o:["Un non poli définitif","Qu'il faut baisser le prix","Une info qui manque, à faire émerger","Qu'il compare"],a:2},
+ {ax:'c',q:"Pour qu'un cerveau passe à l'achat, tu dois surtout...",o:["Augmenter le plaisir promis","Réduire l'incertitude, rendre le résultat prévisible","Insister","Baisser le prix"],a:1},
+ {ax:'c',q:"Juste après avoir annoncé ton prix, tu...",o:["Enchaînes vite pour meubler","Tiens le silence quelques secondes","Ajoutes une remise","Changes de sujet"],a:1},
+ {ax:'c',q:"La négociation par l'aversion à la perte consiste à...",o:["Menacer de partir","Offrir toujours plus","Rappeler ce qu'il perd à ne rien faire, sans pression","Créer une fausse urgence"],a:2},
+ {ax:'m',q:"Plus tu as absolument besoin de closer ce deal...",o:["Plus tu mets de chances de ton côté","Moins tu as de chances : ton énergie de besoin braque le prospect","Ça ne change rien","Mieux tu négocies"],a:1},
+ {ax:'m',q:"Avant un RDV à fort enjeu, le bon rituel ?",o:["Te répéter \"il faut signer\"","Deux minutes de respiration lente + un objectif comportemental","Réviser tous tes arguments par cœur","Rien de spécial"],a:1},
+ {ax:'m',q:"En rendez-vous, qui prend le contrôle de l'échange ?",o:["Le plus rapide","Le cerveau le plus stable","Le plus bavard","Celui qui a le meilleur prix"],a:1}
+];
+const DAY=86400000;
+function lastBilan(){return ST.bilans.length?ST.bilans[ST.bilans.length-1]:null;}
+function prevBilan(){return ST.bilans.length>1?ST.bilans[ST.bilans.length-2]:null;}
+function bilanDue(){const l=lastBilan();return !l||(Date.now()-l.t)>=21*DAY;}
+function daysToBilan(){const l=lastBilan();return l?Math.max(0,Math.ceil((l.t+21*DAY-Date.now())/DAY)):0;}
+function dashboardHTML(){
+  const l=lastBilan(),p=prevBilan();
+  if(!l) return `<div class="card"><div class="nm">Ton tableau de bord</div><div class="mt">Fais ton premier bilan pour situer ton niveau sur les 4 axes, puis suis ton évolution tous les 21 jours.</div><button class="cta" onclick="openBilan()">📊 Faire mon 1er bilan (12 questions, 5 min)</button></div>`;
+  const rows=AXES.map(function(a){const k=a[0],v=l[k],pv=p?p[k]:null,delta=pv==null?null:v-pv;
+    const arrow=delta==null?'':delta>0?`<span style="color:#16a34a">▲+${delta}</span>`:delta<0?`<span style="color:#dc2626">▼${delta}</span>`:`<span style="color:#7a7f92">=</span>`;
+    const hist=ST.bilans.length>1?`<div style="margin:1px 0 9px 92px;display:flex;align-items:flex-end;gap:2px;height:26px">`+ST.bilans.slice(-8).map(function(b){return `<span style="display:inline-block;width:6px;height:${3+b[k]*2.2}px;background:#c7ccf5;border-radius:2px"></span>`;}).join('')+`</div>`:'';
+    return `<div class="axrow"><span class="lb">${a[1]}</span><span class="bar"><i style="width:${v*10}%"></i></span><span class="vv" style="width:52px">${v}/10 ${arrow}</span></div>${hist}`;
+  }).join('');
+  const due=bilanDue();
+  return `<div class="card"><div class="habhead"><div class="nm">Ton tableau de bord</div><div class="streakbig" style="color:var(--indigo)">${ST.bilans.length} bilan${ST.bilans.length>1?'s':''}</div></div>${rows}
+    ${due?`<button class="cta" onclick="openBilan()">📊 C'est l'heure de ton bilan des 3 semaines</button>`:`<div class="mt" style="text-align:center;margin-top:6px">Prochain bilan dans ${daysToBilan()} jour${daysToBilan()>1?'s':''}. <span onclick="openBilan()" style="color:var(--indigo);cursor:pointer;font-weight:600">le faire maintenant</span></div>`}</div>`;
+}
+let BL=null;
+function openBilan(){BL={i:0,ans:{}};renderBilan();openModal();}
+function renderBilan(){const q=BILAN[BL.i],last=BL.i===BILAN.length-1,picked=BL.ans[BL.i];
+  setM('Bilan des 3 semaines',`
+    <div class="mt" style="margin-bottom:8px">Question ${BL.i+1} / ${BILAN.length}</div>
+    <div class="pbar" style="margin-bottom:14px"><i style="width:${Math.round(BL.i/BILAN.length*100)}%"></i></div>
+    <div class="card"><div class="nm" style="font-size:14px;line-height:1.5">${q.q}</div>
+      ${q.o.map(function(o,oi){return `<div class="qopt ${picked===oi?'on':''}" onclick="pickBilan(${oi})">${o}</div>`;}).join('')}</div>
+    <div style="display:flex;gap:8px">${BL.i>0?'<button class="cta" style="background:#eef0ff;color:#3730a3" onclick="bilanNav(-1)">Précédent</button>':''}
+    <button class="cta" style="${picked==null?'opacity:.45;pointer-events:none':''}" onclick="${last?'finishBilan()':'bilanNav(1)'}">${last?'Voir mon bilan':'Suivant →'}</button></div>`);
+  document.querySelector('#modal .ov-body').scrollTop=0;
+}
+function pickBilan(oi){BL.ans[BL.i]=oi;renderBilan();}
+function bilanNav(d){BL.i+=d;renderBilan();}
+function finishBilan(){const sc={d:0,o:0,c:0,m:0},tot={d:0,o:0,c:0,m:0};
+  BILAN.forEach(function(q,i){tot[q.ax]++;if(BL.ans[i]===q.a)sc[q.ax]++;});
+  const b={t:Date.now(),d:Math.round(sc.d/tot.d*10),o:Math.round(sc.o/tot.o*10),c:Math.round(sc.c/tot.c*10),m:Math.round(sc.m/tot.m*10)};
+  ST.bilans.push(b);save();refreshHeader();
+  const p=prevBilan();
+  const msg=p?"Compare à ton dernier bilan, les flèches montrent ton évolution.":"C'est ta base de départ. Reviens dans 21 jours pour mesurer tes progrès.";
+  setM('Ton bilan',`<div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="nm">Bilan enregistré ✓</div><div class="mt">${msg}</div></div>${dashboardHTML()}<button class="cta" style="margin-top:12px" onclick="closeModal();go('accueil')">Retour à l'accueil</button>`);
+  document.querySelector('#modal .ov-body').scrollTop=0;
+}
+
 const GESTES=[
  {id:"g1",t:"1 vraie question de découverte"},
  {id:"g2",t:"Tenir un silence après une objection"},
@@ -174,6 +231,7 @@ const GESTES=[
 function accueilHTML(){
   const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
   return `
+  ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan des 3 semaines est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution sur les 4 axes.</div></div>`:''}
   <div class="card geste"><div class="k">Ton geste du jour</div>
     <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
   <h3 class="sh">Ton profil de vendeur</h3>
@@ -181,13 +239,8 @@ function accueilHTML(){
     ${ST.test?`<div class="pchips"><span class="pchip">DISC · C</span><span class="pchip">L'Expert</span><span class="pchip">ISTP</span></div><div class="mt">Tape pour revoir ton analyse.</div>`
       :`<div class="nm">Passe ton diagnostic de vendeur</div><div class="mt">12 questions, 5 min. Révèle ton profil et ton style.</div><button class="cta">Commencer le test</button>`}
   </div>
-  <h3 class="sh">Ta progression · les 4 axes CALME</h3>
-  <div class="card">
-    <div class="axrow"><span class="lb">Découverte</span><span class="bar"><i style="width:70%"></i></span><span class="vv">7</span></div>
-    <div class="axrow"><span class="lb">Objections</span><span class="bar"><i style="width:55%"></i></span><span class="vv">5,5</span></div>
-    <div class="axrow"><span class="lb">Closing</span><span class="bar"><i style="width:60%"></i></span><span class="vv">6</span></div>
-    <div class="axrow"><span class="lb">Calme</span><span class="bar"><i style="width:75%"></i></span><span class="vv">7,5</span></div>
-  </div>
+  <h3 class="sh">Ton évolution · découverte, objections, closing, CALME</h3>
+  ${dashboardHTML()}
   <h3 class="sh">Ta semaine</h3>
   <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven, quand tu veux</div>
     <button class="cta" onclick="go('rdv')">Réserver ma séance</button></div>`;
