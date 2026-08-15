@@ -1,4 +1,4 @@
-const CACHE = 'persua-preview-v19';
+const CACHE = 'persua-preview-v20';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

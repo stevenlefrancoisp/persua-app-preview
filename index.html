@@ -77,7 +77,7 @@
   .overlay.open{transform:translateY(0)}
   .ov-bar{background:#0e1020;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:700}
   .ov-bar .x{background:rgba(255,255,255,.15);border:0;color:#fff;width:30px;height:30px;border-radius:9px;font-size:16px;cursor:pointer}
-  .ov-body{flex:1;overflow-y:auto;padding:16px 16px 30px}
+  .ov-body{flex:1;overflow-y:auto;padding:16px 16px calc(86px + env(safe-area-inset-bottom))}
   .pchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
   .pchip{background:#eef0ff;color:#3730a3;font-size:12px;font-weight:700;padding:6px 10px;border-radius:10px}
   .plabel{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
@@ -103,10 +103,28 @@
   .post .body{font-size:13.5px;color:#2a2e3d;line-height:1.42}
   .post .acts{display:flex;gap:16px;margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600;cursor:pointer}
   .tagchip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eef0ff;color:#3730a3;cursor:pointer}
-  .tabbar{position:absolute;bottom:0;left:0;right:0;min-height:66px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex}
+  .tabbar{position:absolute;bottom:0;left:0;right:0;min-height:66px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;z-index:30}
+  .modnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .modnav button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 11px;font-size:12.5px;font-weight:600;color:var(--indigo);cursor:pointer}
+  .modnav button:disabled{opacity:.35;color:var(--muted)}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
   .tab .e{font-size:20px;filter:grayscale(1);opacity:.55}
   .tab.on{color:var(--indigo)}.tab.on .e{filter:none;opacity:1}
+  .pop{animation:slideUp .38s ease both}
+  @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .bob{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+  @keyframes bob{0%,55%,100%{transform:translateY(0)}25%{transform:translateY(-4px)}}
+  .xppop{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:#16a34a;color:#fff;font-weight:800;font-size:15px;padding:10px 18px;border-radius:14px;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:xpFly 1.3s ease forwards;pointer-events:none}
+  @keyframes xpFly{0%{opacity:0;transform:translateX(-50%) translateY(8px) scale(.9)}18%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}75%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-24px)}}
+  #onboard{position:absolute;inset:0;z-index:50;background:linear-gradient(160deg,#3730a3,#4f46e5);display:flex;align-items:center;justify-content:center;padding:26px}
+  .ob-card{background:#fff;border-radius:22px;padding:28px 22px 22px;text-align:center;max-width:320px;width:100%}
+  .ob-emoji{font-size:52px;margin-bottom:8px}
+  .ob-title{font-size:20px;font-weight:800;color:var(--ink);margin-bottom:8px}
+  .ob-text{font-size:14px;color:#4a4f60;line-height:1.5;margin-bottom:18px}
+  .ob-dots{display:flex;gap:6px;justify-content:center;margin-bottom:16px}
+  .ob-dots span{width:7px;height:7px;border-radius:50%;background:#d7dbe6;transition:all .2s}
+  .ob-dots span.on{background:var(--indigo);width:20px;border-radius:4px}
+  .ob-skip{margin-top:12px;color:var(--muted);font-size:13px;cursor:pointer}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -142,7 +160,7 @@ function scrollToCal(){var s=document.getElementById('screen'),c=document.getEle
 /* État persistant */
 const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
-ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[];
+ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false;
 function save(){localStorage.setItem(KEY,JSON.stringify(ST));}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
 (function(){var h=(location.hash+location.search).toLowerCase();if(h.indexOf('eleve')>=0||h.indexOf('student')>=0){ST.eleve=true;save();}if(h.indexOf('open')>=0||h.indexOf('admin')>=0){ST.eleve=false;save();}})();
@@ -156,15 +174,17 @@ function isBlocking(v){return (iType(v)==='video'&&!!v.videoUrl)||iType(v)==='fi
 function reqV(m){return m.V.filter(isBlocking);}
 function vDone(m){return reqV(m).filter(v=>ST.done[v.id]).length;}
 function allWatched(m){const r=reqV(m);return r.length>0 && r.every(v=>ST.done[v.id]);}
-const LV=[0,200,450,750,1000,1300,1500];   // XP requis pour débloquer M1..M7
-function xp(){return Object.keys(ST.done).length*25 + Object.keys(ST.quiz).length*100;}
+const LV=[0,300,620,960,1280,1560,1820];   // XP TOTAL requis pour débloquer M1..M7 (quiz validé + usage de l'app)
+function xp(){return Object.keys(ST.done).length*25 + Object.keys(ST.quiz).length*100 + Object.keys(ST.gestes).filter(function(k){return ST.gestes[k];}).length*10 + Object.keys(ST.assist||{}).length*15 + (ST.bilans?ST.bilans.length*30:0) + Object.keys(ST.rdv||{}).length*40;}
 function levelOf(x){let n=1;for(let i=0;i<LV.length;i++){if(x>=LV[i])n=i+1;}return n;}
 function level(){return levelOf(xp());}
 function reqLevel(i){return i+1;}
-function unlocked(i){return !ST.eleve||xp()>=LV[i];}
+function unlocked(i){return !ST.eleve||i===0||(!!ST.quiz[MOD[i-1].id] && xp()>=LV[i]);}
+function lockReason(i){if(i>0 && !ST.quiz[MOD[i-1].id])return `valide d'abord le ${MOD[i-1].num}`;return `encore ${Math.max(0,LV[i]-xp())} XP en utilisant l'app`;}
 function refreshHeader(){document.getElementById('xp').textContent=xp()+' XP';document.getElementById('lvl').textContent='Niveau '+level();}
+function xpToast(n){try{var e=document.createElement('div');e.className='xppop';e.textContent='+'+n+' XP';document.body.appendChild(e);setTimeout(function(){if(e.parentNode)e.parentNode.removeChild(e);},1300);}catch(x){}}
 
-/* Bilan des 3 semaines + tableau de bord d'évolution (unique par appareil via localStorage) */
+/* Bilan hebdomadaire + tableau de bord d'évolution (unique par appareil via localStorage) */
 const AXES=[['d','Découverte'],['o','Objections'],['c','Closing'],['m','Méthode CALME']];
 const BILAN=[
  {ax:'d',q:"En découverte, ton prospect décrit son problème mais reste flou sur ce qu'il lui coûte. Ces quatre approches se défendent. Laquelle fait le plus émerger SA douleur, façon neuro ?",o:["Lui présenter un cas client chiffré pour qu'il se projette","Reformuler sa problématique avec ses mots pour montrer que tu as compris","Lui faire chiffrer par encadrement : \"plutôt des dizaines, des centaines ou des milliers par mois ?\" puis te taire","Poser une question ouverte sur l'origine du problème"],a:2},
@@ -186,7 +206,27 @@ const BILAN=[
  {ax:'d',q:"Avant même le premier mot d'un RDV, qu'est-ce qui prépare le mieux le terrain ?",o:["Un argumentaire produit très solide","Envoyer en amont une analyse courte et utile de sa situation, sans rien demander","Une belle plaquette de présentation","Une remise de lancement"],a:1},
  {ax:'o',q:"Le prospect sait qu'un concurrent te bat sur un point précis. Ta meilleure carte ?",o:["Le nier","L'esquiver et parler d'autre chose","L'avouer franchement puis ramener sur sa vraie priorité (baisse son bouclier)","Dire que ce point n'a aucune importance"],a:2},
  {ax:'c',q:"En présentant ton offre, tu vends surtout...",o:["la liste des fonctionnalités","le résultat vécu, la destination, pas le billet","ton process interne","ton prix, pour cadrer vite"],a:1},
- {ax:'m',q:"Un dirigeant pressé t'annonce \"allez droit au but\". Tes 90 premières secondes ?",o:["Pitch direct, il t'a donné la permission","Ton meilleur chiffre d'entrée pour marquer","Vite mais dans le bon ordre : sa réalité, la pression retirée, l'alarme d'abord","Cinq minutes de small talk pour créer du lien"],a:2}
+ {ax:'m',q:"Un dirigeant pressé t'annonce \"allez droit au but\". Tes 90 premières secondes ?",o:["Pitch direct, il t'a donné la permission","Ton meilleur chiffre d'entrée pour marquer","Vite mais dans le bon ordre : sa réalité, la pression retirée, l'alarme d'abord","Cinq minutes de small talk pour créer du lien"],a:2},
+ {ax:'d',q:"\"On a déjà un fournisseur pour ça.\" Le meilleur réflexe de découverte ?",o:["Lui prouver aussitôt que tu es meilleur","Lui demander ce qui, avec ce fournisseur, pourrait être encore mieux","Baisser ton prix pour te démarquer","Noter que le besoin est couvert et passer"],a:1},
+ {ax:'d',q:"Pour faire parler un prospect très fermé, quelle formulation ouvre le plus ?",o:["\"Vous avez des problèmes en ce moment ?\"","\"Racontez-moi comment ça se passe aujourd'hui, concrètement.\"","\"Je vous envoie un devis ?\"","\"C'est bon pour vous jusqu'ici ?\""],a:1},
+ {ax:'d',q:"Le prospect minimise (\"ça va, on gère\"). Pour révéler l'enjeu sans le braquer ?",o:["Lui énumérer les risques qu'il prend","Lui demander ce que ça changerait si c'était réglé une bonne fois","Lui montrer un cas client impressionnant","Lui proposer un audit gratuit"],a:1},
+ {ax:'d',q:"Quelle information vaut le plus en découverte, façon neuro ?",o:["Son budget exact","La douleur émotionnelle, chiffrée, avec ses mots à lui","Le nom du décideur final","Son délai de mise en place"],a:1},
+ {ax:'d',q:"Tu veux qu'il mesure lui-même le coût de son problème. Tu...",o:["lui donnes ton estimation pour gagner du temps","lui demandes de le chiffrer, même en gros, puis tu te tais","changes de sujet, c'est trop tôt","passes directement à ton offre"],a:1},
+ {ax:'o',q:"\"On n'a pas le budget cette année.\" Ta meilleure réponse ?",o:["Proposer un paiement en plusieurs fois aussitôt","Clarifier : est-ce le budget, ou la priorité de ce budget ?","Baisser ton prix","Reporter à l'année prochaine"],a:1},
+ {ax:'o',q:"\"Envoyez-moi une plaquette, je regarde et je reviens.\" Tu...",o:["envoies la plaquette et relances dans une semaine","demandes \"quelle info précise vous aiderait à décider ?\" avant d'envoyer","proposes un rendez-vous de suivi","insistes pour closer maintenant"],a:1},
+ {ax:'o',q:"Face à une objection, la première chose à viser ?",o:["Répondre le plus vite possible avec un argument","Faire baisser la tension avant de traiter","Sortir une preuve chiffrée","Proposer une concession"],a:1},
+ {ax:'o',q:"\"Votre concurrent est moins cher.\" Le réflexe neuro-optimal ?",o:["Aligner ton prix sur le sien","Ramener sur la valeur et le coût réel de son problème, sans dénigrer","Critiquer le concurrent","Offrir un bonus pour compenser"],a:1},
+ {ax:'o',q:"Une objection sincère, c'est d'abord le signe de...",o:["un refus poli","de l'intérêt, avec une info ou une peur à traiter","une négociation qui commence","un manque de budget"],a:1},
+ {ax:'c',q:"Les trois conditions réunies avant de closer ?",o:["Prix bas, urgence, garantie","Douleur mesurée, valeur perçue, confiance établie","Décideur présent, budget validé, délai court","Preuve sociale, remise, bonus"],a:1},
+ {ax:'c',q:"Ton prospect hésite au moment de signer. Le levier le plus juste ?",o:["Ajouter une remise de dernière minute","Réduire l'incertitude sur le 'et après' (étapes, garantie)","Mettre une deadline artificielle","Répéter tes arguments"],a:1},
+ {ax:'c',q:"Après avoir proposé de conclure, tu...",o:["continues à argumenter pour être sûr","laisses le silence agir et attends sa réponse","proposes une alternative moins chère","changes de sujet pour détendre"],a:1},
+ {ax:'c',q:"Le bon moment pour parler du prix ?",o:["Le plus tard possible, à la toute fin","Une fois la valeur et la douleur posées, sans le fuir","Dès la première minute pour qualifier","Seulement s'il le demande"],a:1},
+ {ax:'c',q:"Un closing neuropsychologique réussi repose surtout sur...",o:["la pression et l'urgence","la baisse du risque perçu au moment de décider","le nombre d'arguments","le charisme du vendeur"],a:1},
+ {ax:'m',q:"Tu sens la panique monter en plein RDV. Le premier geste ?",o:["Parler plus vite pour reprendre la main","Ralentir ton débit, respirer, poser une question ouverte","Sortir ton meilleur argument","Proposer de reporter"],a:1},
+ {ax:'m',q:"Ton prospect est agressif et te teste. Ta meilleure posture ?",o:["Répondre du tac au tac pour t'imposer","Rester posé, ne pas te justifier, reformuler calmement","Hausser le ton pour montrer ta conviction","Écourter le rendez-vous"],a:1},
+ {ax:'m',q:"Mieux préparer ton mental avant un gros RDV ?",o:["Te répéter que tu dois signer","Un rituel court et un objectif de compréhension, pas de résultat","Réviser tous tes arguments par cœur","Un café pour être à fond"],a:1},
+ {ax:'m',q:"Ce qui se transmet le plus au prospect, avant tes mots ?",o:["La qualité de ton argumentaire","Ton état interne : ton calme ou ton stress","Ton apparence","Ton prix"],a:1},
+ {ax:'m',q:"Après un refus, la réaction qui protège ta performance ?",o:["Relancer aussitôt avec insistance","Le prendre comme une info, débriefer une leçon, passer au suivant sans te dévaloriser","Baisser tes prix au prochain","Douter de ta méthode"],a:1}
 ];
 const AXMOD={d:'m4',o:'m6',c:'m5',m:'m7'};
 const AXMODS={d:['m1','m4'],o:['m4','m6'],c:['m4','m5'],m:['m1','m7']};
@@ -195,8 +235,8 @@ function axProg(ax){var mods=AXMODS[ax]||[];var s=0;mods.forEach(function(mid){s
 const DAY=86400000;
 function lastBilan(){return ST.bilans.length?ST.bilans[ST.bilans.length-1]:null;}
 function prevBilan(){return ST.bilans.length>1?ST.bilans[ST.bilans.length-2]:null;}
-function bilanDue(){const l=lastBilan();return !l||(Date.now()-l.t)>=21*DAY;}
-function daysToBilan(){const l=lastBilan();return l?Math.max(0,Math.ceil((l.t+21*DAY-Date.now())/DAY)):0;}
+function bilanDue(){const l=lastBilan();return !l||(Date.now()-l.t)>=7*DAY;}
+function daysToBilan(){const l=lastBilan();return l?Math.max(0,Math.ceil((l.t+7*DAY-Date.now())/DAY)):0;}
 function fmtDate(t){var d=new Date(t);return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2);}
 function arrowHTML(delta){return delta==null?'':delta>0?`<span style="color:#16a34a">▲+${delta}</span>`:delta<0?`<span style="color:#dc2626">▼${delta}</span>`:`<span style="color:#7a7f92">=</span>`;}
 function lineChart(pts,color,H){H=H||140;var W=320,pad=26,padB=22,padT=12,n=pts.length;if(!n)return '';
@@ -229,7 +269,7 @@ function radarChart(cur,prev){
 function toggleAxes(el){var c=el.parentElement.querySelector('.axcharts');if(c){c.style.display=c.style.display==='none'?'block':'none';el.textContent=c.style.display==='none'?"📈 Voir l'évolution dans le temps":"📉 Masquer l'évolution";}}
 function dashboardHTML(){
   const l=lastBilan(),p=prevBilan();
-  if(!l) return `<div class="card"><div class="nm">Ton tableau de bord</div><div class="mt">Fais ton premier bilan pour situer ton niveau, puis suis ton évolution tous les 21 jours.</div><button class="cta" onclick="openBilan()">📊 Faire mon 1er bilan (20 questions)</button></div>`;
+  if(!l) return `<div class="card"><div class="nm">Ton tableau de bord</div><div class="mt">Fais ton premier bilan pour situer ton niveau, puis suis ton évolution chaque semaine.</div><button class="cta" onclick="openBilan()">📊 Faire mon 1er bilan (16 questions)</button></div>`;
   const avg=function(b){return (b.d+b.o+b.c+b.m)/4;};
   const curP=Math.round(avg(l)*10), prevP=p?Math.round(avg(p)*10):null, gdelta=prevP==null?null:curP-prevP;
   const multi=ST.bilans.length>1;
@@ -238,17 +278,21 @@ function dashboardHTML(){
   const due=bilanDue();
   return `<div class="card"><div class="habhead"><div class="nm">Ton profil de vendeur (moyenne)</div><div class="streakbig" style="color:var(--indigo);font-size:16px">${curP}% ${arrowHTML(gdelta)}</div></div>
     ${radarChart(l,p)}
-    ${p?`<div class="mt" style="text-align:center;margin-top:2px">Trait plein = aujourd'hui, pointillé = ton bilan précédent.</div>`:`<div class="mt" style="text-align:center;margin-top:2px">Ta photo du moment. Refais un bilan dans 21 jours pour voir ta progression sur le radar.</div>`}
+    ${p?`<div class="mt" style="text-align:center;margin-top:2px">Trait plein = aujourd'hui, pointillé = ton bilan précédent.</div>`:`<div class="mt" style="text-align:center;margin-top:2px">Ta photo du moment. Refais ton bilan chaque semaine pour voir ta progression sur le radar.</div>`}
     <button class="cta" style="background:#eef0ff;color:#3730a3;margin-top:12px" onclick="toggleAxes(this)">📈 Voir l'évolution dans le temps</button>
     <div class="axcharts" style="display:none;margin-top:6px"><div class="plabel">Moyenne globale</div>${timeGlobal}${timeAx}</div>
-    ${due?`<button class="cta" onclick="openBilan()">📊 C'est l'heure de ton bilan des 3 semaines</button>`:`<div class="mt" style="text-align:center;margin-top:10px">${ST.bilans.length} bilan${ST.bilans.length>1?'s':''} · prochain dans ${daysToBilan()} j. <span onclick="openBilan()" style="color:var(--indigo);cursor:pointer;font-weight:600">le faire maintenant</span></div>`}</div>`;
+    ${due?`<button class="cta" onclick="openBilan()">📊 C'est l'heure de ton bilan de la semaine</button>`:`<div class="mt" style="text-align:center;margin-top:10px">${ST.bilans.length} bilan${ST.bilans.length>1?'s':''} · prochain dans ${daysToBilan()} j. <span onclick="openBilan()" style="color:var(--indigo);cursor:pointer;font-weight:600">le faire maintenant</span></div>`}</div>`;
 }
 let BL=null;
-function openBilan(){BL={i:0,ans:{}};renderBilan();openModal();}
-function renderBilan(){const q=BILAN[BL.i],last=BL.i===BILAN.length-1,picked=BL.ans[BL.i];
-  setM('Bilan des 3 semaines',`
-    <div class="mt" style="margin-bottom:8px">Question ${BL.i+1} / ${BILAN.length}</div>
-    <div class="pbar" style="margin-bottom:14px"><i style="width:${Math.round(BL.i/BILAN.length*100)}%"></i></div>
+const BILAN_PER_AXIS=4;
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function shufOpts(q){var idx=q.o.map(function(_,i){return i;});shuffle(idx);return {ax:q.ax,q:q.q,o:idx.map(function(i){return q.o[i];}),a:idx.indexOf(q.a)};}
+function pickBilanSet(){var by={d:[],o:[],c:[],m:[]};BILAN.forEach(function(q){by[q.ax].push(q);});var out=[];['d','o','c','m'].forEach(function(k){shuffle(by[k]);out=out.concat(by[k].slice(0,BILAN_PER_AXIS));});return shuffle(out).map(shufOpts);}
+function openBilan(){BL={i:0,ans:{},set:pickBilanSet()};renderBilan();openModal();}
+function renderBilan(){const S=BL.set,q=S[BL.i],last=BL.i===S.length-1,picked=BL.ans[BL.i];
+  setM('Bilan de la semaine',`
+    <div class="mt" style="margin-bottom:8px">Question ${BL.i+1} / ${S.length}</div>
+    <div class="pbar" style="margin-bottom:14px"><i style="width:${Math.round(BL.i/S.length*100)}%"></i></div>
     <div class="card"><div class="nm" style="font-size:14px;line-height:1.5">${q.q}</div>
       ${q.o.map(function(o,oi){return `<div class="qopt ${picked===oi?'on':''}" onclick="pickBilan(${oi})">${o}</div>`;}).join('')}</div>
     <div style="display:flex;gap:8px">${BL.i>0?'<button class="cta" style="background:#eef0ff;color:#3730a3" onclick="bilanNav(-1)">Précédent</button>':''}
@@ -258,10 +302,10 @@ function renderBilan(){const q=BILAN[BL.i],last=BL.i===BILAN.length-1,picked=BL.
 function pickBilan(oi){BL.ans[BL.i]=oi;renderBilan();}
 function bilanNav(d){BL.i+=d;renderBilan();}
 function finishBilan(){const sc={d:0,o:0,c:0,m:0},tot={d:0,o:0,c:0,m:0};
-  BILAN.forEach(function(q,i){tot[q.ax]++;if(BL.ans[i]===q.a)sc[q.ax]++;});
+  BL.set.forEach(function(q,i){tot[q.ax]++;if(BL.ans[i]===q.a)sc[q.ax]++;});
   function wsc(ax){return Math.max(0,Math.min(10,Math.round((sc[ax]/tot[ax]*10)*(0.4+0.6*axProg(ax)))));}
   const b={t:Date.now(),d:wsc('d'),o:wsc('o'),c:wsc('c'),m:wsc('m')};
-  ST.bilans.push(b);save();refreshHeader();
+  ST.bilans.push(b);save();xpToast(30);refreshHeader();
   const p=prevBilan();
   const msg=p?"Compare à ton dernier bilan, les flèches montrent ton évolution.":"C'est ton point de départ. Regarde tes axes à travailler ci-dessous.";
   const weak=AXES.filter(function(a){return b[a[0]]<8;}).sort(function(x,y){return b[x[0]]-b[y[0]];});
@@ -281,7 +325,7 @@ const GESTES=[
 function accueilHTML(){
   const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
   return `
-  ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan des 3 semaines est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution sur les 4 axes.</div></div>`:''}
+  ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution sur les 4 axes.</div></div>`:''}
   <div class="card geste"><div class="k">Ton geste du jour</div>
     <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
   <h3 class="sh">Ton profil de vendeur</h3>
@@ -297,13 +341,13 @@ function accueilHTML(){
 }
 function parcoursHTML(){
   const head=!ST.eleve?`<h3 class="sh">Accès complet · tous les modules ouverts</h3>`
-    :`<h3 class="sh">Ton parcours · niveau ${level()} · monte de niveau pour débloquer la suite</h3>`;
+    :`<h3 class="sh">Ton parcours · niveau ${level()} · valide le quiz ET utilise l'app pour débloquer la suite</h3>`;
   return head+
    MOD.map((m,i)=>{
      const done=!!ST.quiz[m.id], unl=unlocked(i);
      const req=reqV(m), vd=vDone(m);
      const node=done?'<div class="node n-done">✓</div>':unl?`<div class="node n-cur">${i+1}</div>`:'<div class="node n-lock">🔒</div>';
-     const status=done?' · validé ✓':unl?'':` · 🔒 niveau ${reqLevel(i)} requis`;
+     const status=done?' · validé ✓':unl?'':` · 🔒 ${lockReason(i)}`;
      return `<div class="mod" ${unl?`onclick="openModule('${m.id}')" style="cursor:pointer"`:''}>${node}
        <div class="modc"><div class="t">${m.icon} ${m.num} · ${m.t}</div>
        <div class="s">${m.sub} · ${vd}/${req.length} contenus${status}</div>
@@ -331,28 +375,70 @@ function rdvHTML(){
   </div>
   <h3 class="sh">Réserver avec Steven</h3>
   <div class="card" style="padding:8px"><div id="cal-inline" style="min-height:540px;width:100%"></div></div>
+  <button class="cta" style="background:#dcfce7;color:#166534" onclick="markRdv()">✅ J'ai réservé mon créneau (+40 XP)</button>
   <h3 class="sh">Tes séances passées</h3>
   <div class="card">
     <div class="rr"><span style="font-size:20px">▶️</span><div class="g"><div class="nm" style="font-size:14px">Séance du 12 août</div><div class="mt">Traiter "je vais réfléchir"</div></div><span class="rl">revoir</span></div>
     <div class="rr"><span style="font-size:20px">▶️</span><div class="g"><div class="nm" style="font-size:14px">Séance du 5 août</div><div class="mt">Ta découverte en 4 questions</div></div><span class="rl">revoir</span></div>
   </div>`;
 }
+const CONSEILS=[
+ {mod:"Module 4",emoji:"⏳",titre:"\"Je vais réfléchir\" n'est pas un non.",texte:"C'est une info qui manque. Demande : « qu'est-ce qui vous manque pour être certain ? » puis tais-toi.",defi:"Aujourd'hui, ne réponds jamais à « je réfléchis » sans poser cette question."},
+ {mod:"Module 4",emoji:"🤫",titre:"Le silence après le prix.",texte:"Annonce ton prix, puis tiens quelques secondes de silence. C'est lui qui doit parler en premier.",defi:"Compte 8 secondes dans ta tête après ton prochain prix."},
+ {mod:"Module 1",emoji:"🔮",titre:"Le cerveau achète ce qu'il peut prédire.",texte:"L'incertitude est le vrai frein, pas le prix. Rends ton résultat concret : étape test, cas chiffré.",defi:"Donne un exemple de résultat ultra concret sur ton prochain appel."},
+ {mod:"Module 2",emoji:"🎨",titre:"Chaque profil a une peur au volant.",texte:"Rouge = échec, jaune = rejet, vert = changement, bleu = mal faire. Trouve la sienne, désamorce-la.",defi:"Devine la couleur de ton prochain prospect avant le RDV."},
+ {mod:"Module 7",emoji:"🧘",titre:"Le cerveau le plus stable prend le contrôle.",texte:"Ton calme se transmet avant tes mots. Ton état interne est ton premier argument.",defi:"Deux minutes de respiration lente avant ton prochain rendez-vous."},
+ {mod:"Module 4",emoji:"💰",titre:"Ancre le coût du problème.",texte:"Avant de parler prix, fais-lui chiffrer ce que son problème lui coûte. Ton prix paraît petit à côté.",defi:"Fais chiffrer une douleur à un prospect aujourd'hui."},
+ {mod:"Module 3",emoji:"👂",titre:"Tu ne dis que trois choses.",texte:"Questions, reformulations, histoires. 80% d'écoute. Le reste est du bruit.",defi:"Sur ton prochain call, parle moins de 30% du temps."},
+ {mod:"Module 6",emoji:"🛡️",titre:"Derrière toute objection, trois craintes.",texte:"Confiance en toi, en ton produit, en ton entreprise. Trouve laquelle bloque, rassure sur celle-là.",defi:"Identifie laquelle des trois freine ton prochain prospect."},
+ {mod:"Module 7",emoji:"🎣",titre:"La loi du besoin.",texte:"Plus tu as besoin de cette vente, moins tu la fais. Ton énergie de besoin braque le prospect.",defi:"Entre en RDV aujourd'hui sans avoir « besoin » de signer."},
+ {mod:"Module 2",emoji:"⚖️",titre:"L'aversion à la perte.",texte:"Perdre fait deux fois plus mal que gagner ne fait plaisir. Fais ressentir le coût de l'inaction.",defi:"Rappelle à un prospect ce qu'il perd à ne rien faire."},
+ {mod:"Module 5",emoji:"⛰️",titre:"L'effet de pic et de fin.",texte:"On retient le pic émotionnel et la fin. Soigne le dernier moment de chaque échange.",defi:"Termine ton prochain RDV sur une note forte."},
+ {mod:"Module 1",emoji:"❤️",titre:"L'émotion décide, la raison justifie.",texte:"Donne l'émotion d'abord. Les arguments viennent renforcer, pas convaincre.",defi:"Ouvre ton prochain RDV par une histoire, pas par une donnée."},
+ {mod:"Module 4",emoji:"🏖️",titre:"Vends la destination, pas le billet.",texte:"Le résultat vécu, pas la liste des fonctionnalités. Le soleil sur la peau, pas les 12h de vol.",defi:"Décris un résultat vécu, zéro fonctionnalité, aujourd'hui."},
+ {mod:"Module 3",emoji:"🔁",titre:"Reformule avant de répondre.",texte:"Reprends ses mots, il se sent compris et baisse la garde.",defi:"Reformule au moins une fois par appel aujourd'hui."},
+ {mod:"Module 6",emoji:"🌊",titre:"Ne pousse pas plus fort.",texte:"Face à la résistance, enlève la friction et la menace, ne rajoute pas de pression.",defi:"Retire explicitement la pression sur ton prochain call."},
+ {mod:"Module 2",emoji:"🃏",titre:"L'anti-vente.",texte:"Avoue un petit défaut. Ça baisse le bouclier et crédibilise tes points forts.",defi:"Avoue honnêtement une limite à un prospect aujourd'hui."},
+ {mod:"Module 4",emoji:"❓",titre:"Une question, puis silence.",texte:"Pose ta question, tais-toi trois secondes. C'est là qu'il donne sa vraie raison.",defi:"Tiens le silence après ta prochaine question ouverte."},
+ {mod:"Module 1",emoji:"🚨",titre:"Baisse la menace avant de convaincre.",texte:"Un cerveau en alerte n'achète jamais. Rassure d'abord, vends ensuite.",defi:"Pose le cadre « pas de vente forcée » en ouverture."},
+ {mod:"Module 7",emoji:"📓",titre:"Débriefe un call par jour.",texte:"Le cerveau se recâble par la répétition. Une leçon par jour te transforme.",defi:"Note une leçon de ton meilleur ou pire call du jour."},
+ {mod:"Module 2",emoji:"🎁",titre:"La présuasion.",texte:"Le match se joue avant le match. Envoie de la valeur avant le RDV : tu actives réciprocité et autorité.",defi:"Envoie une ressource utile avant ton prochain RDV."}
+];
+const OBJS=[
+ {obj:"C'est trop cher.",rep:"Ne défends pas ton prix. « Trop cher par rapport à quoi, exactement ? » puis écoute."},
+ {obj:"Je vais réfléchir.",rep:"« Qu'est-ce qui vous manque pour être certain ? » puis silence."},
+ {obj:"On a déjà un fournisseur.",rep:"« Qu'est-ce qui, avec lui, pourrait être encore mieux ? »"},
+ {obj:"Je dois en parler à mon associé.",rep:"« Selon vous, qu'est-ce qu'il en pensera ? » pour révéler la vraie crainte."},
+ {obj:"Envoyez-moi une plaquette.",rep:"« Quelle info précise vous aiderait à décider ? » avant d'envoyer quoi que ce soit."},
+ {obj:"Votre concurrent est moins cher.",rep:"Ramène sur la valeur et le coût réel de son problème, sans dénigrer."},
+ {obj:"Ce n'est pas le bon moment.",rep:"« Qu'est-ce qui rendrait le moment idéal ? » Souvent c'est une peur, pas un agenda."}
+];
+let conseilOffset=0;
+function dayNum(){return Math.floor(Date.now()/DAY);}
+function conseilDuJour(){var n=CONSEILS.length;return CONSEILS[(((dayNum()+conseilOffset)%n)+n)%n];}
+function objDuJour(){return OBJS[dayNum()%OBJS.length];}
+function markAssist(){var k='a'+dayNum();ST.assist=ST.assist||{};if(!ST.assist[k]){ST.assist[k]=true;save();xpToast(15);refreshHeader();}}
+function nextConseil(){conseilOffset++;go('assistant');}
 function assistantHTML(){
+  markAssist();
+  const c=conseilDuJour(),o=objDuJour();
   return `
-  <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Réponse rapide</button><button class="segb" onclick="amode('chat',this)">💬 Discuter</button></div>
+  <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Ton jour</button><button class="segb" onclick="amode('chat',this)">💬 Discuter</button></div>
   <div id="a-quick">
-    <h3 class="sh">Avant ton RDV · teste une phrase</h3>
-    <div class="card"><div class="mt">Tu allais dire : « Notre solution est la meilleure du marché. »</div>
+    <div class="card geste pop"><div class="k">💡 Le conseil du jour · ${c.mod}</div>
+      <div class="txt"><span class="bob">${c.emoji}</span> ${c.titre}</div>
+      <div class="mt" style="margin-top:6px">${c.texte}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px">
+        <span onclick="nextConseil()" style="color:var(--indigo);font-weight:700;cursor:pointer">↻ un autre</span>
+        <span class="mt">nouveau chaque jour</span></div></div>
+    <div class="card pop" style="animation-delay:.06s;background:#0e1020"><div style="color:#a5b4fc;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">🎯 Ton défi du jour</div>
+      <div style="color:#fff;font-size:15px;font-weight:600;margin-top:6px;line-height:1.35">${c.defi}</div></div>
+    <h3 class="sh">L'objection du jour</h3>
+    <div class="obj pop" style="animation-delay:.1s"><div class="q">« ${o.obj} »</div><div class="a">${o.rep}</div></div>
+    <h3 class="sh">Teste une phrase</h3>
+    <div class="card pop" style="animation-delay:.14s"><div class="mt">Tu allais dire : « Notre solution est la meilleure du marché. »</div>
       <div class="feu"><div class="ev">ÉVITE</div><div class="ad">ADAPTE</div><div class="go">GO</div></div>
       <div class="mt">🔴 Tu pousses ta valeur, son cerveau lit une pression. Reformule en question : « Qu'est-ce qui vous ferait dire qu'une solution est la bonne, pour vous ? »</div></div>
-    <h3 class="sh">Une objection t'a bloqué ?</h3>
-    <div class="obj"><div class="q">« C'est trop cher. »</div><div class="a">Ne défends pas ton prix. Ancre le coût de son problème : « Combien te coûtent, à l'année, les deals que tu perds au moment de vendre ? » Puis silence.</div></div>
-    <h3 class="sh">Tes phrases prêtes</h3>
-    <div class="card taccard">
-      <div class="row"><div class="q">"Je vais réfléchir"</div><div class="r">« Ce n'est pas de temps que tu as besoin, c'est d'une info. Laquelle te manque ? »</div></div>
-      <div class="row"><div class="q">"Pas commercial"</div><div class="r">« Justement. On ne va pas faire de toi un vendeur, on va arrêter que tu te sabordes. »</div></div>
-      <div class="row"><div class="q">Silence gênant</div><div class="r">Tiens-le. C'est là qu'il donne sa vraie raison.</div></div>
-    </div>
   </div>
   <div id="a-chat" style="display:none">
     <div style="padding:4px 2px 10px">
@@ -381,7 +467,7 @@ const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,gestes:gestesHTML,rdv:r
 /* Navigation */
 const TABS=[["accueil","🏠","Accueil"],["parcours","🗺️","Parcours"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];
 document.getElementById('tabbar').innerHTML=TABS.map((t,i)=>`<div class="tab${i===0?' on':''}" data-k="${t[0]}"><span class="e">${t[1]}</span><span>${t[2]}</span></div>`).join('');
-function go(k){document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);refreshHeader();}
+function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);refreshHeader();}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.k)));
 
 /* Modal */
@@ -392,7 +478,16 @@ function setM(tl,body){document.getElementById('mtl').textContent=tl;document.ge
 /* Module : contenu réel (vidéo / atelier 1:1 / fiche) + quiz réel */
 function openModule(mId){
   const m=M(mId),req=reqV(m),watched=vDone(m),passed=!!ST.quiz[mId],canQuiz=allWatched(m);
+  const idx=MOD.findIndex(x=>x.id===mId),prevOk=idx>0&&unlocked(idx-1),nextOk=idx<MOD.length-1&&unlocked(idx+1);
   setM(m.num,`
+    <div class="modnav">
+      <button onclick="closeModal();go('parcours')">← Parcours</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button ${prevOk?`onclick="openModule('${prevOk?MOD[idx-1].id:''}')"`:'disabled'}>◀ Préc.</button>
+        <button ${nextOk?`onclick="openModule('${nextOk?MOD[idx+1].id:''}')"`:'disabled'}>Suiv. ▶</button>
+      </div>
+    </div>`);
+  setM(m.num,document.getElementById('mbd').innerHTML+`
     <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="nm">${m.icon} ${m.t}</div><div class="mt">${m.sub}</div>
       <div class="pbar" style="margin-top:8px"><i style="width:${req.length?Math.round(watched/req.length*100):0}%"></i></div>
       <div class="mt" style="margin-top:5px">${watched}/${req.length} complétés${passed?' · quiz validé ✓':''}</div></div>
@@ -409,7 +504,7 @@ function openModule(mId){
     <button class="cta" style="margin-top:0;${canQuiz?'':'opacity:.45;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'✅ Refaire le quiz de validation':'✅ Quiz de validation ('+m.Q.length+' questions)'} ${canQuiz?'':'🔒'}</button>`);
   openModal();
 }
-function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.videoUrl){window.open(v.videoUrl,'_blank','noopener');}ST.done[vId]=true;save();refreshHeader();openModule(mId);}
+function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.videoUrl){window.open(v.videoUrl,'_blank','noopener');}if(!ST.done[vId])xpToast(25);ST.done[vId]=true;save();refreshHeader();openModule(mId);}
 function bookAtelier(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.calUrl){window.open(v.calUrl,'_blank','noopener');}ST.done[vId]=true;save();refreshHeader();openModule(mId);}
 function openFiche(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId]=true;save();refreshHeader();setM(v.title,`<div class="fiche">${v.fiche||'<p>Fiche à venir.</p>'}</div><button class="cta" style="margin-top:16px" onclick="openModule('${mId}')">← Retour au module</button>`);document.querySelector('#modal .ov-body').scrollTop=0;}
 
@@ -466,7 +561,7 @@ function qnav(d){QZ.i+=d;renderQ();}
 function submitQuiz(mId){
   const m=M(mId);let sc=0;m.Q.forEach((q,qi)=>{if(QZ.ans[qi]===q.a)sc++;});
   const need=Math.ceil(m.Q.length*0.7),pass=sc>=need;
-  if(pass){ST.quiz[mId]=true;save();refreshHeader();}
+  if(pass){var isNew=!ST.quiz[mId];ST.quiz[mId]=true;save();if(isNew)xpToast(100);refreshHeader();}
   setM('Résultat · '+m.num,`
     <div class="card" style="text-align:center;background:${pass?'#dcfce7':'#fee2e2'};border-color:${pass?'#bbf7d0':'#fecaca'}">
       <div style="font-size:34px;font-weight:800;color:${pass?'#166534':'#991b1b'}">${sc}/${m.Q.length}</div>
@@ -506,11 +601,32 @@ function profResult(){
 function pick(el){el.parentElement.querySelectorAll('.qopt').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
 
 /* Gestes / Assistant / Communauté */
-function togGeste(id){ST.gestes[id]=!ST.gestes[id];save();go('gestes');}
+function togGeste(id){var was=ST.gestes[id];ST.gestes[id]=!was;save();if(!was)xpToast(10);go('gestes');}
+function markRdv(){var k='r'+dayNum();ST.rdv=ST.rdv||{};if(!ST.rdv[k]){ST.rdv[k]=true;save();xpToast(40);refreshHeader();}go('rdv');}
 function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';btn.parentElement.querySelectorAll('.segb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
 function publier(){const el=document.getElementById('cinp');const v=el.value.trim();if(!v)return;ST.posts.unshift({av:"M",who:"Marc D. (toi)",when:"à l'instant",body:v,k:0,c:0});save();go('communaute');}
 
+/* Tutoriel interactif au premier lancement */
+const ONBOARD=[
+ {e:"👋",t:"Bienvenue dans ton parcours",x:"Ta formation neurovente, en app. Voici comment ça marche, en 30 secondes."},
+ {e:"🗺️",t:"Le parcours",x:"7 modules. Dans chacun : les vidéos, un exercice par vidéo, et un quiz de validation."},
+ {e:"🔓",t:"Débloquer la suite",x:"Valider le quiz ne suffit pas. Il faut aussi utiliser l'app : gestes, assistant, séances. Tout te fait gagner de l'XP, et c'est l'XP qui ouvre le module suivant."},
+ {e:"☀️",t:"Chaque jour",x:"Ton Assistant te donne un conseil et un défi qui changent tous les jours. Et tu coches tes gestes du jour."},
+ {e:"📈",t:"Ta progression",x:"Chaque semaine, fais ton bilan. Ton radar et tes courbes montrent ton évolution sur les 4 axes."},
+ {e:"🚀",t:"À toi de jouer",x:"Réserve tes séances avec Steven, échange dans la communauté, et progresse à ton rythme."}
+];
+let obStep=0;
+function startOnboarding(){obStep=0;var o=document.createElement('div');o.id='onboard';document.querySelector('.device').appendChild(o);renderOnboard();}
+function renderOnboard(){var o=document.getElementById('onboard');if(!o)return;var s=ONBOARD[obStep],last=obStep===ONBOARD.length-1;
+  o.innerHTML=`<div class="ob-card pop"><div class="ob-emoji bob">${s.e}</div><div class="ob-title">${s.t}</div><div class="ob-text">${s.x}</div>
+    <div class="ob-dots">${ONBOARD.map(function(_,i){return `<span class="${i===obStep?'on':''}"></span>`;}).join('')}</div>
+    <button class="cta" onclick="obNext()">${last?"C'est parti":'Suivant'}</button>${last?'':'<div class="ob-skip" onclick="obDone()">passer</div>'}</div>`;
+}
+function obNext(){if(obStep<ONBOARD.length-1){obStep++;renderOnboard();}else obDone();}
+function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');if(o)o.remove();}
+
 go('accueil');
+if(!ST.seen)setTimeout(startOnboarding,350);
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
 </body>
