@@ -292,18 +292,18 @@ function openModule(mId){
     <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="nm">${m.icon} ${m.t}</div><div class="mt">${m.sub}</div>
       <div class="pbar" style="margin-top:8px"><i style="width:${req.length?Math.round(watched/req.length*100):0}%"></i></div>
       <div class="mt" style="margin-top:5px">${watched}/${req.length} complétés${passed?' · quiz validé ✓':''}</div></div>
-    <h3 class="sh" style="margin-top:4px">Le contenu du module</h3>
+    ${canQuiz?`<div class="card" style="background:#dcfce7;border-color:#bbf7d0;color:#166534"><b>✅ Vidéos vues.</b> Entraîne-toi, puis valide le quiz.</div>`:`<div class="card" style="background:#fff7ed;border-color:#fdba74;color:#9a3412"><b>👀 Regarde la vidéo avant de répondre.</b> Les questions te font travailler ce que la vidéo t'apprend. Le quiz de validation se débloque une fois les vidéos et fiches vues.</div>`}
+    <h3 class="sh">S'entraîner et se tester</h3>
+    <button class="cta" style="margin-top:0;background:#0e1020" onclick="openTrain('${mId}')">🎮 M'entraîner · ${m.Q.length} cartes, correction immédiate</button>
+    <button class="cta" style="margin-top:8px;${canQuiz?'':'opacity:.45;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'✅ Refaire le quiz de validation':'✅ Quiz de validation ('+m.Q.length+' questions)'} ${canQuiz?'':'🔒'}</button>
+    <h3 class="sh" style="margin-top:16px">Le contenu du module</h3>
     ${m.V.map(v=>{
       const t=iType(v),done=!!ST.done[v.id];
       if(t==='atelier') return `<div class="lrow" onclick="bookAtelier('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}" style="${done?'':'background:#fff7ed;color:#c2410c'}">${done?'✓':'📅'}</div><div class="g">${v.title}<div class="mt">${v.num} · Atelier 1:1 avec Steven · Réserver ↗</div></div></div>`;
       if(t==='fiche') return `<div class="lrow" onclick="openFiche('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}" style="${done?'':'background:#eff6ff;color:#1d4ed8'}">${done?'✓':'📄'}</div><div class="g">${v.title}<div class="mt">${v.num} · Fiche pratique à lire</div></div></div>`;
       if(!v.videoUrl) return `<div class="lrow" style="opacity:.55;cursor:default"><div class="chk2">🔒</div><div class="g">${v.title}<div class="mt">${v.num} · bientôt disponible</div></div></div>`;
       return `<div class="lrow" onclick="watchVideo('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}">${done?'✓':'▶'}</div><div class="g">${v.title}<div class="mt">${v.num} · Regarder la vidéo ↗</div></div></div>`;
-    }).join('')}
-    <h3 class="sh" style="margin-top:16px">S'entraîner et se tester</h3>
-    <button class="cta" style="margin-top:0;background:#0e1020" onclick="openTrain('${mId}')">🎮 M'entraîner · ${m.Q.length} cartes, correction immédiate</button>
-    <button class="cta" style="margin-top:8px;${canQuiz?'':'opacity:.45;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'✅ Refaire le quiz de validation':'✅ Quiz de validation ('+m.Q.length+' questions)'} ${canQuiz?'':'🔒'}</button>
-    ${canQuiz?'':'<div class="mt" style="text-align:center;margin-top:6px">Termine les vidéos et fiches pour débloquer le quiz. Les ateliers 1:1 sont en bonus.</div>'}`);
+    }).join('')}`);
   openModal();
 }
 function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.videoUrl){window.open(v.videoUrl,'_blank','noopener');}ST.done[vId]=true;save();refreshHeader();openModule(mId);}
