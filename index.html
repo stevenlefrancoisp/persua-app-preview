@@ -209,22 +209,33 @@ function lineChart(pts,color,H){H=H||130;var W=320,pad=22,padB=20,n=pts.length;i
   var labels=pts.map(function(p,i){if(n>5 && i%Math.ceil(n/5)!==0 && i!==n-1)return '';return `<text x="${xf(i).toFixed(1)}" y="${H-5}" font-size="9" fill="#7a7f92" text-anchor="middle">${fmtDate(p.t)}</text>`;}).join('');
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="courbe d'évolution">${grid}${area}<path d="${d}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>${dots}${labels}</svg>`;
 }
-function toggleAxes(el){var c=el.parentElement.querySelector('.axcharts');if(c){c.style.display=c.style.display==='none'?'block':'none';el.textContent=c.style.display==='none'?'📈 Voir le détail par axe':'📉 Masquer le détail';}}
+function radarPoly(vals,cx,cy,R){return vals.map(function(v,i){var ang=(-90+i*90)*Math.PI/180,r=R*Math.max(0,Math.min(10,v))/10;return (cx+r*Math.cos(ang)).toFixed(1)+','+(cy+r*Math.sin(ang)).toFixed(1);}).join(' ');}
+function radarChart(cur,prev){
+  var cx=130,cy=105,R=58,LR=72;
+  var rings=[2.5,5,7.5,10].map(function(lv){return `<polygon points="${radarPoly([lv,lv,lv,lv],cx,cy,R)}" fill="none" stroke="#eceef6"/>`;}).join('');
+  var spokes=[0,1,2,3].map(function(i){var ang=(-90+i*90)*Math.PI/180;return `<line x1="${cx}" y1="${cy}" x2="${(cx+R*Math.cos(ang)).toFixed(1)}" y2="${(cy+R*Math.sin(ang)).toFixed(1)}" stroke="#eceef6"/>`;}).join('');
+  var vals=AXES.map(function(a){return cur[a[0]];});
+  var prevPoly=prev?`<polygon points="${radarPoly(AXES.map(function(a){return prev[a[0]];}),cx,cy,R)}" fill="none" stroke="#c7ccf5" stroke-width="1.6" stroke-dasharray="4 3"/>`:'';
+  var curPoly=`<polygon points="${radarPoly(vals,cx,cy,R)}" fill="#4f46e5" fill-opacity="0.16" stroke="#4f46e5" stroke-width="2.2"/>`;
+  var dots=vals.map(function(v,i){var ang=(-90+i*90)*Math.PI/180,r=R*v/10;return `<circle cx="${(cx+r*Math.cos(ang)).toFixed(1)}" cy="${(cy+r*Math.sin(ang)).toFixed(1)}" r="3.1" fill="#4f46e5"/>`;}).join('');
+  var labs=AXES.map(function(a,i){var ang=(-90+i*90)*Math.PI/180,x=cx+LR*Math.cos(ang),y=cy+LR*Math.sin(ang),anch=i===1?'start':i===3?'end':'middle',dy=i===0?-3:i===2?9:0,lab=a[1].replace('Méthode ','');return `<text x="${x.toFixed(1)}" y="${(y+dy).toFixed(1)}" font-size="9.5" font-weight="700" fill="#3730a3" text-anchor="${anch}">${lab}</text><text x="${x.toFixed(1)}" y="${(y+dy+11).toFixed(1)}" font-size="9" fill="#7a7f92" text-anchor="${anch}">${cur[a[0]]*10}%</text>`;}).join('');
+  return `<svg viewBox="0 0 260 210" width="100%" style="display:block;max-width:340px;margin:4px auto 0" role="img" aria-label="radar de tes 4 axes">${rings}${spokes}${prevPoly}${curPoly}${dots}${labs}</svg>`;
+}
+function toggleAxes(el){var c=el.parentElement.querySelector('.axcharts');if(c){c.style.display=c.style.display==='none'?'block':'none';el.textContent=c.style.display==='none'?"📈 Voir l'évolution dans le temps":"📉 Masquer l'évolution";}}
 function dashboardHTML(){
   const l=lastBilan(),p=prevBilan();
   if(!l) return `<div class="card"><div class="nm">Ton tableau de bord</div><div class="mt">Fais ton premier bilan pour situer ton niveau, puis suis ton évolution tous les 21 jours.</div><button class="cta" onclick="openBilan()">📊 Faire mon 1er bilan (20 questions)</button></div>`;
   const avg=function(b){return (b.d+b.o+b.c+b.m)/4;};
   const curP=Math.round(avg(l)*10), prevP=p?Math.round(avg(p)*10):null, gdelta=prevP==null?null:curP-prevP;
   const multi=ST.bilans.length>1;
-  const globalChart=multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:avg(b)};}),'#4f46e5',150):`<div class="mt" style="text-align:center;padding:14px 0">1 bilan enregistré (${curP}%). Refais-en un pour voir ta courbe se dessiner.</div>`;
-  const axCharts=AXES.map(function(a){const k=a[0],v=l[k],pv=p?p[k]:null,dl=pv==null?null:v-pv;
-    return `<div class="plabel" style="margin-top:12px">${a[1]} · ${v*10}% ${arrowHTML(dl==null?null:dl*10)}</div>${multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:b[k]};}),'#6366f1',88):`<div class="pbar" style="margin-top:4px"><i style="width:${v*10}%"></i></div>`}`;
-  }).join('');
+  const timeGlobal=multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:avg(b)};}),'#4f46e5',140):`<div class="mt" style="text-align:center;padding:10px 0">Refais un bilan pour voir ta courbe dans le temps.</div>`;
+  const timeAx=AXES.map(function(a){const k=a[0];return `<div class="plabel" style="margin-top:12px">${a[1]} · ${l[k]*10}%</div>${multi?lineChart(ST.bilans.map(function(b){return {t:b.t,y:b[k]};}),'#6366f1',82):''}`;}).join('');
   const due=bilanDue();
-  return `<div class="card"><div class="habhead"><div class="nm">Ton évolution globale (moyenne)</div><div class="streakbig" style="color:var(--indigo);font-size:16px">${curP}% ${arrowHTML(gdelta)}</div></div>
-    ${globalChart}
-    <button class="cta" style="background:#eef0ff;color:#3730a3;margin-top:10px" onclick="toggleAxes(this)">📈 Voir le détail par axe</button>
-    <div class="axcharts" style="display:none;margin-top:4px">${axCharts}</div>
+  return `<div class="card"><div class="habhead"><div class="nm">Ton profil de vendeur (moyenne)</div><div class="streakbig" style="color:var(--indigo);font-size:16px">${curP}% ${arrowHTML(gdelta)}</div></div>
+    ${radarChart(l,p)}
+    ${p?`<div class="mt" style="text-align:center;margin-top:2px">Trait plein = aujourd'hui, pointillé = ton bilan précédent.</div>`:`<div class="mt" style="text-align:center;margin-top:2px">Ta photo du moment. Refais un bilan dans 21 jours pour voir ta progression sur le radar.</div>`}
+    <button class="cta" style="background:#eef0ff;color:#3730a3;margin-top:12px" onclick="toggleAxes(this)">📈 Voir l'évolution dans le temps</button>
+    <div class="axcharts" style="display:none;margin-top:6px"><div class="plabel">Moyenne globale</div>${timeGlobal}${timeAx}</div>
     ${due?`<button class="cta" onclick="openBilan()">📊 C'est l'heure de ton bilan des 3 semaines</button>`:`<div class="mt" style="text-align:center;margin-top:10px">${ST.bilans.length} bilan${ST.bilans.length>1?'s':''} · prochain dans ${daysToBilan()} j. <span onclick="openBilan()" style="color:var(--indigo);cursor:pointer;font-weight:600">le faire maintenant</span></div>`}</div>`;
 }
 let BL=null;
