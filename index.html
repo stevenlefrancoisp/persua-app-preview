@@ -30,7 +30,6 @@
   h3.sh{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:16px 4px 8px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:11px}
   .nm{font-size:15px;font-weight:600}.mt{font-size:12.5px;color:var(--muted)}
-  .axes{margin-top:4px}
   .axrow{display:flex;align-items:center;gap:10px;margin:9px 0}
   .axrow .lb{width:82px;font-size:12.5px;font-weight:600}
   .axrow .bar{flex:1;height:8px;border-radius:5px;background:#eceef6;overflow:hidden}
@@ -39,14 +38,16 @@
   .geste{background:linear-gradient(135deg,#eef0ff,#f5f6ff);border:1px solid #e0e3ff}
   .geste .k{font-size:11px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.4px}
   .geste .txt{font-size:15px;font-weight:600;margin-top:5px;line-height:1.35}
-  /* path modules */
   .mod{display:flex;align-items:center;gap:12px;margin-bottom:11px}
   .node{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:none;color:#fff}
   .n-done{background:var(--green)}.n-cur{background:var(--indigo);box-shadow:0 0 0 5px #e0e3ff}.n-lock{background:#cbd0dc}
   .modc{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px}
   .modc .t{font-size:14px;font-weight:600}.modc .s{font-size:12px;color:var(--muted);margin-top:2px}
   .pbar{height:6px;border-radius:4px;background:#eceef6;overflow:hidden;margin-top:7px}.pbar i{display:block;height:100%;background:var(--indigo)}
-  /* habits */
+  .lrow{display:flex;gap:11px;align-items:center;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer}
+  .chk2{width:30px;height:30px;border-radius:9px;background:#eef0ff;color:var(--indigo);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:14px}
+  .chk2.ok{background:var(--green);color:#fff}
+  .lrow .g{flex:1;font-size:13.5px;font-weight:500}
   .hab{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);cursor:pointer}
   .hab:last-child{border-bottom:0}
   .chk{width:26px;height:26px;border-radius:8px;border:2px solid #d3d8e4;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff}
@@ -55,7 +56,6 @@
   .ht{font-size:14px;font-weight:600}
   .habhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
   .streakbig{font-size:13px;color:var(--warm);font-weight:700}
-  /* copilote */
   .feu{display:flex;gap:8px;margin:10px 0}
   .feu div{flex:1;border-radius:12px;padding:10px;text-align:center;font-size:12px;font-weight:700}
   .go{background:#dcfce7;color:#166534}.ad{background:#fef3c7;color:#92400e}.ev{background:#fee2e2;color:#991b1b}
@@ -63,19 +63,14 @@
   .obj .q{font-size:14px;font-weight:600}.obj .a{font-size:13px;color:#cdd0f2;margin-top:8px;line-height:1.45}
   .taccard .row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
   .taccard .row:last-child{border-bottom:0}
-  .taccard .q{font-size:13px;font-weight:600;flex:none;width:96px}
-  .taccard .r{font-size:12.5px;color:#2a2e3d}
-  /* coach chat */
+  .taccard .q{font-size:13px;font-weight:600;flex:none;width:96px}.taccard .r{font-size:12.5px;color:#2a2e3d}
   .bub{max-width:82%;padding:10px 13px;border-radius:16px;font-size:13.5px;line-height:1.4;margin-bottom:9px}
   .me{background:var(--indigo);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
   .co{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
   .coachbar{display:flex;gap:8px;margin-top:6px}
   .coachbar input{flex:1;border:1px solid var(--line);border-radius:14px;padding:11px 13px;font-size:13px;background:#fff}
   .coachbar button{background:var(--indigo);color:#fff;border:0;border-radius:12px;padding:0 15px;font-size:16px}
-  .cta{display:block;width:100%;margin-top:6px;background:var(--indigo);color:#fff;font-size:13.5px;font-weight:600;padding:12px;border-radius:13px;border:0;text-align:center}
-  .daychips,.slots{display:flex;gap:8px;flex-wrap:wrap}
-  .dc,.sl{border:1px solid var(--line);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:600;background:#fff;cursor:pointer}
-  .dc.on,.sl.on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+  .cta{display:block;width:100%;margin-top:6px;background:var(--indigo);color:#fff;font-size:13.5px;font-weight:600;padding:12px;border-radius:13px;border:0;text-align:center;cursor:pointer}
   .rr{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
   .rr:last-child{border-bottom:0}.rr .g{flex:1}.rr .rl{font-size:11px;color:var(--indigo);font-weight:700}
   .overlay{position:absolute;inset:0;background:var(--bg);z-index:20;transform:translateY(100%);transition:transform .28s ease;display:flex;flex-direction:column}
@@ -100,7 +95,7 @@
   .av{width:36px;height:36px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;background:var(--indigo)}
   .post .who{font-size:13.5px;font-weight:600}.post .when{font-size:11.5px;color:var(--muted)}
   .post .body{font-size:13.5px;color:#2a2e3d;line-height:1.42}
-  .post .acts{display:flex;gap:16px;margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600}
+  .post .acts{display:flex;gap:16px;margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600;cursor:pointer}
   .tagchip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eef0ff;color:#3730a3;cursor:pointer}
   .tabbar{position:absolute;bottom:0;left:0;right:0;height:66px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
@@ -112,213 +107,326 @@
 <div class="device">
   <div class="statusbar"><span>9:41</span><span>Persua</span><span>●●●● ▮</span></div>
   <div class="appbar">
-    <div class="hi" id="hi">Salut Marc 👋</div>
-    <div class="sub" id="sub">Jour 34 de ton Mentorat</div>
+    <div class="hi">Salut Marc 👋</div>
+    <div class="sub">Ton parcours neurovente</div>
     <div class="hdrrow">
       <div class="chip">🔥 <b>12</b> jours</div>
-      <div class="chip">⭐ Niveau <b>3</b> · 640 XP</div>
-      <div class="chip">🎯 M1 dans <b>4j</b></div>
+      <div class="chip">⭐ <span id="lvl">Niveau 1</span></div>
+      <div class="chip">📈 <span id="xp">0 XP</span></div>
     </div>
   </div>
   <div class="screen" id="screen"></div>
   <div class="tabbar" id="tabbar"></div>
 
-  <div class="overlay" id="profil">
-    <div class="ov-bar"><span>Ton profil de vendeur</span><button class="x" onclick="closeProfil()">✕</button></div>
-    <div class="ov-body">
-      <div id="ptest">
-        <div class="card"><div class="plabel">Diagnostic de vendeur · 5 min</div><div class="mt" style="font-size:13px;color:#2a2e3d">12 questions pour révéler ton profil (16 types + DISC) et ton style de vente. Réponds au feeling, il n'y a pas de mauvaise réponse.</div></div>
-        <div class="mt" style="margin:2px 4px 8px">Question 1 sur 12 · Ton fonctionnement</div>
-        <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Après une journée de prospection intense, tu recharges plutôt...</div>
-          <div class="qopt" onclick="pick(this)">En voyant du monde, en échangeant</div>
-          <div class="qopt on" onclick="pick(this)">Au calme, seul, à décompresser</div></div>
-        <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Quand tu prépares un RDV, tu te fies d'abord...</div>
-          <div class="qopt on" onclick="pick(this)">Aux faits concrets et au terrain</div>
-          <div class="qopt" onclick="pick(this)">À ton intuition et à la vision d'ensemble</div></div>
-        <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">En rendez-vous, ton réflexe naturel...</div>
-          <div class="qopt" onclick="pick(this)">Aller droit au résultat, cadrer, closer</div>
-          <div class="qopt on" onclick="pick(this)">Comprendre à fond avant de proposer</div></div>
-        <button class="cta" onclick="showResult()">Voir mon profil de vendeur →</button>
-      </div>
-      <div id="presult" style="display:none">
-        <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="plabel">Ton résultat</div><div class="nm" style="margin-top:3px">L'Expert · ISTP « Le Pragmatique »</div></div>
-        <div class="pchips"><span class="pchip">DISC · C Consciencieux</span><span class="pchip">Archétype · L'Expert</span><span class="pchip">ISTP · Le Pragmatique</span></div>
-        <div class="card"><div class="plabel">Comment tu vends (ta force)</div>
-          <div class="mt" style="font-size:13px;color:#2a2e3d">Tu maîtrises ton offre et tes chiffres. Ta rigueur crée une vraie crédibilité, le client achète ta compétence. Concret et calme, tu vas à l'essentiel sans blabla.</div></div>
-        <div class="card"><div class="plabel">Ton angle mort</div>
-          <div class="mt" style="font-size:13px;color:#2a2e3d">Tu sur-analyses et tu hésites au closing. Le mieux est l'ennemi du closé : décide plus vite, ose demander l'engagement.</div></div>
-        <div class="card"><div class="plabel">Ton moteur</div>
-          <div class="mt" style="font-size:13px;color:#2a2e3d">La maîtrise et l'excellence. Tu te recharges dans un sujet que tu creuses à fond, seul et au calme.</div></div>
-        <h3 class="sh">Lire ton prospect · SONCAS</h3>
-        <div class="soncas">
-          <div><b>Sécurité</b> · rassure, preuves, garanties</div>
-          <div><b>Orgueil</b> · valorise, statut, exclusivité</div>
-          <div><b>Nouveauté</b> · innovation, être le premier</div>
-          <div><b>Confort</b> · simple, sans effort</div>
-          <div><b>Argent</b> · ROI, gain chiffré</div>
-          <div><b>Sympathie</b> · relation, chaleur humaine</div>
-        </div>
-        <button class="cta" onclick="resetTest()">Refaire le test</button>
-      </div>
-    </div>
+  <div class="overlay" id="modal">
+    <div class="ov-bar"><span id="mtl"></span><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="ov-body" id="mbd"></div>
   </div>
 </div>
 
 <script>
-/* Cal.com : embed officiel, calendrier seul (hideEventTypeDetails) */
+/* Cal.com embed (calendrier seul) */
 (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar); return; } p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
 Cal("init", { origin: "https://cal.com" });
 Cal("ui", { hideEventTypeDetails: true, layout: "month_view", theme: "light" });
 function mountCal(){ if(window.Cal){ Cal("inline", { elementOrSelector: "#cal-inline", calLink: "steven-lfrs-persua/coaching-individuel-persua", config: { layout: "month_view", theme: "light" } }); } }
 
-const S = {
- accueil:`
-  <div class="card geste">
-    <div class="k">Ton geste du jour</div>
-    <div class="txt">Sur ton prochain appel : pose UNE question de découverte de plus, puis tais-toi 3 secondes. Laisse le silence travailler.</div>
-    <button class="cta">C'est noté, je le fais</button>
-  </div>
+/* État persistant */
+const KEY='persua_app_v1';
+let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
+ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[];
+function save(){localStorage.setItem(KEY,JSON.stringify(ST));}
+
+/* Le parcours (7 modules réels) */
+const MOD=[
+ {id:"m1",num:"Module 1",icon:"🧠",t:"Les fondements neuro-comportementaux",sub:"Comment le cerveau de l'acheteur décide vraiment",
+  neuro:"Le cerveau décide en deux temps : une réaction émotionnelle rapide, puis une justification lente. L'émotion arbitre, la raison habille.",
+  L:[
+   {id:"m1l1",t:"Les 3 cerveaux",k:"Survie, émotion, raison : trois couches. L'émotion tranche avant que la raison n'arrive.",x:"Avant de convaincre, rassure. Un cerveau en alerte n'achète jamais."},
+   {id:"m1l2",t:"Comment une décision d'achat se forme",k:"Le client ressent d'abord, puis cherche des arguments pour valider son ressenti.",x:"Donne l'émotion en premier, les arguments viennent renforcer après."},
+   {id:"m1l3",t:"Le rôle de l'amygdale : émotion avant raison",k:"L'amygdale déclenche l'alerte avant même que tu aies fini ta phrase.",x:"Baisse la menace : rythme lent, ton posé, zéro pression."},
+   {id:"m1l4",t:"Neurotransmetteurs : dopamine, sérotonine, cortisol",k:"Dopamine = envie, sérotonine = confiance, cortisol = stress qui bloque l'achat.",x:"Crée l'anticipation (dopamine), jamais la pression (cortisol)."},
+   {id:"m1l5",t:"Le cerveau du vendeur : stress, performance, flow",k:"Ton propre stress se transmet. Le cerveau le plus stable prend le contrôle.",x:"Respire avant d'entrer. Ton état est ton premier argument."}
+  ],
+  Q:[{q:"Qui décide en premier chez l'acheteur ?",o:["La raison et les chiffres","L'émotion et le ressenti","Le prix"],a:1},
+     {q:"Un client au cortisol élevé (stressé)...",o:["achète plus vite","se ferme et reporte","négocie mieux"],a:1}]},
+
+ {id:"m2",num:"Module 2",icon:"🧲",t:"L'infiltration subconsciente",sub:"La psychologie de l'acheteur",
+  neuro:"L'essentiel de la décision se joue hors du champ conscient. On parle au ressenti, pas seulement à la logique.",
+  L:[
+   {id:"m2l1",t:"Conscient vs inconscient",k:"La majorité de la décision se joue avant la réflexion consciente.",x:"Adresse le ressenti autant que la logique."},
+   {id:"m2l2",t:"Les 6 principes de Cialdini",k:"Réciprocité, engagement, preuve sociale, autorité, sympathie, rareté.",x:"Donne d'abord, montre les autres qui ont dit oui."},
+   {id:"m2l3",t:"Les biais cognitifs qui déclenchent l'achat",k:"Ancrage, aversion à la perte, effet de halo orientent le choix.",x:"Ancre une référence haute avant d'annoncer ton prix."},
+   {id:"m2l4",t:"Profils psychologiques : DISC",k:"D, I, S, C : chacun décide autrement. Lis le profil, adapte l'approche.",x:"Face à un C, des preuves ; face à un D, du résultat."},
+   {id:"m2l5",t:"Douleur vs plaisir",k:"Éviter une douleur motive plus fort que gagner un plaisir.",x:"Fais ressentir le coût de l'inaction avant la solution."},
+   {id:"m2l6",t:"Les heuristiques : raccourcis mentaux",k:"Le cerveau économise : il suit des règles rapides plutôt que d'analyser.",x:"Simplifie. Une offre claire bat une offre complète."}
+  ],
+  Q:[{q:"L'aversion à la perte, c'est...",o:["gagner motive plus que perdre","perdre fait plus mal que gagner ne fait plaisir","le prix n'importe pas"],a:1},
+     {q:"Face à un profil C (Consciencieux), tu mises sur...",o:["l'enthousiasme","les preuves et la méthode","la pression"],a:1}]},
+
+ {id:"m3",num:"Module 3",icon:"🎯",t:"Communication persuasive",sub:"Framing, reformulation, charge cognitive, voix",
+  neuro:"Le cerveau suit le chemin de moindre effort. Moins de mots, plus d'images, plus de silences.",
+  L:[
+   {id:"m3l1",t:"Les mots qui activent le Système 1",k:"Des mots concrets et sensoriels parlent au cerveau rapide.",x:"Remplace 'optimiser' par 'gagner du temps'."},
+   {id:"m3l2",t:"Un storytelling efficace",k:"Une histoire fait vivre le message, un argument le fait oublier.",x:"Raconte un cas client avant d'expliquer ta méthode."},
+   {id:"m3l3",t:"Le framing",k:"Mêmes faits, cadrage différent, décision opposée.",x:"'90% de réussite' passe mieux que '10% d'échec'."},
+   {id:"m3l4",t:"La reformulation",k:"Reprends ses mots, il se sent compris et baisse la garde.",x:"'Si je comprends bien, ton vrai enjeu c'est X ?'"},
+   {id:"m3l5",t:"La charge cognitive",k:"Trop d'infos = fatigue = report. Moins tu charges, plus il décide.",x:"Une idée par phrase. Coupe un argument sur deux."},
+   {id:"m3l6",t:"Le non-verbal",k:"Ton corps parle avant ta bouche, et il détecte la congruence.",x:"Ralentis tes gestes, ouvre ta posture, respire."},
+   {id:"m3l7",t:"La voix et le silence",k:"Le silence après une question fait parler le client.",x:"Pose ta question, puis tais-toi trois secondes."}
+  ],
+  Q:[{q:"La reformulation sert à...",o:["gagner du temps","faire sentir au client qu'il est compris","meubler"],a:1},
+     {q:"Après une question puissante, tu...",o:["enchaînes vite","tiens le silence","donnes la réponse"],a:1}]},
+
+ {id:"m4",num:"Module 4",icon:"🩺",t:"Le diagnostic clinique",sub:"Le processus de vente : découverte vers closing",
+  neuro:"Le cerveau évalue en permanence risque vs récompense. Baisse le risque perçu, le oui devient logique.",
+  L:[
+   {id:"m4l1",t:"La découverte neuro",k:"Les bonnes questions font émerger le vrai besoin et la douleur.",x:"Creuse le coût du problème avant de parler solution."},
+   {id:"m4l2",t:"Présentation de l'offre",k:"Structure claire = charge basse = décision facile.",x:"Problème, mécanisme, preuve, offre, dans cet ordre."},
+   {id:"m4l3",t:"Gestion des objections",k:"Une objection est une info manquante ou une peur, pas un refus.",x:"Fais dire l'objection à voix haute, puis traite la peur."},
+   {id:"m4l4",t:"Le closing neuropsychologique",k:"On n'achète pas quand le risque perçu dépasse le désir.",x:"Garantie, étape test, preuve : baisse le risque avant de closer."},
+   {id:"m4l5",t:"La négociation par l'aversion à la perte",k:"Ce qu'on risque de perdre pèse plus que ce qu'on peut gagner.",x:"Rappelle ce qu'il perd à ne rien faire, sans menacer."},
+   {id:"m4l6",t:"Urgence et rareté",k:"La rareté vraie accélère, la fausse détruit la confiance.",x:"N'utilise l'urgence que si elle est réelle."}
+  ],
+  Q:[{q:"Une objection, c'est d'abord...",o:["un non définitif","une info qui manque ou une peur","une baisse de prix"],a:1},
+     {q:"Pour closer, tu dois surtout...",o:["baisser le prix","réduire le risque perçu","insister"],a:1}]},
+
+ {id:"m5",num:"Module 5",icon:"🏛️",t:"L'architecture de l'offre",sub:"Expérience client et fidélisation",
+  neuro:"La mémoire garde les pics émotionnels et la fin, pas la moyenne. Ton delivery se joue sur ces moments.",
+  L:[
+   {id:"m5l1",t:"Dopamine et fidélisation",k:"L'anticipation d'une récompense fait revenir le client.",x:"Crée une prochaine étape désirable après l'achat."},
+   {id:"m5l2",t:"L'effet de pic et de fin",k:"On retient le pic émotionnel et la fin, pas la moyenne.",x:"Soigne le dernier moment de chaque interaction."},
+   {id:"m5l3",t:"Confiance et ocytocine",k:"La confiance se construit par la constance et l'attention.",x:"Tiens tes petites promesses, elles bâtissent la grande."},
+   {id:"m5l4",t:"Boucles de récompense et fidélité",k:"Des micro-récompenses régulières ancrent l'habitude.",x:"Récompense l'engagement, pas seulement l'achat."},
+   {id:"m5l5",t:"Transformer un client en ambassadeur",k:"Un client fier de son choix le défend et le partage.",x:"Aide-le à un résultat qu'il a envie de raconter."}
+  ],
+  Q:[{q:"L'effet de pic et de fin dit qu'on retient...",o:["la moyenne","le pic émotionnel et la fin","le début"],a:1},
+     {q:"La confiance durable vient de...",o:["une grosse promesse","la constance dans les petites","le prix bas"],a:1}]},
+
+ {id:"m6",num:"Module 6",icon:"🛡️",t:"La maîtrise des résistances",sub:"Script neuro-optimisé et cas concrets",
+  neuro:"Face à la résistance, on ne pousse pas plus fort : on enlève la friction et la menace.",
+  L:[
+   {id:"m6l1",t:"Le modèle SONCASE",k:"Sécurité, Orgueil, Nouveauté, Confort, Argent, Sympathie, Écologie.",x:"Détecte le levier dominant, parle sa langue."},
+   {id:"m6l2",t:"Le script de vente neuro-optimisé",k:"Une structure éprouvée libère ton attention pour écouter.",x:"Accroche, découverte, gap, mécanisme, preuve, close."},
+   {id:"m6l3",t:"Atelier : reformuler un pitch",k:"Un bon pitch se coupe plus qu'il ne s'ajoute.",x:"Reprends ton pitch, enlève 30% des mots."},
+   {id:"m6l4",t:"Cas #1 : B2B, cycle long",k:"Décision multiple, rationnelle : outille ton champion interne.",x:"Donne-lui les arguments pour te vendre sans toi."},
+   {id:"m6l5",t:"Cas #2 : B2C, achat impulsif",k:"Émotion forte, décision rapide : réduis les frictions.",x:"Enlève les étapes, garde l'élan."},
+   {id:"m6l6",t:"Cas #3 : téléphone et visio",k:"Sans le corps, la voix et le rythme portent tout.",x:"Ralentis, souris (ça s'entend), laisse des silences."},
+   {id:"m6l7",t:"Checklist neuro-vente",k:"Préparer, c'est réduire la charge le jour J.",x:"Avant chaque RDV : profil, douleur-reine, preuve à dégainer."}
+  ],
+  Q:[{q:"Le E de SONCASE, c'est...",o:["Efficacité","Écologie","Engagement"],a:1},
+     {q:"En visio, ton levier principal, c'est...",o:["le slide","la voix et le rythme","le prix"],a:1}]},
+
+ {id:"m7",num:"Module 7",icon:"🚀",t:"Performance et développement",sub:"Stress, émotion, mindset, plan d'action",
+  neuro:"La performance se construit par la régulation émotionnelle et la répétition, pas par la volonté brute.",
+  L:[
+   {id:"m7l1",t:"Gestion du stress : le cortisol",k:"Le stress rétrécit ta lecture du client et casse ton calme.",x:"Rituel de décompression avant d'entrer en RDV."},
+   {id:"m7l2",t:"Intelligence émotionnelle : 4 piliers",k:"Conscience de soi, maîtrise, empathie, relation.",x:"Nomme ton émotion avant l'appel pour la désamorcer."},
+   {id:"m7l3",t:"Mindset de croissance : neuroplasticité",k:"Le cerveau se recâble par la répétition. Chaque call te transforme.",x:"Débriefe un call par jour, une leçon à la fois."},
+   {id:"m7l4",t:"Rituels de préparation mentale",k:"La routine avant le RDV met ton cerveau en état ressource.",x:"Même geste avant chaque appel, ancre ton calme."},
+   {id:"m7l5",t:"Plan d'action personnel",k:"Un plan simple exécuté bat un plan parfait rangé.",x:"Choisis un levier cette semaine, applique-le à fond."}
+  ],
+  Q:[{q:"Le cortisol élevé chez le vendeur...",o:["améliore la lecture du client","rétrécit l'attention et casse le calme","n'a aucun effet"],a:1},
+     {q:"La neuroplasticité, c'est...",o:["un talent fixe","le cerveau qui se recâble par la répétition","le stress utile"],a:1}]}
+];
+function M(id){return MOD.find(m=>m.id===id);}
+function unlocked(i){return i===0||!!ST.quiz[MOD[i-1].id];}
+function xp(){return Object.keys(ST.done).length*30;}
+function refreshHeader(){document.getElementById('xp').textContent=xp()+' XP';document.getElementById('lvl').textContent='Niveau '+(Math.floor(xp()/300)+1);}
+
+const GESTES=[
+ {id:"g1",t:"1 vraie question de découverte"},
+ {id:"g2",t:"Tenir un silence après une objection"},
+ {id:"g3",t:"Reformuler avant de répondre"},
+ {id:"g4",t:"Ne pas baisser mon prix en premier"}
+];
+
+/* Écrans */
+function accueilHTML(){
+  const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
+  return `
+  <div class="card geste"><div class="k">Ton geste du jour</div>
+    <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
   <h3 class="sh">Ton profil de vendeur</h3>
   <div class="card" onclick="openProfil()" style="cursor:pointer">
-    <div class="nm">Passe ton diagnostic de vendeur</div>
-    <div class="mt">12 questions, 5 min. Révèle ton profil (16 types + DISC) et ton style de vente.</div>
-    <button class="cta">Commencer le test</button>
+    ${ST.test?`<div class="pchips"><span class="pchip">DISC · C</span><span class="pchip">L'Expert</span><span class="pchip">ISTP</span></div><div class="mt">Tape pour revoir ton analyse.</div>`
+      :`<div class="nm">Passe ton diagnostic de vendeur</div><div class="mt">12 questions, 5 min. Révèle ton profil et ton style.</div><button class="cta">Commencer le test</button>`}
   </div>
   <h3 class="sh">Ta progression · les 4 axes CALME</h3>
-  <div class="card axes">
-    <div class="axrow"><span class="lb">Découverte</span><span class="bar"><i style="width:70%"></i></span><span class="vv">7/10</span></div>
+  <div class="card">
+    <div class="axrow"><span class="lb">Découverte</span><span class="bar"><i style="width:70%"></i></span><span class="vv">7</span></div>
     <div class="axrow"><span class="lb">Objections</span><span class="bar"><i style="width:55%"></i></span><span class="vv">5,5</span></div>
-    <div class="axrow"><span class="lb">Closing</span><span class="bar"><i style="width:60%"></i></span><span class="vv">6/10</span></div>
+    <div class="axrow"><span class="lb">Closing</span><span class="bar"><i style="width:60%"></i></span><span class="vv">6</span></div>
     <div class="axrow"><span class="lb">Calme</span><span class="bar"><i style="width:75%"></i></span><span class="vv">7,5</span></div>
   </div>
   <h3 class="sh">Ta semaine</h3>
-  <div class="card">
-    <div class="nm">Prochaine séance</div><div class="mt">Mardi 19 août · 11h · avec Steven</div>
-    <button class="cta" onclick="go('rdv')">Voir mes séances / réserver un créneau</button>
+  <div class="card"><div class="nm">Prochaine séance</div><div class="mt">Mardi 19 août · 11h · avec Steven</div>
+    <button class="cta" onclick="go('rdv')">Voir mes séances / réserver</button></div>`;
+}
+function parcoursHTML(){
+  return `<h3 class="sh">Ton parcours · 7 modules · valide le quiz pour débloquer le suivant</h3>`+
+   MOD.map((m,i)=>{
+     const done=!!ST.quiz[m.id], unl=unlocked(i);
+     const ld=m.L.filter(l=>ST.done[l.id]).length;
+     const node=done?'<div class="node n-done">✓</div>':unl?`<div class="node n-cur">${i+1}</div>`:'<div class="node n-lock">🔒</div>';
+     return `<div class="mod" ${unl?`onclick="openModule('${m.id}')" style="cursor:pointer"`:''}>${node}
+       <div class="modc"><div class="t">${m.icon} ${m.num} · ${m.t}</div>
+       <div class="s">${m.sub} · ${ld}/${m.L.length} leçons${done?' · validé ✓':unl?'':' · verrouillé'}</div>
+       ${unl&&!done?`<div class="pbar"><i style="width:${Math.round(ld/m.L.length*100)}%"></i></div>`:''}</div></div>`;
+   }).join('');
+}
+function gestesHTML(){
+  const done=GESTES.filter(g=>ST.gestes[g.id]).length;
+  return `<div class="card"><div class="habhead"><div class="nm">Tes gestes du jour</div><div class="streakbig">🔥 série 12</div></div>
+    <div class="mt" id="hcount">${done} / ${GESTES.length} aujourd'hui</div>
+    ${GESTES.map(g=>`<div class="hab ${ST.gestes[g.id]?'done':''}" onclick="togGeste('${g.id}')"><div class="chk">✓</div><div class="ht">${g.t}</div></div>`).join('')}
   </div>
-  <div class="card">
-    <div class="nm">Jalon M1 dans 4 jours</div><div class="mt">Tu compares où tu en es vs ton entrée. Prépare 1 situation vécue.</div>
-  </div>`,
-
- parcours:`
-  <h3 class="sh">Ton parcours · 7 modules · 1 quiz/module (70% pour débloquer)</h3>
-  <div class="mod"><div class="node n-done">✓</div><div class="modc"><div class="t">🧠 M1 · Les fondements neuro-comportementaux</div><div class="s">Comment le cerveau de l'acheteur décide vraiment · 5 vidéos</div></div></div>
-  <div class="mod"><div class="node n-done">✓</div><div class="modc"><div class="t">🧲 M2 · L'infiltration subconsciente</div><div class="s">La psychologie de l'acheteur · 6 vidéos</div></div></div>
-  <div class="mod"><div class="node n-cur">3</div><div class="modc"><div class="t">🎯 M3 · Communication persuasive</div><div class="s">Framing, reformulation, charge cognitive, voix · 4/7 vidéos</div><div class="pbar"><i style="width:57%"></i></div></div></div>
-  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🩺 M4 · Le diagnostic clinique</div><div class="s">Le processus de vente : découverte vers closing · 6 vidéos</div></div></div>
-  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🏛️ M5 · L'architecture de l'offre</div><div class="s">Expérience client et fidélisation · 5 vidéos</div></div></div>
-  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🛡️ M6 · La maîtrise des résistances</div><div class="s">Script neuro-optimisé et cas B2B/B2C/distanciel · 7 vidéos</div></div></div>
-  <div class="mod"><div class="node n-lock">🔒</div><div class="modc"><div class="t">🚀 M7 · Performance du vendeur</div><div class="s">Stress, intelligence émotionnelle, mindset, plan d'action · 5 vidéos</div></div></div>
-  <button class="cta">Reprendre le module 3</button>`,
-
- gestes:`
-  <div class="card">
-    <div class="habhead"><div class="nm">Tes gestes du jour</div><div class="streakbig">🔥 série 12</div></div>
-    <div class="mt" id="hcount">2 / 4 aujourd'hui</div>
-    <div class="hab done" onclick="tog(this)"><div class="chk">✓</div><div class="ht">1 vraie question de découverte</div></div>
-    <div class="hab" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Tenir un silence après une objection</div></div>
-    <div class="hab done" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Reformuler avant de répondre</div></div>
-    <div class="hab" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Ne pas baisser mon prix en premier</div></div>
-  </div>
-  <h3 class="sh">Cette semaine</h3>
-  <div class="card">
-    <div class="hab" onclick="tog(this)"><div class="chk">✓</div><div class="ht">Assumer 1 walk-away ("ce n'est pas pour vous")</div></div>
-  </div>
-  <div class="mt" style="text-align:center;padding:6px">Les gestes cochés nourrissent tes 4 axes CALME automatiquement.</div>`,
-
- rdv:`
-  <h3 class="sh">Ta prochaine séance</h3>
-  <div class="card">
-    <div class="nm">Mardi 19 août · 11h00</div><div class="mt">Coaching avec Steven · visio 45 min</div>
-    <button class="cta">Rejoindre le lien</button>
-  </div>
+  <div class="mt" style="text-align:center;padding:6px">Les gestes cochés nourrissent tes 4 axes CALME.</div>`;
+}
+function rdvHTML(){
+  return `
+  <div class="card"><div class="nm">Mardi 19 août · 11h00</div><div class="mt">Coaching avec Steven · visio 45 min</div><button class="cta">Rejoindre le lien</button></div>
   <h3 class="sh">Récap de ta dernière séance · 12 août</h3>
-  <div class="card">
-    <div class="plabel">Ce qu'on a travaillé</div>
-    <div class="mt" style="font-size:13px;color:#2a2e3d">Le "je vais réfléchir" : tu le prenais comme un non et tu lâchais direct. C'est une info qui manque, pas un refus.</div>
-    <div class="plabel" style="margin-top:11px">Tes conseils pour cette semaine</div>
-    <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">1️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">Après un "je vais réfléchir" : "laquelle info te manque pour décider ?" puis silence.</div></div></div>
-    <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">2️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">Ne baisse pas ton prix en premier, ancre d'abord le coût de son problème.</div></div></div>
+  <div class="card"><div class="plabel">Ce qu'on a travaillé</div>
+    <div class="mt" style="font-size:13px;color:#2a2e3d">Le "je vais réfléchir" : tu le prenais comme un non. C'est une info qui manque, pas un refus.</div>
+    <div class="plabel" style="margin-top:11px">Tes conseils pour la semaine</div>
+    <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">1️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">Après un "je vais réfléchir" : "quelle info te manque pour décider ?" puis silence.</div></div></div>
+    <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">2️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">Ne baisse pas ton prix en premier, ancre le coût de son problème.</div></div></div>
     <div class="rr" style="border:0;padding:6px 0"><span style="font-size:17px">3️⃣</span><div class="g"><div class="mt" style="color:#2a2e3d">RDV DAF : une question, puis tais-toi. Laisse-le remplir le silence.</div></div></div>
   </div>
   <h3 class="sh">Réserver avec Steven</h3>
   <div class="card" style="padding:8px"><div id="cal-inline" style="min-height:540px;width:100%"></div></div>
-  <h3 class="sh">Tes séances passées (replays)</h3>
+  <h3 class="sh">Tes séances passées</h3>
   <div class="card">
     <div class="rr"><span style="font-size:20px">▶️</span><div class="g"><div class="nm" style="font-size:14px">Séance du 12 août</div><div class="mt">Traiter "je vais réfléchir"</div></div><span class="rl">revoir</span></div>
     <div class="rr"><span style="font-size:20px">▶️</span><div class="g"><div class="nm" style="font-size:14px">Séance du 5 août</div><div class="mt">Ta découverte en 4 questions</div></div><span class="rl">revoir</span></div>
-  </div>`,
-
- assistant:`
+  </div>`;
+}
+function assistantHTML(){
+  return `
   <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Réponse rapide</button><button class="segb" onclick="amode('chat',this)">💬 Discuter</button></div>
   <div id="a-quick">
     <h3 class="sh">Avant ton RDV · teste une phrase</h3>
-    <div class="card">
-      <div class="mt">Tu allais dire : « Notre solution est la meilleure du marché, je vous montre pourquoi. »</div>
+    <div class="card"><div class="mt">Tu allais dire : « Notre solution est la meilleure du marché. »</div>
       <div class="feu"><div class="ev">ÉVITE</div><div class="ad">ADAPTE</div><div class="go">GO</div></div>
-      <div class="mt">🔴 Tu pousses ta valeur, son cerveau lit une pression. Reformule en question : « Qu'est-ce qui vous ferait dire qu'une solution est la bonne, pour vous ? »</div>
-    </div>
+      <div class="mt">🔴 Tu pousses ta valeur, son cerveau lit une pression. Reformule en question : « Qu'est-ce qui vous ferait dire qu'une solution est la bonne, pour vous ? »</div></div>
     <h3 class="sh">Une objection t'a bloqué ?</h3>
-    <div class="obj">
-      <div class="q">« C'est trop cher. »</div>
-      <div class="a">Ne défends pas ton prix. Ancre le coût de son problème d'abord : « Combien te coûtent, à l'année, les deals que tu perds au moment de vendre ? » Puis silence. Le prix devient une comparaison, pas une dépense.</div>
-    </div>
+    <div class="obj"><div class="q">« C'est trop cher. »</div><div class="a">Ne défends pas ton prix. Ancre le coût de son problème : « Combien te coûtent, à l'année, les deals que tu perds au moment de vendre ? » Puis silence.</div></div>
     <h3 class="sh">Tes phrases prêtes</h3>
     <div class="card taccard">
       <div class="row"><div class="q">"Je vais réfléchir"</div><div class="r">« Ce n'est pas de temps que tu as besoin, c'est d'une info. Laquelle te manque ? »</div></div>
-      <div class="row"><div class="q">"Je suis pas commercial"</div><div class="r">« Justement. On ne va pas faire de toi un vendeur, on va arrêter que tu te sabordes. »</div></div>
-      <div class="row"><div class="q">Silence gênant</div><div class="r">Tiens-le. C'est là qu'il te donne sa vraie raison.</div></div>
+      <div class="row"><div class="q">"Pas commercial"</div><div class="r">« Justement. On ne va pas faire de toi un vendeur, on va arrêter que tu te sabordes. »</div></div>
+      <div class="row"><div class="q">Silence gênant</div><div class="r">Tiens-le. C'est là qu'il donne sa vraie raison.</div></div>
     </div>
   </div>
   <div id="a-chat" style="display:none">
     <div style="padding:4px 2px 10px">
-      <div class="bub co">Salut Marc. Prêt pour ton RDV de demain ? Dis-moi qui tu as en face.</div>
-      <div class="bub me">Un DAF, très analytique, il coupe tout le temps la parole. J'ai peur de me faire écraser.</div>
-      <div class="bub co">Profil Système 2 : il veut du mécanisme et des preuves, pas de l'enthousiasme. Ton avantage, c'est le calme. Ne cours pas derrière lui. Pose une question précise, puis tais-toi. Son besoin de tout analyser va remplir le silence à ta place.</div>
-      <div class="bub me">Et s'il attaque sur le prix direct ?</div>
-      <div class="bub co">Tu ne réponds pas au prix. Tu ramènes au coût de son problème. « Avant le prix : ça vous coûte quoi, aujourd'hui, de ne pas le régler ? » Obstacles avant le prix, toujours.</div>
+      <div class="bub co">Salut Marc. Prêt pour ton RDV ? Dis-moi qui tu as en face.</div>
+      <div class="bub me">Un DAF très analytique, il coupe tout le temps. J'ai peur de me faire écraser.</div>
+      <div class="bub co">Profil Système 2 : il veut du mécanisme et des preuves. Ton avantage, c'est le calme. Pose une question précise, puis tais-toi. Son besoin d'analyser va remplir le silence à ta place.</div>
+      <div class="bub me">Et s'il attaque sur le prix ?</div>
+      <div class="bub co">Tu ne réponds pas au prix, tu ramènes au coût de son problème. Obstacles avant le prix, toujours.</div>
     </div>
     <div class="coachbar"><input placeholder="Pose ta question au coach..." readonly><button>➤</button></div>
-  </div>`,
+  </div>`;
+}
+function communauteHTML(){
+  const seed=[
+   {av:"S",bg:"#0e1020",who:"Steven · Coach 📌",when:"Épinglé · il y a 2h",body:'Défi de la semaine : après un "je vais réfléchir", demandez QUELLE info manque, puis taisez-vous. Postez ce que ça donne.',k:24,c:8},
+   {av:"V",who:"Valérie M.",when:"il y a 5h · 🏆 Victoire",body:"Premier closing sans baisser mon prix ! J'ai ancré le coût de son problème avant d'annoncer, il a signé direct.",k:31,c:12},
+   {av:"T",who:"Thomas C.",when:"hier · ❓ Question",body:'Un prospect me dit "envoyez-moi une plaquette et je reviens vers vous". J\'envoie, ou je creuse ?',k:6,c:15},
+   {av:"M",who:"Marc D.",when:"hier · 🏆 Victoire",body:"J'ai tenu le silence 4 secondes après mon prix. Le plus dur de ma vie. Il a rempli le blanc et s'est convaincu tout seul 😅",k:28,c:9}
+  ];
+  const posts=ST.posts.concat(seed);
+  return `<div class="composer"><input id="cinp" placeholder="Partage une victoire, une question, un doute..."><div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><div style="display:flex;gap:6px"><span class="tagchip">🏆 Victoire</span><span class="tagchip">❓ Question</span></div><button class="cta" style="width:auto;margin:0;padding:8px 15px" onclick="publier()">Publier</button></div></div>`+
+   posts.map(p=>`<div class="post"><div class="ph"><div class="av" ${p.bg?`style="background:${p.bg}"`:''}>${p.av}</div><div><div class="who">${p.who}</div><div class="when">${p.when}</div></div></div><div class="body">${p.body}</div><div class="acts"><span>👏 ${p.k}</span><span>💬 ${p.c}</span></div></div>`).join('');
+}
+const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,gestes:gestesHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML};
 
- communaute:`
-  <div class="composer"><input placeholder="Partage une victoire, une question, un doute..."><div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><div style="display:flex;gap:6px"><span class="tagchip">🏆 Victoire</span><span class="tagchip">❓ Question</span></div><button class="cta" style="width:auto;margin:0;padding:8px 15px">Publier</button></div></div>
-  <div class="post">
-    <div class="ph"><div class="av" style="background:#0e1020">S</div><div><div class="who">Steven · Coach 📌</div><div class="when">Épinglé · il y a 2h</div></div></div>
-    <div class="body">Défi de la semaine : après un "je vais réfléchir", demandez QUELLE info manque, puis taisez-vous. Postez ici ce que ça donne sur vos vrais RDV.</div>
-    <div class="acts"><span>👏 24</span><span>💬 8</span></div>
-  </div>
-  <div class="post">
-    <div class="ph"><div class="av">V</div><div><div class="who">Valérie M.</div><div class="when">il y a 5h · 🏆 Victoire</div></div></div>
-    <div class="body">Premier closing sans baisser mon prix ! J'ai ancré le coût de son problème avant d'annoncer, il a signé direct. Merci pour le déclic.</div>
-    <div class="acts"><span>👏 31</span><span>💬 12</span></div>
-  </div>
-  <div class="post">
-    <div class="ph"><div class="av">T</div><div><div class="who">Thomas C.</div><div class="when">hier · ❓ Question</div></div></div>
-    <div class="body">Un prospect me dit "envoyez-moi une plaquette et je reviens vers vous". J'envoie, ou je creuse ?</div>
-    <div class="acts"><span>👏 6</span><span>💬 15</span></div>
-  </div>
-  <div class="post">
-    <div class="ph"><div class="av">M</div><div><div class="who">Marc D.</div><div class="when">hier · 🏆 Victoire</div></div></div>
-    <div class="body">J'ai tenu le silence 4 secondes après mon prix. Le plus dur de ma vie. Il a rempli le blanc et s'est convaincu tout seul 😅</div>
-    <div class="acts"><span>👏 28</span><span>💬 9</span></div>
-  </div>`,
-};
-
+/* Navigation */
 const TABS=[["accueil","🏠","Accueil"],["parcours","🗺️","Parcours"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];
-const tb=document.getElementById('tabbar');
-tb.innerHTML=TABS.map((t,i)=>`<div class="tab${i===0?' on':''}" data-k="${t[0]}"><span class="e">${t[1]}</span><span>${t[2]}</span></div>`).join('');
-function go(k){document.getElementById('screen').innerHTML=S[k];document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,50);}
-tb.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.k)));
-function tog(el){el.classList.toggle('done');const done=document.querySelectorAll('#screen .card:first-of-type .hab.done').length;const c=document.getElementById('hcount');if(c)c.textContent=done+" / 4 aujourd'hui";}
-function pick(el){[...el.parentElement.children].forEach(c=>c.classList.remove('on'));el.classList.add('on');}
-function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';[...btn.parentElement.children].forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
-function resetTest(){document.getElementById('ptest').style.display='';document.getElementById('presult').style.display='none';document.querySelector('#profil .ov-body').scrollTop=0;}
-function showResult(){document.getElementById('ptest').style.display='none';document.getElementById('presult').style.display='';document.querySelector('#profil .ov-body').scrollTop=0;}
-function openProfil(){resetTest();document.getElementById('profil').classList.add('open')}
-function closeProfil(){document.getElementById('profil').classList.remove('open')}
+document.getElementById('tabbar').innerHTML=TABS.map((t,i)=>`<div class="tab${i===0?' on':''}" data-k="${t[0]}"><span class="e">${t[1]}</span><span>${t[2]}</span></div>`).join('');
+function go(k){document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);refreshHeader();}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.k)));
+
+/* Modal : module / leçon / quiz / profil */
+function openModal(){document.getElementById('modal').classList.add('open');document.querySelector('#modal .ov-body').scrollTop=0;}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function setM(tl,body){document.getElementById('mtl').textContent=tl;document.getElementById('mbd').innerHTML=body;}
+
+function openModule(mId){
+  const m=M(mId),tot=m.L.length,done=m.L.filter(l=>ST.done[l.id]).length,allDone=done===tot,passed=!!ST.quiz[mId];
+  setM(m.num,`
+    <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="nm">${m.icon} ${m.t}</div><div class="mt">${m.sub}</div>
+      <div class="pbar" style="margin-top:8px"><i style="width:${Math.round(done/tot*100)}%"></i></div>
+      <div class="mt" style="margin-top:5px">${done}/${tot} leçons${passed?' · quiz validé ✓':''}</div></div>
+    ${m.L.map(l=>`<div class="lrow" onclick="openLesson('${mId}','${l.id}')"><div class="chk2 ${ST.done[l.id]?'ok':''}">${ST.done[l.id]?'✓':'▶'}</div><div class="g">${l.t}</div></div>`).join('')}
+    <button class="cta" style="margin-top:12px;${allDone?'':'opacity:.45;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'Refaire le quiz':'Passer le quiz du module'} ${allDone?'':'🔒'}</button>
+    ${allDone?'':'<div class="mt" style="text-align:center;margin-top:6px">Termine les leçons pour débloquer le quiz.</div>'}`);
+  openModal();
+}
+let CUR=null;
+function openLesson(mId,lId){
+  const m=M(mId),l=m.L.find(x=>x.id===lId);
+  CUR={mId,lId,i:0,s:[{h:l.t,t:l.k,lb:"L'idée"},{h:"Le déclic neuro",t:m.neuro,lb:"Le mécanisme"},{h:"Ton action de terrain",t:l.x,lb:"Sur le terrain"}]};
+  renderLesson();openModal();
+}
+function renderLesson(){
+  const c=CUR,s=c.s[c.i],last=c.i===c.s.length-1;
+  setM('Leçon',`
+    <div class="mt" style="margin-bottom:10px">Slide ${c.i+1} / ${c.s.length}</div>
+    <div class="card" style="min-height:190px"><div class="plabel">${s.lb}</div><div class="nm" style="margin:7px 0 9px">${s.h}</div><div style="font-size:14.5px;color:#2a2e3d;line-height:1.55">${s.t}</div></div>
+    <div style="display:flex;gap:8px">${c.i>0?'<button class="cta" style="background:#eef0ff;color:#3730a3" onclick="lnav(-1)">Précédent</button>':''}
+    <button class="cta" onclick="${last?'finishLesson()':'lnav(1)'}">${last?'Terminer la leçon ✓':'Suivant →'}</button></div>`);
+}
+function lnav(d){CUR.i+=d;renderLesson();document.querySelector('#modal .ov-body').scrollTop=0;}
+function finishLesson(){ST.done[CUR.lId]=true;save();refreshHeader();openModule(CUR.mId);}
+let QA=null;
+function openQuiz(mId){const m=M(mId);QA={mId,ans:{}};
+  setM('Quiz · '+m.num,m.Q.map((q,qi)=>`<div class="card"><div class="nm" style="font-size:14px;margin-bottom:8px">${qi+1}. ${q.q}</div>${q.o.map((o,oi)=>`<div class="qopt" onclick="ansQ(${qi},${oi},this)">${o}</div>`).join('')}</div>`).join('')+`<button class="cta" onclick="submitQuiz('${mId}')">Valider mes réponses</button><div id="qres" style="text-align:center;margin-top:10px;font-size:13px"></div>`);
+  openModal();
+}
+function ansQ(qi,oi,el){QA.ans[qi]=oi;el.parentElement.querySelectorAll('.qopt').forEach(x=>x.classList.remove('on'));el.classList.add('on');}
+function submitQuiz(mId){const m=M(mId);let sc=0;m.Q.forEach((q,qi)=>{if(QA.ans[qi]===q.a)sc++;});const pass=sc>=Math.ceil(m.Q.length*0.5);const r=document.getElementById('qres');
+  if(pass){ST.quiz[mId]=true;save();refreshHeader();r.innerHTML='<span style="color:#16a34a;font-weight:700">✓ '+sc+'/'+m.Q.length+' · Module validé ! Le suivant est débloqué.</span>';setTimeout(function(){closeModal();go('parcours');},1300);}
+  else r.innerHTML='<span style="color:#dc2626;font-weight:700">'+sc+'/'+m.Q.length+' · Il te manque un point, relis et réessaie.</span>';
+}
+
+/* Profil (test) */
+function openProfil(){
+  if(ST.test){profResult();openModal();return;}
+  setM('Diagnostic de vendeur',`
+    <div class="card"><div class="plabel">5 min</div><div class="mt" style="font-size:13px;color:#2a2e3d">Réponds au feeling, il n'y a pas de mauvaise réponse.</div></div>
+    <div class="mt" style="margin:2px 4px 8px">Question 1 sur 12</div>
+    <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Après une journée de prospection intense, tu recharges plutôt...</div>
+      <div class="qopt" onclick="pick(this)">En voyant du monde</div><div class="qopt on" onclick="pick(this)">Au calme, seul</div></div>
+    <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Quand tu prépares un RDV, tu te fies d'abord...</div>
+      <div class="qopt on" onclick="pick(this)">Aux faits concrets</div><div class="qopt" onclick="pick(this)">À ton intuition</div></div>
+    <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">En rendez-vous, ton réflexe...</div>
+      <div class="qopt" onclick="pick(this)">Aller droit au résultat</div><div class="qopt on" onclick="pick(this)">Comprendre à fond avant</div></div>
+    <button class="cta" onclick="finishTest()">Voir mon profil →</button>`);
+  openModal();
+}
+function finishTest(){ST.test=true;save();profResult();}
+function profResult(){
+  setM('Ton profil de vendeur',`
+    <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="plabel">Ton résultat</div><div class="nm" style="margin-top:3px">L'Expert · ISTP « Le Pragmatique »</div></div>
+    <div class="pchips"><span class="pchip">DISC · C Consciencieux</span><span class="pchip">Archétype · L'Expert</span><span class="pchip">ISTP</span></div>
+    <div class="card"><div class="plabel">Ta force</div><div class="mt" style="font-size:13px;color:#2a2e3d">Tu maîtrises ton offre et tes chiffres. Ta rigueur crée une vraie crédibilité, le client achète ta compétence. Concret et calme, tu vas à l'essentiel.</div></div>
+    <div class="card"><div class="plabel">Ton angle mort</div><div class="mt" style="font-size:13px;color:#2a2e3d">Tu sur-analyses et tu hésites au closing. Le mieux est l'ennemi du closé : décide plus vite, ose demander l'engagement.</div></div>
+    <div class="card"><div class="plabel">Ton moteur</div><div class="mt" style="font-size:13px;color:#2a2e3d">La maîtrise et l'excellence. Tu te recharges dans un sujet creusé à fond, seul et au calme.</div></div>
+    <h3 class="sh">Lire ton prospect · SONCAS</h3>
+    <div class="soncas"><div><b>Sécurité</b> · preuves, garanties</div><div><b>Orgueil</b> · statut, exclusivité</div><div><b>Nouveauté</b> · innovation</div><div><b>Confort</b> · simple, sans effort</div><div><b>Argent</b> · ROI chiffré</div><div><b>Sympathie</b> · relation</div></div>`);
+}
+function pick(el){el.parentElement.querySelectorAll('.qopt').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+
+/* Gestes / Assistant / Communauté */
+function togGeste(id){ST.gestes[id]=!ST.gestes[id];save();go('gestes');}
+function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';btn.parentElement.querySelectorAll('.segb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function publier(){const el=document.getElementById('cinp');const v=el.value.trim();if(!v)return;ST.posts.unshift({av:"M",who:"Marc D. (toi)",when:"à l'instant",body:v,k:0,c:0});save();go('communaute');}
+
 go('accueil');
 </script>
-  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
 </body>
 </html>
