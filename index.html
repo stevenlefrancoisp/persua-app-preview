@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,17 +16,17 @@
     --bg:#f6f7fb;--card:#fff;--green:#16a34a;--amber:#d97706;--red:#dc2626;--warm:#f59e0b;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0e1020;color:var(--ink)}
-  .device{max-width:420px;height:100dvh;margin:0 auto;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .device{max-width:420px;height:100vh;height:100svh;margin:0 auto;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
   @media(min-width:440px){body{display:flex;align-items:center;justify-content:center;padding:18px}
     .device{height:860px;border-radius:44px;border:11px solid #0b0c16;box-shadow:0 30px 80px rgba(0,0,0,.5)}}
-  .statusbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;color:#fff;background:var(--indigo-d)}
+  .statusbar{min-height:34px;padding-top:env(safe-area-inset-top);display:flex;align-items:center;justify-content:space-between;padding-left:20px;padding-right:20px;font-size:13px;font-weight:600;color:#fff;background:var(--indigo-d)}
   .appbar{background:linear-gradient(135deg,var(--indigo-d),var(--indigo));color:#fff;padding:10px 18px 18px}
   .appbar .hi{font-size:20px;font-weight:700;letter-spacing:-.3px}
   .appbar .sub{font-size:12px;color:#cdd0f2}
   .hdrrow{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
   .chip{background:rgba(255,255,255,.16);border-radius:12px;padding:8px 12px;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
   .chip b{font-size:15px}
-  .screen{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:14px 14px 84px;-webkit-overflow-scrolling:touch}
+  .screen{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:14px 14px calc(84px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
   h3.sh{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:16px 4px 8px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:11px}
   .nm{font-size:15px;font-weight:600}.mt{font-size:12.5px;color:var(--muted)}
@@ -68,7 +68,7 @@
   .me{background:var(--indigo);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
   .co{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
   .coachbar{display:flex;gap:8px;margin-top:6px}
-  .coachbar input{flex:1;border:1px solid var(--line);border-radius:14px;padding:11px 13px;font-size:13px;background:#fff}
+  .coachbar input{flex:1;border:1px solid var(--line);border-radius:14px;padding:11px 13px;font-size:16px;background:#fff}
   .coachbar button{background:var(--indigo);color:#fff;border:0;border-radius:12px;padding:0 15px;font-size:16px}
   .cta{display:block;width:100%;margin-top:6px;background:var(--indigo);color:#fff;font-size:13.5px;font-weight:600;padding:12px;border-radius:13px;border:0;text-align:center;cursor:pointer}
   .rr{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -95,7 +95,7 @@
   .segb{flex:1;border:0;background:transparent;padding:9px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
   .segb.on{background:#fff;color:var(--indigo);box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .composer{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
-  .composer input{width:100%;border:0;font-size:13.5px;outline:none;background:transparent}
+  .composer input{width:100%;border:0;font-size:16px;outline:none;background:transparent}
   .post{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
   .post .ph{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .av{width:36px;height:36px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;background:var(--indigo)}
@@ -103,10 +103,11 @@
   .post .body{font-size:13.5px;color:#2a2e3d;line-height:1.42}
   .post .acts{display:flex;gap:16px;margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600;cursor:pointer}
   .tagchip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eef0ff;color:#3730a3;cursor:pointer}
-  .tabbar{position:absolute;bottom:0;left:0;right:0;height:66px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex}
+  .tabbar{position:absolute;bottom:0;left:0;right:0;min-height:66px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
   .tab .e{font-size:20px;filter:grayscale(1);opacity:.55}
   .tab.on{color:var(--indigo)}.tab.on .e{filter:none;opacity:1}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
