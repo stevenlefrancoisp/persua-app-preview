@@ -199,15 +199,20 @@ function bilanDue(){const l=lastBilan();return !l||(Date.now()-l.t)>=21*DAY;}
 function daysToBilan(){const l=lastBilan();return l?Math.max(0,Math.ceil((l.t+21*DAY-Date.now())/DAY)):0;}
 function fmtDate(t){var d=new Date(t);return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2);}
 function arrowHTML(delta){return delta==null?'':delta>0?`<span style="color:#16a34a">▲+${delta}</span>`:delta<0?`<span style="color:#dc2626">▼${delta}</span>`:`<span style="color:#7a7f92">=</span>`;}
-function lineChart(pts,color,H){H=H||130;var W=320,pad=22,padB=20,n=pts.length;if(!n)return '';
+function lineChart(pts,color,H){H=H||140;var W=320,pad=26,padB=22,padT=12,n=pts.length;if(!n)return '';
+  var big=H>=120,sw=big?5:3.2,off=big?3.6:2.4,rEnd=big?6.5:4.6;
   var xf=function(i){return pad+(W-2*pad)*(n===1?0.5:i/(n-1));};
-  var yf=function(v){return H-padB-(H-padB-10)*(Math.max(0,Math.min(10,v))/10);};
+  var yf=function(v){return H-padB-(H-padB-padT)*(Math.max(0,Math.min(10,v))/10);};
   var d='';pts.forEach(function(p,i){var X=xf(i),Y=yf(p.y);if(i===0){d='M'+X.toFixed(1)+' '+Y.toFixed(1);}else{var X0=xf(i-1),Y0=yf(pts[i-1].y),cx=((X0+X)/2).toFixed(1);d+=' C'+cx+' '+Y0.toFixed(1)+' '+cx+' '+Y.toFixed(1)+' '+X.toFixed(1)+' '+Y.toFixed(1);}});
-  var grid=[0,5,10].map(function(v){return `<line x1="${pad}" y1="${yf(v).toFixed(1)}" x2="${W-pad}" y2="${yf(v).toFixed(1)}" stroke="#eceef6"/><text x="${pad-6}" y="${(yf(v)+3).toFixed(1)}" font-size="9" fill="#b8bccb" text-anchor="end">${v*10}</text>`;}).join('');
-  var area=n>1?`<path d="${d} L${xf(n-1).toFixed(1)} ${(H-padB).toFixed(1)} L${xf(0).toFixed(1)} ${(H-padB).toFixed(1)} Z" fill="${color}" opacity="0.09"/>`:'';
-  var dots=pts.map(function(p,i){return `<circle cx="${xf(i).toFixed(1)}" cy="${yf(p.y).toFixed(1)}" r="3.2" fill="${color}"/>`;}).join('');
+  var grid=[0,2,4,6,8,10].map(function(v){return `<line x1="${pad}" y1="${yf(v).toFixed(1)}" x2="${W-pad}" y2="${yf(v).toFixed(1)}" stroke="#eef0f4"/>`;}).join('');
+  var ylab=[0,5,10].map(function(v){return `<text x="${pad-7}" y="${(yf(v)+3).toFixed(1)}" font-size="9" fill="#b8bccb" text-anchor="end">${v*10}</text>`;}).join('');
+  var axes=`<line x1="${pad}" y1="${(padT-2).toFixed(1)}" x2="${pad}" y2="${(H-padB).toFixed(1)}" stroke="#d7dbe6"/><line x1="${pad}" y1="${(H-padB).toFixed(1)}" x2="${W-pad}" y2="${(H-padB).toFixed(1)}" stroke="#d7dbe6"/>`;
+  var ticks=pts.map(function(p,i){return `<line x1="${xf(i).toFixed(1)}" y1="${(H-padB).toFixed(1)}" x2="${xf(i).toFixed(1)}" y2="${(H-padB+4).toFixed(1)}" stroke="#d7dbe6"/>`;}).join('');
+  var shadow=`<path d="${d}" fill="none" stroke="${color}" stroke-opacity="0.22" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" transform="translate(0,${off})"/>`;
+  var line=`<path d="${d}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  var dots=pts.map(function(p,i){if(i===n-1)return `<circle cx="${xf(i).toFixed(1)}" cy="${yf(p.y).toFixed(1)}" r="${rEnd}" fill="#84cc16" stroke="#fff" stroke-width="2.4"/>`;return `<circle cx="${xf(i).toFixed(1)}" cy="${yf(p.y).toFixed(1)}" r="2.6" fill="${color}"/>`;}).join('');
   var labels=pts.map(function(p,i){if(n>5 && i%Math.ceil(n/5)!==0 && i!==n-1)return '';return `<text x="${xf(i).toFixed(1)}" y="${H-5}" font-size="9" fill="#7a7f92" text-anchor="middle">${fmtDate(p.t)}</text>`;}).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="courbe d'évolution">${grid}${area}<path d="${d}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>${dots}${labels}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="courbe d'évolution">${grid}${axes}${ticks}${ylab}${shadow}${line}${dots}${labels}</svg>`;
 }
 function radarPoly(vals,cx,cy,R){return vals.map(function(v,i){var ang=(-90+i*90)*Math.PI/180,r=R*Math.max(0,Math.min(10,v))/10;return (cx+r*Math.cos(ang)).toFixed(1)+','+(cy+r*Math.sin(ang)).toFixed(1);}).join(' ');}
 function radarChart(cur,prev){
