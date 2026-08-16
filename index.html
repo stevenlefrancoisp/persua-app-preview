@@ -88,6 +88,13 @@
   .soncas{display:grid;grid-template-columns:1fr 1fr;gap:7px}
   .soncas>div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11.5px}
   .qopt{border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:13px;margin-top:8px;cursor:pointer;background:#fff;line-height:1.4}
+  .scalebar{display:flex;gap:7px}
+  .scalebar .seg{flex:1;text-align:center;padding:15px 0;border:1px solid var(--line);border-radius:12px;font-weight:800;font-size:16px;color:var(--muted);cursor:pointer;background:#fff;transition:all .15s}
+  .scalebar .seg.on{background:var(--indigo);color:#fff;border-color:var(--indigo);transform:translateY(-2px)}
+  .scaleends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:7px}
+  .profil-round{text-align:center;cursor:pointer;flex:none}
+  .pr-circle{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;margin:0 auto;border:2px solid rgba(255,255,255,.4)}
+  .pr-lbl{font-size:10px;color:#cdd0f2;margin-top:3px;font-weight:700}
   .qopt.on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
   .fiche{font-size:13.5px;line-height:1.6;color:#2a2e3d}
   .fiche .lead{font-size:14px;color:#0e1020}
@@ -142,8 +149,10 @@
 <div class="device">
   <div class="statusbar"><span>9:41</span><span>Persua</span><span>●●●● ▮</span></div>
   <div class="appbar">
-    <div class="hi">Salut Marc 👋</div>
-    <div class="sub">Ton parcours neurovente</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div><div class="hi">Salut Marc 👋</div><div class="sub">Ton parcours neurovente</div></div>
+      <div class="profil-round" onclick="openProfil()"><div class="pr-circle">M</div><div class="pr-lbl">Profil</div></div>
+    </div>
     <div class="hdrrow">
       <div class="chip">🔥 <b>12</b> jours</div>
       <div class="chip">⭐ <span id="lvl">Niveau 1</span></div>
@@ -177,7 +186,7 @@ function scrollToCal(){var s=document.getElementById('screen'),c=document.getEle
 /* État persistant */
 const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
-ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false;
+ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false; ST.diagAns=ST.diagAns||{}; ST.diag=ST.diag||null; ST.diagDone=ST.diagDone||false;
 function save(){localStorage.setItem(KEY,JSON.stringify(ST));}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
 (function(){var h=(location.hash+location.search).toLowerCase();if(h.indexOf('eleve')>=0||h.indexOf('student')>=0){ST.eleve=true;save();}if(h.indexOf('open')>=0||h.indexOf('admin')>=0){ST.eleve=false;save();}})();
@@ -342,17 +351,11 @@ const GESTES=[
 function accueilHTML(){
   const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
   return `
-  ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution sur les 4 axes.</div></div>`:''}
+  ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution.</div></div>`:''}
   <div class="card geste"><div class="k">Ton geste du jour</div>
     <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
-  <h3 class="sh">Ton profil de vendeur</h3>
-  <div class="card" onclick="openProfil()" style="cursor:pointer">
-    ${ST.test?`<div class="pchips"><span class="pchip">DISC · C</span><span class="pchip">L'Expert</span><span class="pchip">ISTP</span></div><div class="mt">Tape pour revoir ton analyse.</div>`
-      :`<div class="nm">Passe ton diagnostic de vendeur</div><div class="mt">12 questions, 5 min. Révèle ton profil et ton style.</div><button class="cta">Commencer le test</button>`}
-  </div>
-  <h3 class="sh">Ton évolution · découverte, objections, closing, CALME</h3>
-  ${dashboardHTML()}
-  <h3 class="sh">Ta semaine</h3>
+  <div class="card" style="cursor:pointer;background:linear-gradient(135deg,#eef0ff,#f5f6ff);border-color:#e0e3ff" onclick="go('parcours')">
+    <div class="nm">🗺️ Reprendre ma formation</div><div class="mt">Continue ton parcours neurovente, module par module.</div></div>
   <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven, quand tu veux</div>
     <button class="cta" onclick="go('rdv')">Réserver ma séance</button></div>`;
 }
@@ -590,32 +593,83 @@ function submitQuiz(mId){
 }
 
 /* Profil (test) */
+/* ===== Diagnostic réel (données + moteur, réutilisé de app.persua) ===== */
+const POSQ=[{"id":"ei1","cat":"mbti","section":"Ton fonctionnement","kind":"pick","title":"Après une journée de prospection intense, tu recharges plutôt…","options":[{"label":"En voyant du monde, en échangeant","tag":"E"},{"label":"Au calme, seul, à décompresser","tag":"I"}]},{"id":"ei2","cat":"mbti","section":"Ton fonctionnement","kind":"pick","title":"En réunion ou en RDV de groupe, tu…","options":[{"label":"Prends naturellement la parole","tag":"E"},{"label":"Observes, puis interviens au bon moment","tag":"I"}]},{"id":"ei3","cat":"mbti","section":"Ton fonctionnement","kind":"pick","title":"Ton énergie vient surtout…","options":[{"label":"Des interactions et du mouvement","tag":"E"},{"label":"De ta réflexion et de ta concentration","tag":"I"}]},{"id":"sn1","cat":"mbti","section":"Ta façon de penser","kind":"pick","title":"Quand tu prépares un RDV, tu te fies d'abord…","options":[{"label":"Aux faits concrets et au terrain","tag":"S"},{"label":"À ton intuition et à la vision d'ensemble","tag":"N"}]},{"id":"sn2","cat":"mbti","section":"Ta façon de penser","kind":"pick","title":"Ce qui t'attire le plus dans une offre :","options":[{"label":"Le concret, le détail qui marche","tag":"S"},{"label":"Le potentiel, les possibilités","tag":"N"}]},{"id":"sn3","cat":"mbti","section":"Ta façon de penser","kind":"pick","title":"Tu fais davantage confiance…","options":[{"label":"À l'expérience éprouvée","tag":"S"},{"label":"À ton flair, à ce que tu sens venir","tag":"N"}]},{"id":"tf1","cat":"mbti","section":"Ta façon de décider","kind":"pick","title":"Pour convaincre, tu t'appuies d'abord sur…","options":[{"label":"La logique, les chiffres, la démonstration","tag":"T"},{"label":"La relation, l'émotion, le lien","tag":"F"}]},{"id":"tf2","cat":"mbti","section":"Ta façon de décider","kind":"pick","title":"Face à un client hésitant, ton réflexe :","options":[{"label":"Lui démontrer rationnellement qu'il a tort d'hésiter","tag":"T"},{"label":"Le rassurer et comprendre ce qui le freine","tag":"F"}]},{"id":"tf3","cat":"mbti","section":"Ta façon de décider","kind":"pick","title":"Une bonne décision est avant tout…","options":[{"label":"Juste et logique","tag":"T"},{"label":"Humaine et alignée avec les gens","tag":"F"}]},{"id":"jp1","cat":"mbti","section":"Ton organisation","kind":"pick","title":"Ton agenda de prospection est plutôt…","options":[{"label":"Planifié et structuré","tag":"J"},{"label":"Souple, au feeling","tag":"P"}]},{"id":"jp2","cat":"mbti","section":"Ton organisation","kind":"pick","title":"Tu préfères…","options":[{"label":"Clore les sujets et décider vite","tag":"J"},{"label":"Garder les options ouvertes le plus longtemps","tag":"P"}]},{"id":"jp3","cat":"mbti","section":"Ton organisation","kind":"pick","title":"Ton CRM / ton suivi ressemble à…","options":[{"label":"Quelque chose d'ordonné et à jour","tag":"J"},{"label":"Un joyeux bazar créatif","tag":"P"}]},{"id":"d1","cat":"disc","section":"Ton style de vente","kind":"pick","title":"En vente, ta plus grande force :","options":[{"label":"Je fonce et je conclus vite","tag":"D"},{"label":"Je crée du lien et de l'enthousiasme","tag":"I"},{"label":"Je rassure et j'accompagne dans la durée","tag":"S"},{"label":"Je maîtrise mon offre et mes chiffres","tag":"C"}]},{"id":"d2","cat":"disc","section":"Ton style de vente","kind":"pick","title":"Ce qui t'agace le plus chez un prospect :","options":[{"label":"Qu'il tourne autour du pot","tag":"D"},{"label":"Qu'il soit froid et fermé","tag":"I"},{"label":"Qu'on le brusque ou le presse","tag":"S"},{"label":"Qu'il soit approximatif, sans rigueur","tag":"C"}]},{"id":"d3","cat":"disc","section":"Ton style de vente","kind":"pick","title":"Sous pression (fin de mois, objectif loin), tu…","options":[{"label":"Accélères et mets la pression","tag":"D"},{"label":"Actives ton réseau et improvises","tag":"I"},{"label":"Gardes ton calme et avances pas à pas","tag":"S"},{"label":"Analyses et cherches la faille à corriger","tag":"C"}]},{"id":"d4","cat":"disc","section":"Ton style de vente","kind":"pick","title":"Un bon RDV, pour toi, c'est un RDV où…","options":[{"label":"On a avancé et décidé","tag":"D"},{"label":"Le courant est super bien passé","tag":"I"},{"label":"Le client s'est senti écouté et en confiance","tag":"S"},{"label":"Tout était carré et bien cadré","tag":"C"}]},{"id":"d5","cat":"disc","section":"Ton style de vente","kind":"pick","title":"Ton point de vigilance honnête :","options":[{"label":"Je peux être trop direct / impatient","tag":"D"},{"label":"Je peux trop parler et pas assez closer","tag":"I"},{"label":"Je peux manquer de mordant au closing","tag":"S"},{"label":"Je peux trop sur-préparer et hésiter","tag":"C"}]},{"id":"d6","cat":"disc","section":"Ton style de vente","kind":"pick","title":"On te décrirait plutôt comme…","options":[{"label":"Un fonceur déterminé","tag":"D"},{"label":"Un communicant solaire","tag":"I"},{"label":"Un pilier fiable et posé","tag":"S"},{"label":"Un expert précis et rigoureux","tag":"C"}]},{"id":"f_prospection","cat":"funnel","section":"Ton diagnostic terrain","kind":"scale","title":"Prospection / prise de RDV","low":"Je galère","high":"À l'aise"},{"id":"f_decouverte","cat":"funnel","section":"Ton diagnostic terrain","kind":"scale","title":"Découverte du besoin","low":"Je galère","high":"À l'aise"},{"id":"f_objections","cat":"funnel","section":"Ton diagnostic terrain","kind":"scale","title":"Traitement des objections","low":"Je galère","high":"À l'aise"},{"id":"f_closing","cat":"funnel","section":"Ton diagnostic terrain","kind":"scale","title":"Closing / conclure","low":"Je galère","high":"À l'aise"},{"id":"f_relance","cat":"funnel","section":"Ton diagnostic terrain","kind":"scale","title":"Relance / suivi","low":"Je galère","high":"À l'aise"},{"id":"m_confiance","cat":"mindset","section":"Ton mental","kind":"scale","title":"Ta confiance pendant un RDV","low":"Fragile","high":"Solide"},{"id":"m_stress","cat":"mindset","section":"Ton mental","kind":"scale","title":"Ta gestion du stress avant un RDV important","low":"Très stressé","high":"Très posé"},{"id":"m_forcing","cat":"mindset","section":"Ton mental","kind":"pick","title":"Ton rapport au fait de « pousser » la vente :","options":[{"label":"Je n'ose pas, peur de forcer","tag":"timide"},{"label":"Je suis parfois trop insistant","tag":"agressif"},{"label":"Je suis plutôt équilibré","tag":"equilibre"},{"label":"Ça dépend des jours","tag":"variable"}]},{"id":"m_moteur","cat":"mindset","section":"Ton mental","kind":"pick","title":"Ce qui te fait vraiment vibrer dans la vente :","options":[{"label":"Gagner, performer, dépasser mes chiffres","tag":"performance"},{"label":"La reconnaissance, être vu comme un bon","tag":"reconnaissance"},{"label":"La liberté et l'indépendance que ça m'offre","tag":"liberte"},{"label":"Aider vraiment mes clients, avoir de l'impact","tag":"impact"},{"label":"Maîtriser un art, devenir excellent","tag":"maitrise"}]},{"id":"s1","cat":"soncas","section":"Ton profil d'acheteur","kind":"pick","title":"Quand TU achètes quelque chose d'important, ton premier réflexe :","options":[{"label":"Vérifier que c'est fiable, sans risque","tag":"S"},{"label":"Choisir le haut de gamme, ce qui te valorise","tag":"O"},{"label":"Aller vers la nouveauté, la dernière innovation","tag":"N"},{"label":"Privilégier la simplicité, ce qui te facilite la vie","tag":"C"},{"label":"Comparer les prix, optimiser ton budget","tag":"A"}]},{"id":"s2","cat":"soncas","section":"Ton profil d'acheteur","kind":"pick","title":"Ce qui te ferait dire OUI tout de suite à un vendeur :","options":[{"label":"Des garanties solides et des preuves","tag":"S"},{"label":"Te sentir client privilégié, VIP","tag":"O"},{"label":"Un produit unique, original","tag":"N"},{"label":"Un truc clé-en-main, zéro prise de tête","tag":"C"},{"label":"Un vendeur sympa avec qui le courant passe","tag":"Sy"}]},{"id":"s3","cat":"soncas","section":"Ton profil d'acheteur","kind":"pick","title":"Le pire défaut d'un produit, pour toi :","options":[{"label":"Qu'il soit risqué / pas fiable","tag":"S"},{"label":"Qu'il fasse cheap, banal","tag":"O"},{"label":"Qu'il soit déjà dépassé","tag":"N"},{"label":"Qu'il soit compliqué à utiliser","tag":"C"},{"label":"Qu'il pollue / ne soit pas responsable","tag":"E"}]},{"id":"s4","cat":"soncas","section":"Ton profil d'acheteur","kind":"pick","title":"Dans une pub, ce qui t'accroche le plus :","options":[{"label":"La sécurité, la garantie","tag":"S"},{"label":"Le statut, le prestige","tag":"O"},{"label":"L'innovation, le « jamais vu »","tag":"N"},{"label":"La promo, le bon prix","tag":"A"},{"label":"Les valeurs, l'écologie","tag":"E"}]},{"id":"s5","cat":"soncas","section":"Ton profil d'acheteur","kind":"pick","title":"Tu achètes plus facilement à quelqu'un qui :","options":[{"label":"Te rassure et prend le temps","tag":"S"},{"label":"Te traite comme quelqu'un d'important","tag":"O"},{"label":"Te simplifie la décision","tag":"C"},{"label":"Te fait sentir que tu fais une affaire","tag":"A"},{"label":"Est chaleureux et authentique","tag":"Sy"}]},{"id":"s6","cat":"soncas","section":"Ton profil d'acheteur","kind":"pick","title":"Ce dont tu es le plus fier dans tes achats :","options":[{"label":"De n'avoir jamais été déçu / arnaqué","tag":"S"},{"label":"D'avoir ce que les autres n'ont pas","tag":"O"},{"label":"D'être souvent le premier à tester","tag":"N"},{"label":"D'avoir simplifié ta vie","tag":"C"},{"label":"D'avoir toujours payé le juste prix","tag":"A"}]}];
+const DTYPES={"INTJ":{"nickname":"L'Architecte","blurb":"Stratège. Tu vends par la vision et la logique long terme : tu construis un raisonnement imparable qui rend l'achat évident."},"INTP":{"nickname":"Le Logicien","blurb":"Analyste. Tu démontes les objections par la précision. Ton arme : comprendre mieux que le client son propre problème."},"ENTJ":{"nickname":"Le Commandant","blurb":"Leader né. Tu prends le contrôle du RDV, tu cadres, tu décides. Ton closing est naturel — attention à ne pas écraser."},"ENTP":{"nickname":"L'Innovateur","blurb":"Débatteur. Tu adores retourner une objection en opportunité. Vif, persuasif — ton défi : finir ce que tu commences."},"INFJ":{"nickname":"Le Conseiller","blurb":"Empathique et profond. Tu lis les besoins cachés. Tu vends par la confiance et le sens, pas par la pression."},"INFP":{"nickname":"L'Idéaliste","blurb":"Authentique. Tu ne sais vendre que ce en quoi tu crois — et ça se sent. Ton défi : oser parler argent."},"ENFJ":{"nickname":"Le Mentor","blurb":"Charismatique et bienveillant. Tu embarques les gens. Ta vente est une relation — ton levier : l'inspiration."},"ENFP":{"nickname":"L'Inspirateur","blurb":"Énergie et enthousiasme. Tu crées l'envie en quelques minutes. Ton défi : structurer et closer avant de t'éparpiller."},"ISTJ":{"nickname":"Le Fiable","blurb":"Méthodique et carré. Tu rassures par le sérieux. Le client te fait confiance parce que tout est nickel."},"ISFJ":{"nickname":"Le Protecteur","blurb":"Attentionné. Tu fidélises comme personne. Ta vente est de service — ton défi : oser pousser quand il le faut."},"ESTJ":{"nickname":"Le Directeur","blurb":"Organisé et efficace. Tu mènes le process de A à Z. Orienté résultat — ton levier : la clarté et l'action."},"ESFJ":{"nickname":"Le Facilitateur","blurb":"Relationnel et chaleureux. Tu mets tout le monde à l'aise. Ton réseau est ton meilleur commercial."},"ISTP":{"nickname":"Le Pragmatique","blurb":"Concret et calme. Tu vas à l'essentiel, sans blabla. Le client sent que tu maîtrises ton sujet."},"ISFP":{"nickname":"Le Sensible","blurb":"Discret mais juste. Tu crées une vraie connexion. Ton défi : prendre plus de place et assumer ta valeur."},"ESTP":{"nickname":"Le Closer","blurb":"Instinct de vente pur. Tu lis la situation et tu agis. Redoutable en RDV — ton défi : la rigueur du suivi."},"ESFP":{"nickname":"L'Animateur","blurb":"Solaire et spontané. Tu rends l'achat agréable et humain. Ton levier : l'émotion et le plaisir de la relation."}};
+const DDISC={"D":{"label":"Dominant","force":"Orienté résultat, tu closes vite et tu n'as pas peur de demander la vente.","levier":"Va droit au but, parle ROI et décision — son Système 1 veut de l'efficacité.","vigilance":"Tu peux brusquer et zapper la découverte. Ralentis pour apaiser la menace avant de pousser."},"I":{"label":"Influent","force":"Tu crées du lien et de l'enthousiasme en quelques minutes. Les gens t'apprécient vite.","levier":"Mise sur le relationnel et la reconnaissance — fais-le se sentir spécial.","vigilance":"Tu parles parfois trop et tu oublies de closer. Cadre et conclus."},"S":{"label":"Stable","force":"Tu inspires confiance et tu fidélises. Le client se sent écouté et en sécurité avec toi.","levier":"Rassure, accompagne, montre la continuité — pas de pression brutale.","vigilance":"Tu peux manquer de mordant au closing. Ose demander l'engagement."},"C":{"label":"Consciencieux","force":"Tu maîtrises ton offre et tes chiffres. Ta rigueur crée une vraie crédibilité.","levier":"Apporte des preuves, de la méthode, du concret — nourris son Système 2.","vigilance":"Tu sur-analyses et tu hésites. Décide plus vite, le mieux est l'ennemi du closé."}};
+const DARCH={"D":{"name":"Le Chasseur","desc":"Tu vis pour la conquête et le résultat. Ton terrain de jeu : la prise de RDV et le closing."},"I":{"name":"Le Charismatique","desc":"Tu vends par la relation et l'énergie. Les gens achètent d'abord toi, puis ton offre."},"S":{"name":"Le Conseiller","desc":"Tu vends par la confiance et l'accompagnement. Ta force : la fidélité et la recommandation."},"C":{"name":"L'Expert","desc":"Tu vends par la maîtrise et la crédibilité. Le client achète ta compétence et ta rigueur."}};
+const DFUNL={"f_prospection":"Prospection","f_decouverte":"Découverte","f_objections":"Objections","f_closing":"Closing","f_relance":"Relance"};
+const DFUNM={"f_prospection":"m3","f_decouverte":"m4","f_objections":"m4","f_closing":"m4","f_relance":"m5"};
+const DMOT={"performance":"la performance et le dépassement de soi","reconnaissance":"la reconnaissance et l'estime","liberte":"la liberté et l'indépendance","impact":"l'impact réel sur tes clients","maitrise":"la maîtrise et l'excellence"};
+const DSON={"S":{"label":"Sécurité","desc":"Tu as besoin d'être rassuré : garanties, preuves, fiabilité. Le risque te bloque."},"O":{"label":"Orgueil","desc":"Tu es sensible au statut, à la reconnaissance, au haut de gamme. Tu veux te sentir spécial."},"N":{"label":"Nouveauté","desc":"L'innovation et l'originalité t'attirent. Tu veux du neuf, du jamais-vu."},"C":{"label":"Confort","desc":"Tu veux du simple, du pratique, sans prise de tête. La facilité prime."},"A":{"label":"Argent","desc":"Le prix et la bonne affaire comptent. Tu optimises ton budget."},"Sy":{"label":"Sympathie","desc":"La relation et le feeling avec le vendeur pèsent lourd. Tu achètes d'abord des gens."},"E":{"label":"Écologie","desc":"Les valeurs et l'impact responsable orientent tes choix."}};
+/* ---- Moteur de diagnostic (réutilisé de app.persua-neurovente) ---- */
+function diagAxis(ans,ids,a,b){var na=0,nb=0;ids.forEach(function(id){var raw=ans[id]||'';if(raw===a){na++;return;}if(raw===b){nb++;return;}var v=parseInt(raw,10);if(v===1||v===2)na+=3-v;else if(v===4||v===5)nb+=v-3;});return na>=nb?a:b;}
+function computeDiag(ans){
+  var type=diagAxis(ans,['ei1','ei2','ei3'],'E','I')+diagAxis(ans,['sn1','sn2','sn3'],'S','N')+diagAxis(ans,['tf1','tf2','tf3'],'T','F')+diagAxis(ans,['jp1','jp2','jp3'],'J','P');
+  var t=DTYPES[type]||{nickname:'Profil unique',blurb:'Un profil rare et nuancé.'};
+  var counts={D:0,I:0,S:0,C:0};POSQ.filter(function(q){return q.cat==='disc';}).forEach(function(q){var v=ans[q.id];if(v&&counts[v]!==undefined)counts[v]++;});
+  var ranked=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+  var dom=ranked[0]||'D',sec=ranked[1]||'C';
+  var funnel=Object.keys(DFUNL).map(function(key){return {key:key,label:DFUNL[key],score:parseInt(ans[key]||'0',10),module:DFUNM[key]};});
+  var scored=funnel.filter(function(f){return f.score>0;});
+  var weakest=scored.length?scored.reduce(function(a,b){return b.score<a.score?b:a;}):null;
+  var sonCounts={};POSQ.filter(function(q){return q.cat==='soncas';}).forEach(function(q){var v=ans[q.id];if(v)sonCounts[v]=(sonCounts[v]||0)+1;});
+  var sonTop=Object.keys(sonCounts).sort(function(a,b){return sonCounts[b]-sonCounts[a];}).filter(function(k){return DSON[k];}).slice(0,3).map(function(k){return {key:k,label:DSON[k].label,desc:DSON[k].desc};});
+  return {type:type,nickname:t.nickname,blurb:t.blurb,dom:dom,sec:sec,disc:DDISC[dom],arch:DARCH[dom],funnel:funnel,weakest:weakest,son:sonTop,moteur:DMOT[ans['m_moteur']]||'ta réussite'};
+}
+/* ---- Déroulé des deux tests (personnalité + niveau terrain), réponses 1->5 en barre ---- */
+function diagStart(){ST.diagAns=ST.diagAns||{};ST.DR={i:0};renderDiag();openModal();}
+function renderDiag(){var i=ST.DR.i,q=POSQ[i],picked=ST.diagAns[q.id];
+  var phase=(q.cat==='funnel')?'Test 2 · ton niveau terrain':'Test 1 · ton profil de vendeur';
+  var body;
+  if(q.kind==='scale'){
+    body='<div class="scalebar">'+[1,2,3,4,5].map(function(v){return '<div class="seg '+(picked===(''+v)?'on':'')+'" onclick="diagAns(\''+q.id+'\',\''+v+'\')">'+v+'</div>';}).join('')+'</div><div class="scaleends"><span>'+(q.low||'')+'</span><span>'+(q.high||'')+'</span></div>';
+  } else {
+    body=q.options.map(function(o){return '<div class="qopt '+(picked===o.tag?'on':'')+'" onclick="diagAns(\''+q.id+'\',\''+o.tag+'\')">'+o.label+'</div>';}).join('');
+  }
+  var last=i===POSQ.length-1;
+  setM('Diagnostic',`
+    <div class="mt" style="margin-bottom:6px">${phase} · ${i+1}/${POSQ.length}</div>
+    <div class="pbar" style="margin-bottom:16px"><i style="width:${Math.round((i+1)/POSQ.length*100)}%"></i></div>
+    <div class="plabel">${q.section}</div>
+    <div class="nm" style="font-size:16px;margin:6px 0 14px;line-height:1.4">${q.title}</div>
+    ${body}
+    <div style="display:flex;gap:8px;margin-top:18px">${i>0?'<button class="cta" style="background:#eef0ff;color:#3730a3" onclick="diagNav(-1)">Précédent</button>':''}
+    <button class="cta" style="${picked==null?'opacity:.45;pointer-events:none':''}" onclick="diagNext()">${last?'Voir mon profil':'Suivant →'}</button></div>`);
+  document.querySelector('#modal .ov-body').scrollTop=0;
+}
+function diagAns(id,val){ST.diagAns[id]=val;save();ST.DR.i=Math.min(POSQ.length-1,ST.DR.i);renderDiag();}
+function diagNav(d){ST.DR.i+=d;renderDiag();}
+function diagNext(){if(ST.DR.i<POSQ.length-1){ST.DR.i++;renderDiag();}else diagFinish();}
+function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=true;save();refreshHeader();xpToast(60);openProfil();}
+/* ---- Section Profil : résultats des deux tests + notation (dashboard déplacé ici) ---- */
 function openProfil(){
-  if(ST.test){profResult();openModal();return;}
-  setM('Diagnostic de vendeur',`
-    <div class="card"><div class="plabel">5 min</div><div class="mt" style="font-size:13px;color:#2a2e3d">Réponds au feeling, il n'y a pas de mauvaise réponse.</div></div>
-    <div class="mt" style="margin:2px 4px 8px">Question 1 sur 12</div>
-    <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Après une journée de prospection intense, tu recharges plutôt...</div>
-      <div class="qopt" onclick="pick(this)">En voyant du monde</div><div class="qopt on" onclick="pick(this)">Au calme, seul</div></div>
-    <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">Quand tu prépares un RDV, tu te fies d'abord...</div>
-      <div class="qopt on" onclick="pick(this)">Aux faits concrets</div><div class="qopt" onclick="pick(this)">À ton intuition</div></div>
-    <div class="card"><div class="nm" style="font-size:14px;margin-bottom:4px">En rendez-vous, ton réflexe...</div>
-      <div class="qopt" onclick="pick(this)">Aller droit au résultat</div><div class="qopt on" onclick="pick(this)">Comprendre à fond avant</div></div>
-    <button class="cta" onclick="finishTest()">Voir mon profil →</button>`);
-  openModal();
+  if(!ST.diag){diagStart();return;}
+  var d=ST.diag;
+  setM('Ton profil',`
+    <div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0">
+      <div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton archétype de vendeur</div>
+      <div style="font-size:23px;font-weight:800;margin-top:4px">${d.arch.name}</div>
+      <div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">${d.arch.desc}</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:13px">
+        <span class="pchip" style="background:rgba(255,255,255,.16);color:#fff">DISC · ${d.dom} ${d.disc.label}</span>
+        <span class="pchip" style="background:rgba(255,255,255,.16);color:#fff">${d.type} · ${d.nickname}</span>
+      </div>
+    </div>
+    <div class="card"><div class="plabel">Ta force</div><div class="mt" style="color:#2a2e3d;font-size:13px;line-height:1.5">${d.disc.force}</div></div>
+    <div class="card"><div class="plabel">Ton angle mort</div><div class="mt" style="color:#2a2e3d;font-size:13px;line-height:1.5">${d.disc.vigilance}</div></div>
+    <div class="card"><div class="plabel">Comment te lire</div><div class="mt" style="color:#2a2e3d;font-size:13px;line-height:1.5">${d.blurb}</div></div>
+    <div class="card"><div class="plabel">Ton moteur</div><div class="mt" style="color:#2a2e3d;font-size:13px">Ce qui te fait vibrer : ${d.moteur}.</div></div>
+    ${d.son&&d.son.length?`<div class="card"><div class="plabel">Tes leviers d'achat (SONCAS)</div>${d.son.map(function(s){return `<div class="mt" style="color:#2a2e3d;font-size:12.5px;margin-top:5px"><b>${s.label}</b> · ${s.desc}</div>`;}).join('')}</div>`:''}
+    <h3 class="sh">Ton positionnement terrain</h3>
+    <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>
+    <h3 class="sh">Ta notation · évolution hebdo</h3>
+    ${dashboardHTML()}
+    <button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="diagStart()">↻ Refaire mon diagnostic</button>
+    <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>`);
+  openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
-function finishTest(){ST.test=true;save();profResult();}
-function profResult(){
-  setM('Ton profil de vendeur',`
-    <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="plabel">Ton résultat</div><div class="nm" style="margin-top:3px">L'Expert · ISTP « Le Pragmatique »</div></div>
-    <div class="pchips"><span class="pchip">DISC · C Consciencieux</span><span class="pchip">Archétype · L'Expert</span><span class="pchip">ISTP</span></div>
-    <div class="card"><div class="plabel">Ta force</div><div class="mt" style="font-size:13px;color:#2a2e3d">Tu maîtrises ton offre et tes chiffres. Ta rigueur crée une vraie crédibilité, le client achète ta compétence. Concret et calme, tu vas à l'essentiel.</div></div>
-    <div class="card"><div class="plabel">Ton angle mort</div><div class="mt" style="font-size:13px;color:#2a2e3d">Tu sur-analyses et tu hésites au closing. Le mieux est l'ennemi du closé : décide plus vite, ose demander l'engagement.</div></div>
-    <div class="card"><div class="plabel">Ton moteur</div><div class="mt" style="font-size:13px;color:#2a2e3d">La maîtrise et l'excellence. Tu te recharges dans un sujet creusé à fond, seul et au calme.</div></div>
-    <h3 class="sh">Lire ton prospect · SONCAS</h3>
-    <div class="soncas"><div><b>Sécurité</b> · preuves, garanties</div><div><b>Orgueil</b> · statut, exclusivité</div><div><b>Nouveauté</b> · innovation</div><div><b>Confort</b> · simple, sans effort</div><div><b>Argent</b> · ROI chiffré</div><div><b>Sympathie</b> · relation</div></div>`);
-}
-function pick(el){el.parentElement.querySelectorAll('.qopt').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+
 
 /* Gestes / Assistant / Communauté */
 function togGeste(id){var was=ST.gestes[id];ST.gestes[id]=!was;save();if(!was)xpToast(10);go('gestes');}
@@ -642,7 +696,7 @@ function renderOnboard(){var o=document.getElementById('onboard');if(!o)return;v
 function obNext(){if(obStep<ONBOARD.length-1){obStep++;renderOnboard();}else obDone();}
 function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');if(o)o.remove();}
 
-function enterApp(){var s=document.getElementById('splash');if(!s)return;s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);if(!ST.seen)setTimeout(startOnboarding,350);}
+function enterApp(){var s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);}if(!ST.diagDone)setTimeout(diagStart,300);}
 go('accueil');
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
