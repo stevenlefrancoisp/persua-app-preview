@@ -38,6 +38,10 @@
   .geste{background:linear-gradient(135deg,#eef0ff,#f5f6ff);border:1px solid #e0e3ff}
   .geste .k{font-size:11px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.4px}
   .geste .txt{font-size:15px;font-weight:600;margin-top:5px;line-height:1.35}
+  .hero-cta{background:linear-gradient(135deg,#3730a3,#4f46e5 55%,#6d63ff);color:#fff;border-radius:20px;padding:32px 22px;margin-bottom:14px;cursor:pointer;box-shadow:0 14px 34px rgba(79,70,229,.30)}
+  .hero-cta .big{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1.06}
+  .hero-cta .sub{font-size:13.5px;color:#dcdcf7;margin-top:10px;line-height:1.45}
+  .hero-cta .go{display:inline-block;margin-top:18px;background:rgba(255,255,255,.16);border-radius:12px;padding:11px 17px;font-size:14px;font-weight:700}
   .mod{display:flex;align-items:center;gap:12px;margin-bottom:11px}
   .node{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:none;color:#fff}
   .n-done{background:var(--green)}.n-cur{background:var(--indigo);box-shadow:0 0 0 5px #e0e3ff}.n-lock{background:#cbd0dc}
@@ -325,14 +329,12 @@ const GESTES=[
 function accueilHTML(){
   const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
   return `
+  ${!ST.test?`<div class="hero-cta pop" onclick="openProfil()"><div class="big">Commencer maintenant</div><div class="sub">Ton diagnostic de vendeur, 5 minutes pour révéler ton profil et ton style.</div><div class="go">Faire mon diagnostic →</div></div>`:''}
   ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution sur les 4 axes.</div></div>`:''}
   <div class="card geste"><div class="k">Ton geste du jour</div>
     <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
-  <h3 class="sh">Ton profil de vendeur</h3>
-  <div class="card" onclick="openProfil()" style="cursor:pointer">
-    ${ST.test?`<div class="pchips"><span class="pchip">DISC · C</span><span class="pchip">L'Expert</span><span class="pchip">ISTP</span></div><div class="mt">Tape pour revoir ton analyse.</div>`
-      :`<div class="nm">Passe ton diagnostic de vendeur</div><div class="mt">12 questions, 5 min. Révèle ton profil et ton style.</div><button class="cta">Commencer le test</button>`}
-  </div>
+  ${ST.test?`<h3 class="sh">Ton profil de vendeur</h3>
+  <div class="card" onclick="openProfil()" style="cursor:pointer"><div class="pchips"><span class="pchip">DISC · C</span><span class="pchip">L'Expert</span><span class="pchip">ISTP</span></div><div class="mt">Tape pour revoir ton analyse.</div></div>`:''}
   <h3 class="sh">Ton évolution · découverte, objections, closing, CALME</h3>
   ${dashboardHTML()}
   <h3 class="sh">Ta semaine</h3>
