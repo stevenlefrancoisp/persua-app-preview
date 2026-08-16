@@ -118,6 +118,18 @@
   .modnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
   .modnav button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 11px;font-size:12.5px;font-weight:600;color:var(--indigo);cursor:pointer}
   .modnav button:disabled{opacity:.35;color:var(--muted)}
+  .vthumb{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4f46e5,#3730a3);box-shadow:0 10px 26px rgba(79,70,229,.28)}
+  .vthumb.h1{background:linear-gradient(135deg,#0ea5e9,#4f46e5)}
+  .vthumb.h2{background:linear-gradient(135deg,#6d63ff,#8b5cf6)}
+  .vthumb.h3{background:linear-gradient(135deg,#4f46e5,#0e1020)}
+  .vthumb.h4{background:linear-gradient(135deg,#7c3aed,#4f46e5)}
+  .vthumb.locked{background:linear-gradient(135deg,#94a3b8,#64748b);cursor:default}
+  .vthumb-play{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.92);color:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:23px;padding-left:4px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .vthumb-cap{position:absolute;left:0;right:0;bottom:0;padding:14px;background:linear-gradient(transparent,rgba(0,0,0,.6));color:#fff}
+  .vthumb-num{font-size:11px;opacity:.85;font-weight:700}
+  .vthumb-title{font-size:15px;font-weight:700;line-height:1.2;margin-top:2px}
+  .vthumb-badge{font-size:11.5px;color:#dcdcf7;margin-top:6px;font-weight:600}
+  .vthumb-done{position:absolute;top:10px;right:10px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;z-index:2}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
   .tab .e{font-size:20px;filter:grayscale(1);opacity:.55}
   .tab.on{color:var(--indigo)}.tab.on .e{filter:none;opacity:1}
@@ -496,37 +508,39 @@ function closeModal(){document.getElementById('modal').classList.remove('open');
 function setM(tl,body){document.getElementById('mtl').textContent=tl;document.getElementById('mbd').innerHTML=body;}
 
 /* Module : contenu réel (vidéo / atelier 1:1 / fiche) + quiz réel */
-function openModule(mId){
-  const m=M(mId),req=reqV(m),watched=vDone(m),passed=!!ST.quiz[mId],canQuiz=allWatched(m);
-  const idx=MOD.findIndex(x=>x.id===mId),prevOk=idx>0&&unlocked(idx-1),nextOk=idx<MOD.length-1&&unlocked(idx+1);
+let curMod={id:null,i:0};
+function openModule(mId,idx){
+  const m=M(mId),items=m.V;
+  idx=idx||0;if(idx<0)idx=0;if(idx>items.length-1)idx=items.length-1;
+  curMod={id:mId,i:idx};
+  const v=items[idx],t=iType(v),done=!!ST.done[v.id],last=idx===items.length-1;
+  const passed=!!ST.quiz[mId],canQuiz=allWatched(m),midx=MOD.findIndex(x=>x.id===mId);
+  let itemHTML;
+  if(t==='atelier'){
+    itemHTML=`<div class="card" style="background:#fff7ed;border-color:#fed7aa;cursor:pointer" onclick="bookAtelier('${mId}','${v.id}')"><div class="nm">📅 ${v.title}</div><div class="mt" style="margin-top:4px">${v.num} · Atelier 1:1 avec Steven ${done?'· réservé ✓':'· réserver ↗'}</div></div>`;
+  } else if(t==='fiche'){
+    itemHTML=`<div class="card" style="background:#eff6ff;border-color:#bfdbfe;cursor:pointer" onclick="openFiche('${mId}','${v.id}')"><div class="nm">📄 ${v.title}</div><div class="mt" style="margin-top:4px">${v.num} · Fiche pratique ${done?'· lue ✓':'· tape pour lire'}</div></div>`;
+  } else if(!v.videoUrl){
+    itemHTML=`<div class="vthumb locked"><div class="vthumb-play">🔒</div><div class="vthumb-cap"><div class="vthumb-num">${v.num}</div><div class="vthumb-title">${v.title}</div><div class="vthumb-badge">bientôt disponible</div></div></div>`;
+  } else {
+    itemHTML=`<div class="vthumb h${midx%5}" onclick="watchVideo('${mId}','${v.id}')">${done?'<div class="vthumb-done">✓ vu</div>':''}<div class="vthumb-play">▶</div><div class="vthumb-cap"><div class="vthumb-num">${v.num}</div><div class="vthumb-title">${v.title}</div><div class="vthumb-badge">Regarder la vidéo ↗</div></div></div>
+    <button class="cta" onclick="openTrainV('${mId}','${v.id}')" style="margin-top:12px;background:#0e1020">🎮 Faire les exercices de cette vidéo</button>`;
+  }
   setM(m.num,`
-    <div class="modnav">
-      <button onclick="closeModal();go('parcours')">← Parcours</button>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button ${prevOk?`onclick="openModule('${prevOk?MOD[idx-1].id:''}')"`:'disabled'}>◀ Préc.</button>
-        <button ${nextOk?`onclick="openModule('${nextOk?MOD[idx+1].id:''}')"`:'disabled'}>Suiv. ▶</button>
-      </div>
-    </div>`);
-  setM(m.num,document.getElementById('mbd').innerHTML+`
-    <div class="card" style="background:#eef0ff;border-color:#e0e3ff"><div class="nm">${m.icon} ${m.t}</div><div class="mt">${m.sub}</div>
-      <div class="pbar" style="margin-top:8px"><i style="width:${req.length?Math.round(watched/req.length*100):0}%"></i></div>
-      <div class="mt" style="margin-top:5px">${watched}/${req.length} complétés${passed?' · quiz validé ✓':''}</div></div>
-    ${canQuiz?`<div class="card" style="background:#dcfce7;border-color:#bbf7d0;color:#166534"><b>✅ Vidéos vues.</b> Entraîne-toi, puis valide le quiz.</div>`:`<div class="card" style="background:#fff7ed;border-color:#fdba74;color:#9a3412"><b>👀 Regarde la vidéo avant de répondre.</b> Les questions te font travailler ce que la vidéo t'apprend. Le quiz de validation se débloque une fois les vidéos et fiches vues.</div>`}
-    <h3 class="sh">Le module, vidéo par vidéo</h3>
-    ${m.V.map(v=>{
-      const t=iType(v),done=!!ST.done[v.id];
-      if(t==='atelier') return `<div class="lrow" onclick="bookAtelier('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}" style="${done?'':'background:#fff7ed;color:#c2410c'}">${done?'✓':'📅'}</div><div class="g">${v.title}<div class="mt">${v.num} · Atelier 1:1 avec Steven · Réserver ↗</div></div></div>`;
-      if(t==='fiche') return `<div class="lrow" onclick="openFiche('${mId}','${v.id}')"><div class="chk2 ${done?'ok':''}" style="${done?'':'background:#eff6ff;color:#1d4ed8'}">${done?'✓':'📄'}</div><div class="g">${v.title}<div class="mt">${v.num} · Fiche pratique à lire</div></div></div>`;
-      if(!v.videoUrl) return `<div class="lrow" style="opacity:.55;cursor:default"><div class="chk2">🔒</div><div class="g">${v.title}<div class="mt">${v.num} · bientôt disponible</div></div></div>`;
-      return `<div class="card" style="padding:12px"><div style="display:flex;gap:11px;align-items:center"><div class="chk2 ${done?'ok':''}">${done?'✓':'▶'}</div><div style="flex:1"><div style="font-weight:600;font-size:13.5px;line-height:1.3">${v.title}</div><div class="mt">${v.num}</div></div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="cta" style="margin:0;flex:1;background:#eef0ff;color:#3730a3;font-size:12.5px;padding:10px" onclick="watchVideo('${mId}','${v.id}')">▶ Regarder ↗</button><button class="cta" style="margin:0;flex:1;background:#0e1020;font-size:12.5px;padding:10px" onclick="openTrainV('${mId}','${v.id}')">🎮 Exercice</button></div></div>`;
-    }).join('')}
-    <h3 class="sh" style="margin-top:16px">Valider le module</h3>
-    <button class="cta" style="margin-top:0;${canQuiz?'':'opacity:.45;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'✅ Refaire le quiz de validation':'✅ Quiz de validation ('+m.Q.length+' questions)'} ${canQuiz?'':'🔒'}</button>`);
-  openModal();
+    <div class="modnav"><button onclick="closeModal();go('parcours')">← Parcours</button><div class="mt" style="font-weight:600">${m.icon} ${m.num}</div></div>
+    <div class="mt" style="margin-bottom:6px">${idx+1} / ${items.length}${passed?' · module validé ✓':''}</div>
+    <div class="pbar" style="margin-bottom:14px"><i style="width:${Math.round((idx+1)/items.length*100)}%"></i></div>
+    ${itemHTML}
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="cta" style="flex:1;background:#eef0ff;color:#3730a3;${idx>0?'':'opacity:.4;pointer-events:none'}" onclick="openModule('${mId}',${idx-1})">◀ Préc.</button>
+      ${last?`<button class="cta" style="flex:1;${canQuiz?'':'opacity:.5;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'Refaire le quiz':'Quiz de validation'} ${canQuiz?'':'🔒'}</button>`:`<button class="cta" style="flex:1" onclick="openModule('${mId}',${idx+1})">Suivant ▶</button>`}
+    </div>
+    ${last&&!canQuiz?`<div class="mt" style="text-align:center;margin-top:8px">Regarde les vidéos et lis les fiches pour débloquer le quiz.</div>`:''}`);
+  openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
-function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.videoUrl){window.open(v.videoUrl,'_blank','noopener');}if(!ST.done[vId])xpToast(25);ST.done[vId]=true;save();refreshHeader();openModule(mId);}
-function bookAtelier(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.calUrl){window.open(v.calUrl,'_blank','noopener');}ST.done[vId]=true;save();refreshHeader();openModule(mId);}
-function openFiche(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId]=true;save();refreshHeader();setM(v.title,`<div class="fiche">${v.fiche||'<p>Fiche à venir.</p>'}</div><button class="cta" style="margin-top:16px" onclick="openModule('${mId}')">← Retour au module</button>`);document.querySelector('#modal .ov-body').scrollTop=0;}
+function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.videoUrl){window.open(v.videoUrl,'_blank','noopener');}if(!ST.done[vId])xpToast(25);ST.done[vId]=true;save();refreshHeader();openModule(mId,curMod.i);}
+function bookAtelier(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.calUrl){window.open(v.calUrl,'_blank','noopener');}ST.done[vId]=true;save();refreshHeader();openModule(mId,curMod.i);}
+function openFiche(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId]=true;save();refreshHeader();setM(v.title,`<div class="fiche">${v.fiche||'<p>Fiche à venir.</p>'}</div><button class="cta" style="margin-top:16px" onclick="openModule('${mId}',${curMod.i})">← Retour au module</button>`);document.querySelector('#modal .ov-body').scrollTop=0;}
 
 /* Entraînement : jeu d'apprentissage, correction immédiate à chaque carte (sans note, sans blocage) */
 let TR=null;
@@ -556,7 +570,7 @@ function finishTrain(){const m=M(TR.mId),n=TR.qs.length,rejouer=TR.vId?`openTrai
       <div style="font-size:34px;font-weight:800;color:#3730a3">${TR.score}/${n}</div>
       <div class="mt" style="color:#3730a3;font-weight:600">C'est un entraînement, pas une note. Rejoue autant que tu veux : chaque erreur t'apprend le mécanisme.</div></div>
     <button class="cta" onclick="${rejouer}">🎮 Rejouer</button>
-    <button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="openModule('${TR.mId}')">← Retour au module</button>`);
+    <button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="openModule('${TR.mId}',${curMod.i})">← Retour au module</button>`);
   document.querySelector('#modal .ov-body').scrollTop=0;
 }
 
