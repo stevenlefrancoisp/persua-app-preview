@@ -129,6 +129,12 @@
   .ob-dots span{width:7px;height:7px;border-radius:50%;background:#d7dbe6;transition:all .2s}
   .ob-dots span.on{background:var(--indigo);width:20px;border-radius:4px}
   .ob-skip{margin-top:12px;color:var(--muted);font-size:13px;cursor:pointer}
+  #splash{position:absolute;inset:0;z-index:70;background:linear-gradient(160deg,#3730a3,#4f46e5 58%,#6d63ff);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;cursor:pointer;transition:opacity .45s ease}
+  #splash.hide{opacity:0;pointer-events:none}
+  #splash .brand{color:rgba(255,255,255,.8);font-size:13px;font-weight:800;letter-spacing:4px;margin-bottom:26px}
+  #splash .cm{color:#fff;font-size:38px;font-weight:800;letter-spacing:-.8px;line-height:1.04}
+  #splash .tag{color:#dcdcf7;font-size:14px;margin-top:16px}
+  #splash .arrow{margin-top:38px;color:#fff;background:rgba(255,255,255,.16);border-radius:14px;padding:14px 30px;font-size:15px;font-weight:700}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -150,6 +156,13 @@
   <div class="overlay" id="modal">
     <div class="ov-bar"><span id="mtl"></span><button class="x" onclick="closeModal()">✕</button></div>
     <div class="ov-body" id="mbd"></div>
+  </div>
+
+  <div id="splash" onclick="enterApp()">
+    <div class="brand">PERSUA</div>
+    <div class="cm">Commencer<br>maintenant</div>
+    <div class="tag">Ta formation neurovente</div>
+    <div class="arrow">Entrer →</div>
   </div>
 </div>
 
@@ -329,12 +342,14 @@ const GESTES=[
 function accueilHTML(){
   const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
   return `
-  ${!ST.test?`<div class="hero-cta pop" onclick="openProfil()"><div class="big">Commencer maintenant</div><div class="sub">Ton diagnostic de vendeur, 5 minutes pour révéler ton profil et ton style.</div><div class="go">Faire mon diagnostic →</div></div>`:''}
   ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution sur les 4 axes.</div></div>`:''}
   <div class="card geste"><div class="k">Ton geste du jour</div>
     <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
-  ${ST.test?`<h3 class="sh">Ton profil de vendeur</h3>
-  <div class="card" onclick="openProfil()" style="cursor:pointer"><div class="pchips"><span class="pchip">DISC · C</span><span class="pchip">L'Expert</span><span class="pchip">ISTP</span></div><div class="mt">Tape pour revoir ton analyse.</div></div>`:''}
+  <h3 class="sh">Ton profil de vendeur</h3>
+  <div class="card" onclick="openProfil()" style="cursor:pointer">
+    ${ST.test?`<div class="pchips"><span class="pchip">DISC · C</span><span class="pchip">L'Expert</span><span class="pchip">ISTP</span></div><div class="mt">Tape pour revoir ton analyse.</div>`
+      :`<div class="nm">Passe ton diagnostic de vendeur</div><div class="mt">12 questions, 5 min. Révèle ton profil et ton style.</div><button class="cta">Commencer le test</button>`}
+  </div>
   <h3 class="sh">Ton évolution · découverte, objections, closing, CALME</h3>
   ${dashboardHTML()}
   <h3 class="sh">Ta semaine</h3>
@@ -627,8 +642,8 @@ function renderOnboard(){var o=document.getElementById('onboard');if(!o)return;v
 function obNext(){if(obStep<ONBOARD.length-1){obStep++;renderOnboard();}else obDone();}
 function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');if(o)o.remove();}
 
+function enterApp(){var s=document.getElementById('splash');if(!s)return;s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);if(!ST.seen)setTimeout(startOnboarding,350);}
 go('accueil');
-if(!ST.seen)setTimeout(startOnboarding,350);
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
 </body>
