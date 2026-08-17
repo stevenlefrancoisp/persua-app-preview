@@ -11,6 +11,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <title>Persua · mon parcours</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{--indigo:#4f46e5;--indigo-d:#3730a3;--ink:#0e1020;--muted:#7a7f92;--line:#eceef6;
     --bg:#f6f7fb;--card:#fff;--green:#16a34a;--amber:#d97706;--red:#dc2626;--warm:#f59e0b;}
@@ -166,6 +167,13 @@
   #splash .cm{color:#fff;font-size:38px;font-weight:800;letter-spacing:-.8px;line-height:1.04}
   #splash .tag{color:#dcdcf7;font-size:14px;margin-top:16px}
   #splash .arrow{margin-top:38px;color:#fff;background:rgba(255,255,255,.16);border-radius:14px;padding:14px 30px;font-size:15px;font-weight:700}
+  #auth{position:absolute;inset:0;z-index:80;background:linear-gradient(160deg,#3730a3,#4f46e5 58%,#6d63ff);display:none;align-items:center;justify-content:center;padding:26px}
+  .auth-card{background:#fff;border-radius:22px;padding:26px 22px;width:100%;max-width:340px}
+  .auth-brand{color:var(--indigo);font-size:13px;font-weight:800;letter-spacing:4px;text-align:center;margin-bottom:10px}
+  .auth-t{font-size:20px;font-weight:800;color:var(--ink);text-align:center;margin-bottom:18px}
+  .auth-card input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:13px;font-size:16px;margin-bottom:10px;background:#fff}
+  .auth-err{font-size:12.5px;color:#dc2626;min-height:16px;margin-bottom:6px;text-align:center}
+  .auth-switch{text-align:center;margin-top:14px;color:var(--indigo);font-size:13px;font-weight:600;cursor:pointer}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -196,6 +204,7 @@
     <div class="tag">Ta formation neurovente</div>
     <div class="arrow">Entrer →</div>
   </div>
+  <div id="auth"></div>
 </div>
 
 <script>
@@ -207,10 +216,31 @@ function mountCal(){ if(window.Cal){ Cal("inline", { elementOrSelector: "#cal-in
 function scrollToCal(){var s=document.getElementById('screen'),c=document.getElementById('cal-inline');if(!s||!c)return;var top=c.getBoundingClientRect().top-s.getBoundingClientRect().top+s.scrollTop-8;s.scrollTo({top:top,behavior:'smooth'});}
 
 /* État persistant */
+/* ===== Supabase : si configuré -> vraie app (auth + backend), sinon -> démo localStorage ===== */
+const SUPA_URL=''; const SUPA_ANON='';   /* <-- remplir pour app.persua-neurovente (anon key = publique, RLS protège) */
+const isSupa = !!(SUPA_URL && SUPA_ANON && window.supabase);
+const sb = isSupa ? window.supabase.createClient(SUPA_URL, SUPA_ANON) : null;
+let syncT=null;
+function syncRemote(){ if(!isSupa||!sb._uid) return; clearTimeout(syncT); syncT=setTimeout(function(){
+  sb.from('profiles').update({ app_progress:{done:ST.done,quiz:ST.quiz,gestes:ST.gestes,exoDone:ST.exoDone,assist:ST.assist,rdv:ST.rdv,seen:ST.seen}, streak:ST.streak }).eq('id',sb._uid).then(function(){},function(){});
+},800); }
+async function loadUserData(){
+  var u=(await sb.auth.getUser()).data.user; if(!u) return; sb._uid=u.id;
+  var r=await sb.from('profiles').select('*').eq('id',u.id).single(); var prof=r.data;
+  if(prof){
+    if(typeof prof.streak==='number') ST.streak=prof.streak;
+    if(prof.positioning && Object.keys(prof.positioning).length){ ST.diagAns=prof.positioning; try{ST.diag=computeDiag(prof.positioning);ST.diagDone=true;}catch(e){} }
+    if(prof.app_progress) Object.keys(prof.app_progress).forEach(function(k){ ST[k]=prof.app_progress[k]; });
+    window._fn=prof.first_name||'';
+  }
+  var rb=await sb.from('bilans').select('*').order('taken_at');
+  if(rb.data) ST.bilans=rb.data.map(function(b){return {t:new Date(b.taken_at).getTime(),d:b.decouverte,o:b.objections,c:b.closing,m:b.calme};});
+  save();
+}
 const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
 ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false; ST.diagAns=ST.diagAns||{}; ST.diag=ST.diag||null; ST.diagDone=ST.diagDone||false; ST.streak=ST.streak||0; ST.lastDay=ST.lastDay||0; ST.exoDone=ST.exoDone||{};
-function save(){localStorage.setItem(KEY,JSON.stringify(ST));}
+function save(){localStorage.setItem(KEY,JSON.stringify(ST));if(isSupa)syncRemote();}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
 (function(){var h=(location.hash+location.search).toLowerCase();if(h.indexOf('eleve')>=0||h.indexOf('student')>=0){ST.eleve=true;save();}if(h.indexOf('open')>=0||h.indexOf('admin')>=0){ST.eleve=false;save();}if(h.indexOf('boost')>=0){ST.streak=367;ST.lastDay=Math.floor(Date.now()/86400000);ST.levelForce=327;ST.eleve=false;save();}})();
 
@@ -386,6 +416,7 @@ function finishBilan(){const sc={d:0,o:0,c:0,m:0},tot={d:0,o:0,c:0,m:0};
   function wsc(ax){return Math.max(0,Math.min(10,Math.round((sc[ax]/tot[ax]*10)*(0.4+0.6*axProg(ax)))));}
   const b={t:Date.now(),d:wsc('d'),o:wsc('o'),c:wsc('c'),m:wsc('m')};
   ST.bilans.push(b);save();xpToast(30);refreshHeader();
+  if(isSupa&&sb._uid)sb.from('bilans').insert({user_id:sb._uid,decouverte:b.d,objections:b.o,closing:b.c,calme:b.m}).then(function(){},function(){});
   const p=prevBilan();
   const msg=p?"Compare à ton dernier bilan, les flèches montrent ton évolution.":"C'est ton point de départ. Regarde tes axes à travailler ci-dessous.";
   const weak=AXES.filter(function(a){return b[a[0]]<8;}).sort(function(x,y){return b[x[0]]-b[y[0]];});
@@ -698,7 +729,7 @@ function renderDiag(){var i=ST.DR.i,q=POSQ[i],picked=ST.diagAns[q.id];
 function diagAns(id,val){ST.diagAns[id]=val;save();ST.DR.i=Math.min(POSQ.length-1,ST.DR.i);renderDiag();}
 function diagNav(d){ST.DR.i+=d;renderDiag();}
 function diagNext(){if(ST.DR.i<POSQ.length-1){ST.DR.i++;renderDiag();}else diagFinish();}
-function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=true;save();refreshHeader();xpToast(60);openProfil();}
+function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=true;save();refreshHeader();xpToast(60);if(isSupa&&sb._uid)sb.from('profiles').update({positioning:ST.diagAns,positioning_submitted_at:new Date().toISOString()}).eq('id',sb._uid).then(function(){},function(){});openProfil();}
 /* ---- Section Profil : résultats des deux tests + notation (dashboard déplacé ici) ---- */
 function openProfil(){
   var d=ST.diag;
@@ -757,8 +788,37 @@ function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');i
 
 function enterApp(){var s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);}if(!ST.diagDone)setTimeout(diagStart,300);}
 function touchStreak(){var t=dayNum();if(ST.lastDay===t)return;if(ST.lastDay===t-1)ST.streak=(ST.streak||0)+1;else ST.streak=1;ST.lastDay=t;save();}
-touchStreak();
-go('parcours');
+/* ---- Auth (vraie app, quand Supabase configuré) ---- */
+function authErr(m){var e=document.getElementById('au-err');if(e)e.textContent=m;}
+function showAuth(mode){mode=mode||'login';var o=document.getElementById('auth');o.style.display='flex';
+  o.innerHTML=`<div class="auth-card"><div class="auth-brand">PERSUA</div><div class="auth-t">${mode==='login'?'Connexion':'Créer ton compte'}</div>
+    <input id="au-email" type="email" inputmode="email" placeholder="Email" autocomplete="email">
+    <input id="au-pass" type="password" placeholder="Mot de passe" autocomplete="${mode==='login'?'current-password':'new-password'}">
+    <div id="au-err" class="auth-err"></div>
+    <button class="cta" onclick="authSubmit('${mode}')">${mode==='login'?'Se connecter':'Créer mon compte'}</button>
+    <div class="auth-switch" onclick="showAuth('${mode==='login'?'signup':'login'}')">${mode==='login'?'Pas encore de compte ? En créer un':'Déjà un compte ? Se connecter'}</div></div>`;
+}
+function authSubmit(mode){var email=(document.getElementById('au-email')||{}).value,pass=(document.getElementById('au-pass')||{}).value;
+  if(!email||!pass){authErr('Email et mot de passe requis.');return;}authErr('…');
+  var pr=mode==='login'?sb.auth.signInWithPassword({email:email,password:pass}):sb.auth.signUp({email:email,password:pass});
+  pr.then(function(res){if(res.error){authErr(res.error.message);return;}
+    if(mode==='signup'&&!res.data.session){authErr('Compte créé. Confirme ton email puis connecte-toi.');return;}
+    document.getElementById('auth').style.display='none';
+    loadUserData().then(function(){touchStreak();go('parcours');});
+  },function(){authErr('Erreur, réessaie.');});
+}
+function logout(){if(isSupa&&sb){sb.auth.signOut().then(function(){location.reload();});}}
+/* ---- Démarrage ---- */
+if(isSupa){
+  var _sp=document.getElementById('splash');if(_sp)_sp.style.display='none';
+  sb.auth.getSession().then(function(res){
+    if(res.data&&res.data.session){loadUserData().then(function(){touchStreak();go('parcours');});}
+    else{go('parcours');showAuth('login');}
+  });
+}else{
+  touchStreak();
+  go('parcours');
+}
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
 </body>
