@@ -405,17 +405,17 @@ const GESTES=[
 function accueilHTML(){
   const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
   return `
+  <div class="hero-cta pop" onclick="go('parcours')"><div class="big">Continue ta formation</div><div class="sub">Ton parcours neurovente, module par module. C'est le cœur de ce que tu as rejoint.</div><div class="go">Ouvrir ma formation →</div></div>
   ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution.</div></div>`:''}
   <div class="card geste"><div class="k">Ton geste du jour</div>
     <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
-  <div class="card" style="cursor:pointer;background:linear-gradient(135deg,#eef0ff,#f5f6ff);border-color:#e0e3ff" onclick="go('parcours')">
-    <div class="nm">🗺️ Reprendre ma formation</div><div class="mt">Continue ton parcours neurovente, module par module.</div></div>
+  <div class="card" style="cursor:pointer" onclick="openProfil()"><div class="nm">📊 Ton tableau de bord</div><div class="mt">Score, progression, série, tes 4 axes. Tape pour voir.</div></div>
   <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven, quand tu veux</div>
     <button class="cta" onclick="go('rdv')">Réserver ma séance</button></div>`;
 }
 function parcoursHTML(){
-  const head=!ST.eleve?`<h3 class="sh">Accès complet · tous les modules ouverts</h3>`
-    :`<h3 class="sh">Ton parcours · niveau ${level()} · valide le quiz ET utilise l'app pour débloquer la suite</h3>`;
+  const head=!ST.eleve?`<h3 class="sh">Ta formation · tous les modules ouverts</h3>`
+    :`<h3 class="sh">Ta formation · niveau ${level()} · valide le quiz ET utilise l'app pour débloquer la suite</h3>`;
   return head+
    MOD.map((m,i)=>{
      const done=!!ST.quiz[m.id], unl=unlocked(i);
@@ -539,7 +539,7 @@ function communauteHTML(){
 const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,gestes:gestesHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML};
 
 /* Navigation */
-const TABS=[["accueil","🏠","Accueil"],["parcours","🗺️","Parcours"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];
+const TABS=[["parcours","🎓","Formation"],["accueil","🏠","Accueil"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];
 document.getElementById('tabbar').innerHTML=TABS.map((t,i)=>`<div class="tab${i===0?' on':''}" data-k="${t[0]}"><span class="e">${t[1]}</span><span>${t[2]}</span></div>`).join('');
 function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);refreshHeader();}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.k)));
@@ -701,9 +701,8 @@ function diagNext(){if(ST.DR.i<POSQ.length-1){ST.DR.i++;renderDiag();}else diagF
 function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=true;save();refreshHeader();xpToast(60);openProfil();}
 /* ---- Section Profil : résultats des deux tests + notation (dashboard déplacé ici) ---- */
 function openProfil(){
-  if(!ST.diag){diagStart();return;}
   var d=ST.diag;
-  setM('Ton profil',`
+  var perso=d?`
     <div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0">
       <div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton archétype de vendeur</div>
       <div style="font-size:23px;font-weight:800;margin-top:4px">${d.arch.name}</div>
@@ -719,11 +718,13 @@ function openProfil(){
     <div class="card"><div class="plabel">Ton moteur</div><div class="mt" style="color:#2a2e3d;font-size:13px">Ce qui te fait vibrer : ${d.moteur}.</div></div>
     ${d.son&&d.son.length?`<div class="card"><div class="plabel">Tes leviers d'achat (SONCAS)</div>${d.son.map(function(s){return `<div class="mt" style="color:#2a2e3d;font-size:12.5px;margin-top:5px"><b>${s.label}</b> · ${s.desc}</div>`;}).join('')}</div>`:''}
     <h3 class="sh">Ton positionnement terrain</h3>
-    <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>
+    <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>`
+  :`<div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0;cursor:pointer" onclick="diagStart()"><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton profil de vendeur</div><div style="font-size:20px;font-weight:800;margin-top:4px">Fais ton diagnostic</div><div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">5 min, réponses 1→5. Révèle ton archétype, ton profil DISC et tes leviers d'achat.</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:700">Commencer →</div></div>`;
+  setM('Ton profil',perso+`
     <h3 class="sh">Ton tableau de bord</h3>
     ${kpiDashHTML()}
     ${bilanDue()?`<button class="cta" style="margin-top:12px" onclick="openBilan()">📊 Faire mon bilan de la semaine</button>`:''}
-    <button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="diagStart()">↻ Refaire mon diagnostic</button>
+    ${d?`<button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="diagStart()">↻ Refaire mon diagnostic</button>`:''}
     <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>`);
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
@@ -757,7 +758,7 @@ function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');i
 function enterApp(){var s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);}if(!ST.diagDone)setTimeout(diagStart,300);}
 function touchStreak(){var t=dayNum();if(ST.lastDay===t)return;if(ST.lastDay===t-1)ST.streak=(ST.streak||0)+1;else ST.streak=1;ST.lastDay=t;save();}
 touchStreak();
-go('accueil');
+go('parcours');
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
 </body>
