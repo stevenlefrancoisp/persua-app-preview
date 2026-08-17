@@ -166,7 +166,7 @@
       <div class="profil-round" onclick="openProfil()"><div class="pr-circle">M</div><div class="pr-lbl">Profil</div></div>
     </div>
     <div class="hdrrow">
-      <div class="chip">🔥 <b>12</b> jours</div>
+      <div class="chip">🔥 <b id="streak">1</b> jours</div>
       <div class="chip">⭐ <span id="lvl">Niveau 1</span></div>
     </div>
   </div>
@@ -197,7 +197,7 @@ function scrollToCal(){var s=document.getElementById('screen'),c=document.getEle
 /* État persistant */
 const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
-ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false; ST.diagAns=ST.diagAns||{}; ST.diag=ST.diag||null; ST.diagDone=ST.diagDone||false;
+ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false; ST.diagAns=ST.diagAns||{}; ST.diag=ST.diag||null; ST.diagDone=ST.diagDone||false; ST.streak=ST.streak||0; ST.lastDay=ST.lastDay||0; ST.exoDone=ST.exoDone||{};
 function save(){localStorage.setItem(KEY,JSON.stringify(ST));}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
 (function(){var h=(location.hash+location.search).toLowerCase();if(h.indexOf('eleve')>=0||h.indexOf('student')>=0){ST.eleve=true;save();}if(h.indexOf('open')>=0||h.indexOf('admin')>=0){ST.eleve=false;save();}})();
@@ -218,7 +218,8 @@ function level(){return levelOf(xp());}
 function reqLevel(i){return i+1;}
 function unlocked(i){return !ST.eleve||i===0||(!!ST.quiz[MOD[i-1].id] && xp()>=LV[i]);}
 function lockReason(i){if(i>0 && !ST.quiz[MOD[i-1].id])return `valide d'abord le ${MOD[i-1].num}`;return `encore ${Math.max(0,LV[i]-xp())} XP en utilisant l'app`;}
-function refreshHeader(){var l=document.getElementById('lvl');if(l)l.textContent='Niveau '+level();}
+function refreshHeader(){var l=document.getElementById('lvl');if(l)l.textContent='Niveau '+level();var s=document.getElementById('streak');if(s)s.textContent=ST.streak;}
+function exosCount(){return Object.keys(ST.exoDone||{}).length;}
 function xpToast(n){}
 
 /* Bilan hebdomadaire + tableau de bord d'évolution (unique par appareil via localStorage) */
@@ -564,6 +565,7 @@ function renderTrain(){
 function pickTrain(oi){if(TR.rev[TR.i])return;TR.ans[TR.i]=oi;TR.rev[TR.i]=true;if(oi===TR.qs[TR.i].a)TR.score++;renderTrain();}
 function trainNav(){TR.i++;renderTrain();}
 function finishTrain(){const m=M(TR.mId),n=TR.qs.length,rejouer=TR.vId?`openTrainV('${TR.mId}','${TR.vId}')`:`openTrain('${TR.mId}')`;
+  if(TR.vId){ST.exoDone=ST.exoDone||{};ST.exoDone[TR.vId]=true;save();}
   setM('Exercice · '+m.num,`
     <div class="card" style="text-align:center;background:#eef0ff;border-color:#e0e3ff">
       <div style="font-size:34px;font-weight:800;color:#3730a3">${TR.score}/${n}</div>
@@ -710,6 +712,8 @@ function obNext(){if(obStep<ONBOARD.length-1){obStep++;renderOnboard();}else obD
 function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');if(o)o.remove();}
 
 function enterApp(){var s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);}if(!ST.diagDone)setTimeout(diagStart,300);}
+function touchStreak(){var t=dayNum();if(ST.lastDay===t)return;if(ST.lastDay===t-1)ST.streak=(ST.streak||0)+1;else ST.streak=1;ST.lastDay=t;save();}
+touchStreak();
 go('accueil');
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
