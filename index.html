@@ -175,6 +175,23 @@
   .auth-err{font-size:12.5px;color:#dc2626;min-height:16px;margin-bottom:6px;text-align:center}
   .auth-switch{text-align:center;margin-top:14px;color:var(--indigo);font-size:13px;font-weight:600;cursor:pointer}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  /* --- Briques portées (check-in, journal, ressources, coach) --- */
+  .moodrow{display:flex;gap:6px;margin-top:10px}
+  .moodb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 3px;cursor:pointer;min-height:44px}
+  .moodb .me{font-size:20px}.moodb .ml{font-size:9.5px;color:var(--muted);line-height:1.1;text-align:center}
+  .moodb.on{border-color:var(--indigo);background:#eef0ff}.moodb.on .ml{color:var(--indigo);font-weight:700}
+  .jinp{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px;background:#fff;font-family:inherit}
+  textarea.jinp{resize:vertical}
+  .jres{display:flex;gap:6px}.jresb{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 4px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;min-height:44px}
+  .jresb.on{border-color:var(--rc);color:var(--rc);background:color-mix(in srgb,var(--rc) 10%,#fff)}
+  .jtags{display:flex;flex-wrap:wrap;gap:6px}.jtag{border:1px solid var(--line);background:#fff;border-radius:20px;padding:7px 11px;font-size:12px;color:var(--muted);cursor:pointer}
+  .jtag.on{border-color:var(--indigo);background:#eef0ff;color:var(--indigo);font-weight:700}
+  .jbadge{display:inline-block;color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;margin-right:5px;margin-top:3px}
+  .jbadge.tg{background:#eef0ff;color:#3730a3}
+  .resitem{display:flex;align-items:center;gap:11px;cursor:pointer}.resitem .g{flex:1;min-width:0}.resico{font-size:24px;width:34px;text-align:center;flex:none}
+  .caform{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;background:#fff;font-family:inherit;line-height:1.5;resize:vertical}
+  .toastmini{position:fixed;left:50%;bottom:96px;transform:translate(-50%,14px);background:#0e1020;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.28);opacity:0;transition:opacity .28s,transform .28s;z-index:999;max-width:82%;text-align:center}
+  .toastmini.show{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
@@ -232,14 +249,36 @@ async function loadUserData(){
     if(prof.positioning && Object.keys(prof.positioning).length){ ST.diagAns=prof.positioning; try{ST.diag=computeDiag(prof.positioning);ST.diagDone=true;}catch(e){} }
     if(prof.app_progress) Object.keys(prof.app_progress).forEach(function(k){ ST[k]=prof.app_progress[k]; });
     window._fn=prof.first_name||'';
+    ST.coach = prof.role==='coach';
   }
-  var rb=await sb.from('bilans').select('*').order('taken_at');
+  var rb=await sb.from('bilans').select('*').eq('user_id',u.id).order('taken_at');
   if(rb.data) ST.bilans=rb.data.map(function(b){return {t:new Date(b.taken_at).getTime(),d:b.decouverte,o:b.objections,c:b.closing,m:b.calme};});
+  /* ressources partagées (tous) */
+  try{ var rr=await sb.from('resources').select('id,title,description,icon,url,sort').order('sort'); if(rr.data) ST.resources=rr.data; }catch(e){}
+  if(ST.coach){
+    /* Vue coach : liste des élèves + agrégats humeur/journal */
+    var rs=await sb.from('profiles').select('id,first_name,email,streak,role').eq('role','eleve');
+    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,email:s.email,streak:s.streak,lastMood:null,lastMoodDay:'',journalCount:0};});
+    var byId={}; students.forEach(function(s){byId[s.id]=s;});
+    var ac=await sb.from('checkins').select('user_id,day,mood');
+    (ac.data||[]).forEach(function(c){var s=byId[c.user_id];if(s&&(!s.lastMoodDay||c.day>s.lastMoodDay)){s.lastMoodDay=c.day;s.lastMood=c.mood;}});
+    var aj=await sb.from('journal_entries').select('user_id,occurred_at');
+    (aj.data||[]).forEach(function(j){var s=byId[j.user_id];if(s)s.journalCount++;});
+    students.sort(function(a,b){var fa=(a.lastMood==='tension'||a.lastMood==='hesitant')?0:1,fb=(b.lastMood==='tension'||b.lastMood==='hesitant')?0:1;return fa-fb;});
+    ST.students=students;
+  }else{
+    /* Vue élève : son journal + ses check-ins */
+    var rj=await sb.from('journal_entries').select('*').eq('user_id',u.id).order('occurred_at',{ascending:false});
+    if(rj.data) ST.journal=rj.data;
+    var rc=await sb.from('checkins').select('day,mood').eq('user_id',u.id);
+    if(rc.data){ST.checkins={};rc.data.forEach(function(c){ST.checkins[c.day]=c.mood;});}
+  }
   save();
 }
 const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
 ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false; ST.diagAns=ST.diagAns||{}; ST.diag=ST.diag||null; ST.diagDone=ST.diagDone||false; ST.streak=ST.streak||0; ST.lastDay=ST.lastDay||0; ST.exoDone=ST.exoDone||{};
+ST.checkins=ST.checkins||{}; ST.journal=ST.journal||[]; ST.resources=ST.resources||[]; ST.coach=ST.coach||false; ST.students=ST.students||[];
 function save(){localStorage.setItem(KEY,JSON.stringify(ST));if(isSupa)syncRemote();}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
 (function(){var h=(location.hash+location.search).toLowerCase();if(h.indexOf('eleve')>=0||h.indexOf('student')>=0){ST.eleve=true;save();}if(h.indexOf('open')>=0||h.indexOf('admin')>=0){ST.eleve=false;save();}if(h.indexOf('boost')>=0){ST.streak=367;ST.lastDay=Math.floor(Date.now()/86400000);ST.levelForce=327;ST.eleve=false;save();}})();
@@ -437,12 +476,16 @@ function accueilHTML(){
   const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
   return `
   <div class="hero-cta pop" onclick="go('parcours')"><div class="big">Continue ta formation</div><div class="sub">Ton parcours neurovente, module par module. C'est le cœur de ce que tu as rejoint.</div><div class="go">Ouvrir ma formation →</div></div>
+  ${moodWidget()}
   ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution.</div></div>`:''}
   <div class="card geste"><div class="k">Ton geste du jour</div>
     <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
   <div class="card" style="cursor:pointer" onclick="openProfil()"><div class="nm">📊 Ton tableau de bord</div><div class="mt">Score, progression, série, tes 4 axes. Tape pour voir.</div></div>
+  <div class="card" style="cursor:pointer" onclick="openJournal()"><div class="nm">📓 Ton journal de vente</div><div class="mt">Note tes RDV à chaud. C'est ce qui recâble ton cerveau, et Steven suit ta progression.</div></div>
+  <div class="card" style="cursor:pointer" onclick="openResources()"><div class="nm">📁 Tes ressources</div><div class="mt">Les documents et outils que Steven met à ta disposition.</div></div>
   <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven, quand tu veux</div>
-    <button class="cta" onclick="go('rdv')">Réserver ma séance</button></div>`;
+    <button class="cta" onclick="go('rdv')">Réserver ma séance</button></div>
+  ${isSupa?`<div class="mt" style="text-align:center;padding:14px 0"><span onclick="logout()" style="color:var(--muted);cursor:pointer;text-decoration:underline">Déconnexion</span></div>`:''}`;
 }
 function parcoursHTML(){
   const head=!ST.eleve?`<h3 class="sh">Ta formation · tous les modules ouverts</h3>`
@@ -567,13 +610,163 @@ function communauteHTML(){
   return `<div class="composer"><input id="cinp" placeholder="Partage une victoire, une question, un doute..."><div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><div style="display:flex;gap:6px"><span class="tagchip">🏆 Victoire</span><span class="tagchip">❓ Question</span></div><button class="cta" style="width:auto;margin:0;padding:8px 15px" onclick="publier()">Publier</button></div></div>`+
    posts.map(p=>`<div class="post"><div class="ph"><div class="av" ${p.bg?`style="background:${p.bg}"`:''}>${p.av}</div><div><div class="who">${p.who}</div><div class="when">${p.when}</div></div></div><div class="body">${p.body}</div><div class="acts"><span>👏 ${p.k}</span><span>💬 ${p.c}</span></div></div>`).join('');
 }
-const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,gestes:gestesHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML};
+/* ================= Briques portées de l'espace membre ================= */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+function todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function toastMini(msg){var t=document.createElement('div');t.className='toastmini';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.classList.add('show');},10);setTimeout(function(){t.classList.remove('show');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},320);},2200);}
+function curTab(){var t=document.querySelector('.tab.on');return t?t.dataset.k:'';}
+
+/* ---- Check-in humeur (élève) ---- */
+const MOODS=[{k:'tension',e:'😣',l:'Sous tension'},{k:'hesitant',e:'😕',l:'Hésitant'},{k:'pose',e:'🙂',l:'Posé'},{k:'confiance',e:'😎',l:'En confiance'},{k:'top',e:'🚀',l:'Au top'}];
+function moodLabel(k){var m=MOODS.find(function(x){return x.k===k;});return m?m.e+' '+m.l:k;}
+function moodWidget(){var cur=ST.checkins[todayISO()];return '<div class="card"><div class="nm">Ton état avant tes RDV du jour</div><div class="moodrow">'+MOODS.map(function(m){return '<button class="moodb '+(cur===m.k?'on':'')+'" onclick="setMood(\''+m.k+'\')"><span class="me">'+m.e+'</span><span class="ml">'+m.l+'</span></button>';}).join('')+'</div></div>';}
+function setMood(k){var d=todayISO();ST.checkins[d]=k;touchStreak();save();if(isSupa&&sb._uid)sb.from('checkins').upsert({user_id:sb._uid,day:d,mood:k}).then(function(){},function(){});toastMini('Check-in enregistré. Bonne séance 🎯');if(curTab()==='accueil')go('accueil');}
+
+/* ---- Journal de vente (élève) ---- */
+const JTAGS=['Menace perçue','Marqueur somatique','Système 1','Ancrage prix','Preuve sociale','Aversion perte','Réciprocité','Effet de halo'];
+const JRES={signe:{l:'✅ Signé',c:'#16a34a'},relancer:{l:'À relancer',c:'#d97706'},perdu:{l:'Perdu',c:'#6b7280'}};
+var JF={result:'signe',tags:[],title:'',note:''};
+function openJournal(){JF={result:'signe',tags:[],title:'',note:''};renderJournal();openModal();}
+function syncJForm(){var t=document.getElementById('j-title'),n=document.getElementById('j-note');if(t)JF.title=t.value;if(n)JF.note=n.value;}
+function jSetRes(k){syncJForm();JF.result=k;renderJournal();}
+function jTag(i){var t=JTAGS[i];syncJForm();var j=JF.tags.indexOf(t);if(j>=0)JF.tags.splice(j,1);else JF.tags.push(t);renderJournal();}
+function renderJournal(){
+  var hist=(ST.journal||[]).slice().sort(function(a,b){return new Date(b.occurred_at)-new Date(a.occurred_at);});
+  var histHTML=hist.length?hist.map(function(e){var r=JRES[e.result]||{l:e.result,c:'#6b7280'};var d=new Date(e.occurred_at);return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><div class="nm">'+esc(e.title)+'</div><span class="mt" style="flex:none">'+d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})+'</span></div><div style="margin:5px 0">'+'<span class="jbadge" style="background:'+r.c+'">'+r.l+'</span>'+(e.tags||[]).map(function(t){return '<span class="jbadge tg">'+esc(t)+'</span>';}).join('')+'</div>'+(e.note?'<div class="mt">'+esc(e.note)+'</div>':'')+'</div>';}).join(''):'<div class="card"><div class="mt">Rien encore. Ta première entrée après ton prochain appel.</div></div>';
+  setM('Ton journal de vente',
+    '<div class="mt" style="margin-bottom:12px">Note chaque RDV à chaud. Le cerveau se recâble par la répétition, et Steven suit ton évolution.</div>'+
+    '<div class="card"><div class="plabel">Titre du RDV</div>'+
+    '<input id="j-title" class="jinp" placeholder="Ex : RDV DAF industrie, relance devis…" value="'+esc(JF.title)+'">'+
+    '<div class="plabel" style="margin-top:12px">Résultat</div>'+
+    '<div class="jres">'+Object.keys(JRES).map(function(k){return '<button class="jresb '+(JF.result===k?'on':'')+'" style="--rc:'+JRES[k].c+'" onclick="jSetRes(\''+k+'\')">'+JRES[k].l+'</button>';}).join('')+'</div>'+
+    '<div class="plabel" style="margin-top:12px">Mécanismes utilisés</div>'+
+    '<div class="jtags">'+JTAGS.map(function(t,i){return '<button class="jtag '+(JF.tags.indexOf(t)>=0?'on':'')+'" onclick="jTag('+i+')">'+t+'</button>';}).join('')+'</div>'+
+    '<div class="plabel" style="margin-top:12px">Ce qui a marché, ton ressenti</div>'+
+    '<textarea id="j-note" class="jinp" rows="3" placeholder="Ce que tu retiens…">'+esc(JF.note)+'</textarea>'+
+    '<button class="cta" style="margin-top:14px" onclick="saveJournal()">Enregistrer l\'entrée</button></div>'+
+    '<h3 class="sh">Ton historique · '+hist.length+'</h3>'+histHTML);
+}
+function saveJournal(){
+  syncJForm();
+  if(!JF.title||!JF.title.trim()){toastMini('Ajoute un titre.');return;}
+  var entry={id:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'j'+Date.now(),occurred_at:new Date().toISOString(),title:JF.title.trim(),tags:JF.tags.slice(),result:JF.result,note:(JF.note||'').trim()};
+  ST.journal=ST.journal||[];ST.journal.unshift(entry);save();
+  if(isSupa&&sb._uid)sb.from('journal_entries').insert({user_id:sb._uid,occurred_at:entry.occurred_at,title:entry.title,tags:entry.tags,result:entry.result,note:entry.note}).select('id').single().then(function(r){if(r&&r.data&&r.data.id)entry.id=r.data.id;},function(){});
+  JF={result:'signe',tags:[],title:'',note:''};renderJournal();toastMini('Entrée enregistrée ✅');
+}
+
+/* ---- Ressources (élève lit, coach alimente) ---- */
+function openResources(){renderResources();openModal();}
+function renderResources(){
+  var rs=ST.resources||[];
+  var list=rs.length?rs.map(function(r,i){return '<div class="card resitem" onclick="openRes('+i+')"><div class="resico">'+esc(r.icon||'📄')+'</div><div class="g"><div class="nm">'+esc(r.title)+'</div>'+(r.description?'<div class="mt">'+esc(r.description)+'</div>':'')+'</div><span class="rl">ouvrir →</span></div>';}).join(''):'<div class="card"><div class="mt">Aucune ressource pour l\'instant.</div></div>';
+  setM('Tes ressources','<div class="mt" style="margin-bottom:12px">Les documents et outils que Steven met à ta disposition.</div>'+list);
+}
+function openRes(i){var r=(ST.resources||[])[i];if(r&&r.url)window.open(r.url,'_blank','noopener');}
+
+/* ---- Vue coach ---- */
+function coachHTML(){
+  var st=ST.students||[];
+  var rows=st.length?st.map(function(s,i){var flag=(s.lastMood==='tension'||s.lastMood==='hesitant');return '<div class="card resitem" onclick="openFicheEleve('+i+')"><div class="resico">'+(flag?'⚠️':'🎓')+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+(s.journalCount||0)+' entrées journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(flag?' · <b style="color:#dc2626">à checker</b>':'')+'</div></div><span class="rl">fiche →</span></div>';}).join(''):'<div class="card"><div class="mt">Aucun élève chargé.</div></div>';
+  return '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">👋 Vue coach</div><div class="mt" style="color:#cdd0f2">Tape un élève : bilans, journal, humeurs, diagnostic, analyse IA privée.</div></div>'+
+    '<h3 class="sh">Tes élèves · '+st.length+'</h3>'+rows+
+    '<h3 class="sh">Bibliothèque partagée</h3>'+
+    '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>';
+}
+function openAddRes(){
+  setM('Ajouter une ressource',
+    '<div class="card"><div class="plabel">Titre</div><input id="r-title" class="jinp" placeholder="Ex : Script d\'ancrage prix">'+
+    '<div class="plabel" style="margin-top:10px">Description</div><input id="r-desc" class="jinp" placeholder="À quoi ça sert">'+
+    '<div class="plabel" style="margin-top:10px">Emoji</div><input id="r-icon" class="jinp" value="📄">'+
+    '<div class="plabel" style="margin-top:10px">Lien (Drive, Notion, YouTube…)</div><input id="r-url" class="jinp" placeholder="https://…">'+
+    '<div class="mt" style="margin:10px 0 4px">ou un fichier (PDF, image)</div><input id="r-file" type="file" class="jinp" accept=".pdf,image/*">'+
+    '<button class="cta" style="margin-top:14px" onclick="submitAddRes()">Ajouter</button></div>');
+  openModal();
+}
+async function submitAddRes(){
+  var title=((document.getElementById('r-title')||{}).value||'');
+  if(!title.trim()){toastMini('Titre requis.');return;}
+  if(!isSupa){toastMini('Dispo une fois connecté au backend.');return;}
+  var desc=((document.getElementById('r-desc')||{}).value||''),icon=(((document.getElementById('r-icon')||{}).value||'📄').trim()||'📄'),url=((document.getElementById('r-url')||{}).value||'');
+  var fileEl=document.getElementById('r-file'),file=fileEl&&fileEl.files&&fileEl.files[0];
+  try{
+    if(file){var path=Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_');var up=await sb.storage.from('documents').upload(path,file);if(up.error)throw up.error;url=sb.storage.from('documents').getPublicUrl(path).data.publicUrl;}
+    var ins=await sb.from('resources').insert({title:title.trim(),description:desc.trim(),icon:icon,url:url,sort:(ST.resources||[]).length+1}).select('id,title,description,icon,url,sort').single();
+    if(ins.error)throw ins.error;
+    if(ins.data)ST.resources.push(ins.data);
+    toastMini('Ressource ajoutée ✅');go('coach');
+  }catch(e){toastMini('Échec : '+(e.message||'erreur'));}
+}
+
+/* ---- Fiche élève (coach) ---- */
+var FE=null;
+async function openFicheEleve(i){
+  var s=(ST.students||[])[i]; if(!s)return; FE={s:s,journal:[],checkins:[],bilans:[],prof:{},analysis:'',analysisAt:''};
+  setM('Fiche · '+esc(s.first_name||s.email||'Élève'),'<div class="mt">Chargement…</div>');openModal();
+  var uid=s.id;
+  try{
+    var jr=await sb.from('journal_entries').select('*').eq('user_id',uid).order('occurred_at',{ascending:false});
+    var ck=await sb.from('checkins').select('day,mood').eq('user_id',uid).order('day',{ascending:false});
+    var bl=await sb.from('bilans').select('*').eq('user_id',uid).order('taken_at');
+    var pr=await sb.from('profiles').select('positioning,streak,onboarding,first_name').eq('id',uid).maybeSingle();
+    var an=await sb.from('coach_analyses').select('analysis,updated_at').eq('user_id',uid).maybeSingle();
+    FE.journal=jr.data||[];FE.checkins=ck.data||[];FE.bilans=bl.data||[];FE.prof=pr.data||{};FE.analysis=(an.data&&an.data.analysis)||'';FE.analysisAt=(an.data&&an.data.updated_at)||'';
+  }catch(e){}
+  renderFicheEleve();
+}
+function renderFicheEleve(){
+  var s=FE.s;
+  var lastB=FE.bilans.length?FE.bilans[FE.bilans.length-1]:null;
+  var LB={decouverte:'Découverte',objections:'Objections',closing:'Closing',calme:'CALME'};
+  var bilHTML=lastB?['decouverte','objections','closing','calme'].map(function(k){return '<div class="axrow"><span class="lb">'+LB[k]+'</span><span class="bar"><i style="width:'+(lastB[k]*10)+'%"></i></span><span class="vv">'+(lastB[k]*10)+'%</span></div>';}).join(''):'<div class="mt">Aucun bilan encore.</div>';
+  var jHTML=FE.journal.length?FE.journal.slice(0,6).map(function(e){var d=new Date(e.occurred_at);return '<div class="rr" style="border:0;padding:6px 0"><div class="g"><div class="nm" style="font-size:14px">'+esc(e.title)+'</div>'+(e.note?'<div class="mt">'+esc(e.note)+'</div>':'')+'</div><span class="mt" style="flex:none">'+d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})+'</span></div>';}).join(''):'<div class="mt">Aucune entrée.</div>';
+  var cHTML=FE.checkins.length?FE.checkins.slice(0,8).map(function(c){return '<div class="rr" style="border:0;padding:4px 0"><div class="g"><div class="mt">'+new Date(c.day).toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'})+'</div></div><span class="mt" style="flex:none">'+moodLabel(c.mood)+'</span></div>';}).join(''):'<div class="mt">Aucun check-in.</div>';
+  var diagHTML='';try{if(FE.prof.positioning&&Object.keys(FE.prof.positioning).length){var d=computeDiag(FE.prof.positioning);diagHTML='<div class="card"><div class="plabel">Diagnostic</div><div class="nm">'+esc(d.arch.name)+' · '+esc(d.type)+'</div><div class="mt">DISC '+d.dom+'/'+d.sec+' · maillon faible : '+(d.weakest?esc(d.weakest.label)+' ('+d.weakest.score+'/5)':'n/a')+'</div></div>';}}catch(e){}
+  var apiNote=location.hostname.indexOf('github.io')>=0?'<div class="mt" style="margin-top:6px">La génération IA s\'active une fois l\'app déployée sur le domaine. Ici tu peux écrire l\'analyse à la main.</div>':'';
+  setM('Fiche · '+esc(s.first_name||s.email||'Élève'),
+    '<div class="card"><div class="plabel">Dernier bilan · 4 axes</div>'+bilHTML+'</div>'+
+    diagHTML+
+    '<h3 class="sh">Journal de vente · '+FE.journal.length+'</h3><div class="card">'+jHTML+'</div>'+
+    '<h3 class="sh">Humeurs récentes</h3><div class="card">'+cHTML+'</div>'+
+    '<h3 class="sh">🧠 Analyse IA (privée · l\'élève ne la voit jamais)</h3>'+
+    '<div class="card"><textarea id="ca-text" class="caform" rows="8" placeholder="Analyse du profil…">'+esc(FE.analysis)+'</textarea>'+
+    (FE.analysisAt?'<div class="mt" style="margin-top:6px">Dernière MAJ : '+new Date(FE.analysisAt).toLocaleDateString('fr-FR')+'</div>':'')+apiNote+
+    '<div style="display:flex;gap:8px;margin-top:12px"><button class="cta" style="background:#eef0ff;color:#3730a3" onclick="saveAnalyse()">Sauvegarder</button><button class="cta" onclick="genAnalyse()">⚡ Générer (IA)</button></div></div>'+
+    '<button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="closeModal()">← Retour</button>');
+  document.querySelector('#modal .ov-body').scrollTop=0;
+}
+function saveAnalyse(){
+  var t=((document.getElementById('ca-text')||{}).value||'');FE.analysis=t;
+  if(isSupa&&sb._uid)sb.from('coach_analyses').upsert({user_id:FE.s.id,analysis:t,updated_at:new Date().toISOString()}).then(function(r){toastMini(r&&r.error?'Échec sauvegarde':'Analyse sauvegardée ✅');},function(){toastMini('Échec sauvegarde');});
+  else toastMini('Sauvegarde dispo avec le backend.');
+}
+function buildAnalysePayload(){
+  var pos=FE.prof.positioning||{};var qa=[];try{qa=POSQ.map(function(q){var v=pos[q.id];var ans=v;if(q.kind!=='scale'&&q.options){var o=q.options.find(function(x){return x.tag===v;});ans=o?o.label:v;}return {section:q.section,question:q.title,answer:ans||''};});}catch(e){}
+  var diag=null;try{var d=computeDiag(pos);diag={type:d.type+' ('+d.nickname+')',archetype:{name:d.arch.name},disc:d.dom+' dominant, '+d.sec+' secondaire ('+d.disc.label+')',funnel:d.funnel.map(function(f){return f.label+' '+f.score+'/5';}).join(' · '),maillonFaible:d.weakest?d.weakest.label+' ('+d.weakest.score+'/5)':null,forces:[d.disc.force],anglesMorts:[d.disc.vigilance],moteur:d.moteur,soncas:(d.son||[]).map(function(x){return x.label;}).join(', '),affinites:''};}catch(e){}
+  return {studentName:FE.prof.first_name||FE.s.first_name||'',qa:qa,diagnostic:diag,onboarding:FE.prof.onboarding||{}};
+}
+async function genAnalyse(){
+  var box=document.getElementById('ca-text'); if(!box)return;
+  if(!isSupa){toastMini('Génération dispo avec le backend.');return;}
+  var payload=buildAnalysePayload(),prev=FE.analysis;
+  box.value='Génération en cours…';
+  try{
+    var sess=(await sb.auth.getSession()).data.session,token=sess&&sess.access_token;
+    var res=await fetch('/api/coach-analysis',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(payload)});
+    if(!res.ok){box.value=prev;toastMini(res.status===404?'Génération IA dispo en prod (Vercel).':'Erreur '+res.status);return;}
+    var reader=res.body.getReader(),dec=new TextDecoder(),full='';
+    while(true){var ch=await reader.read();if(ch.done)break;full+=dec.decode(ch.value,{stream:true});box.value=full;box.scrollTop=box.scrollHeight;}
+    FE.analysis=full;saveAnalyse();
+  }catch(e){box.value=prev;toastMini('Génération indisponible ici.');}
+}
+
+const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,gestes:gestesHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
 
 /* Navigation */
-const TABS=[["parcours","🎓","Formation"],["accueil","🏠","Accueil"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];
-document.getElementById('tabbar').innerHTML=TABS.map((t,i)=>`<div class="tab${i===0?' on':''}" data-k="${t[0]}"><span class="e">${t[1]}</span><span>${t[2]}</span></div>`).join('');
+function buildTabs(){var t=[["parcours","🎓","Formation"],["accueil","🏠","Accueil"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
+function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><span class="e">'+t[1]+'</span><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
+renderTabs('parcours');
 function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);refreshHeader();}
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.k)));
 
 /* Modal */
 function openModal(){document.getElementById('modal').classList.add('open');document.querySelector('#modal .ov-body').scrollTop=0;}
@@ -812,7 +1005,7 @@ function logout(){if(isSupa&&sb){sb.auth.signOut().then(function(){location.relo
 if(isSupa){
   var _sp=document.getElementById('splash');if(_sp)_sp.style.display='none';
   sb.auth.getSession().then(function(res){
-    if(res.data&&res.data.session){loadUserData().then(function(){touchStreak();go('parcours');});}
+    if(res.data&&res.data.session){loadUserData().then(function(){renderTabs(ST.coach?'coach':'parcours');touchStreak();go(ST.coach?'coach':'parcours');});}
     else{go('parcours');showAuth('login');}
   });
 }else{
