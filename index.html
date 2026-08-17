@@ -168,7 +168,6 @@
     <div class="hdrrow">
       <div class="chip">🔥 <b>12</b> jours</div>
       <div class="chip">⭐ <span id="lvl">Niveau 1</span></div>
-      <div class="chip">📈 <span id="xp">0 XP</span></div>
     </div>
   </div>
   <div class="screen" id="screen"></div>
@@ -219,8 +218,8 @@ function level(){return levelOf(xp());}
 function reqLevel(i){return i+1;}
 function unlocked(i){return !ST.eleve||i===0||(!!ST.quiz[MOD[i-1].id] && xp()>=LV[i]);}
 function lockReason(i){if(i>0 && !ST.quiz[MOD[i-1].id])return `valide d'abord le ${MOD[i-1].num}`;return `encore ${Math.max(0,LV[i]-xp())} XP en utilisant l'app`;}
-function refreshHeader(){document.getElementById('xp').textContent=xp()+' XP';document.getElementById('lvl').textContent='Niveau '+level();}
-function xpToast(n){try{var e=document.createElement('div');e.className='xppop';e.textContent='+'+n+' XP';document.body.appendChild(e);setTimeout(function(){if(e.parentNode)e.parentNode.removeChild(e);},1300);}catch(x){}}
+function refreshHeader(){var l=document.getElementById('lvl');if(l)l.textContent='Niveau '+level();}
+function xpToast(n){}
 
 /* Bilan hebdomadaire + tableau de bord d'évolution (unique par appareil via localStorage) */
 const AXES=[['d','Découverte'],['o','Objections'],['c','Closing'],['m','Méthode CALME']];
@@ -538,8 +537,8 @@ function openModule(mId,idx){
     ${last&&!canQuiz?`<div class="mt" style="text-align:center;margin-top:8px">Regarde les vidéos et lis les fiches pour débloquer le quiz.</div>`:''}`);
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
-function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.videoUrl){window.open(v.videoUrl,'_blank','noopener');}if(!ST.done[vId])xpToast(25);ST.done[vId]=true;save();refreshHeader();openModule(mId,curMod.i);}
-function bookAtelier(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);if(v&&v.calUrl){window.open(v.calUrl,'_blank','noopener');}ST.done[vId]=true;save();refreshHeader();openModule(mId,curMod.i);}
+function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId]=true;save();refreshHeader();if(v&&v.videoUrl){window.location.href=v.videoUrl;}else{openModule(mId,curMod.i);}}
+function bookAtelier(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId]=true;save();refreshHeader();if(v&&v.calUrl){window.location.href=v.calUrl;}else{openModule(mId,curMod.i);}}
 function openFiche(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId]=true;save();refreshHeader();setM(v.title,`<div class="fiche">${v.fiche||'<p>Fiche à venir.</p>'}</div><button class="cta" style="margin-top:16px" onclick="openModule('${mId}',${curMod.i})">← Retour au module</button>`);document.querySelector('#modal .ov-body').scrollTop=0;}
 
 /* Entraînement : jeu d'apprentissage, correction immédiate à chaque carte (sans note, sans blocage) */
@@ -550,7 +549,7 @@ function openTrainV(mId,vId){TR={mId:mId,vId:vId,qs:qForVideo(M(mId),vId),i:0,an
 function renderTrain(){
   const m=M(TR.mId),qs=TR.qs,q=qs[TR.i],last=TR.i===qs.length-1,rev=!!TR.rev[TR.i],picked=TR.ans[TR.i];
   const v=TR.vId?m.V.find(x=>x.id===TR.vId):null;
-  const vlink=(v&&v.videoUrl)?`<div class="card" style="background:#eef0ff;border-color:#e0e3ff;padding:11px"><div class="mt" style="color:#3730a3;font-weight:600">Exercice sur : ${v.title}</div><button class="cta" style="margin-top:8px;background:#4f46e5" onclick="window.open('${v.videoUrl}','_blank','noopener')">▶ Revoir la vidéo ↗</button></div>`:'';
+  const vlink=(v&&v.videoUrl)?`<div class="card" style="background:#eef0ff;border-color:#e0e3ff;padding:11px"><div class="mt" style="color:#3730a3;font-weight:600">Exercice sur : ${v.title}</div><button class="cta" style="margin-top:8px;background:#4f46e5" onclick="window.location.href='${v.videoUrl}'">▶ Revoir la vidéo ↗</button></div>`:'';
   setM('Exercice · '+m.num,`
     ${vlink}
     <div class="mt" style="margin-bottom:8px">Carte ${TR.i+1} / ${qs.length} · score ${TR.score}</div>
