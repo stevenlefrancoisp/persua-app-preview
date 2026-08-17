@@ -1,5 +1,32 @@
 # Plan du build réel : parcours Persua sur auth + Supabase
 
+## ⚠️ MISE À JOUR (correction majeure après recon de l'espace membre)
+
+Le backend Supabase **existe déjà** dans `~/Desktop/persua-espace-membre` et couvre ~90% du plan. On ne crée donc PAS un nouveau Supabase (ce serait la fragmentation à éviter). On **branche la preview sur l'existant** et on ajoute le peu qui manque.
+
+Déjà en place (tables `supabase/schema.sql`) :
+- **Auth** (auth.users) + **`profiles`** (first_name, email, `role` élève/coach, `streak`, `positioning` jsonb = le diagnostic, `positioning_submitted_at`).
+- **`progress`** (user_id, kind `exercise`/`quiz`, ref) = progression par user, déjà là.
+- **`checkins`**, **`journal_entries`**, **`member_documents`**, **`coach_analyses`** + fonction `public.is_coach()` pour la vue coach (RLS).
+
+Ce qui manque (delta) → migration écrite : `supabase/bilans_migration.sql`
+- **`bilans`** (série hebdo des 4 axes) = le dashboard/la notation dans le temps. Ajoutée + RLS `owner or is_coach()`.
+- **Communauté** (`posts`/`post_claps`) : optionnelle, commentée dans la migration.
+
+Map preview → existant :
+| Preview | Backend espace membre |
+|---|---|
+| Diagnostic 33 questions | `profiles.positioning` (jsonb) + `positioning_submitted_at` |
+| Vidéos vues / exercices / quiz | `progress` (kind exercise/quiz, ref) |
+| Série de jours | `profiles.streak` |
+| Bilan hebdo 4 axes + dashboard | **`bilans`** (nouveau) |
+| Communauté | `posts` (nouveau, optionnel) |
+| Vue coach | `role='coach'` + `is_coach()` (déjà là) |
+
+Décisions à trancher (voir fin de session) : (1) on **fond la preview dans l'app React de l'espace membre** (recommandé, une base une identité) ; (2) il me faut le vrai `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (ou tu lances le SQL toi-même) ; (3) la nouvelle structure de formation de la preview **remplace** l'actuelle ou on **ajoute juste** bilan hebdo + dashboard.
+
+---
+
 Objectif : passer de la preview (localStorage, par appareil) à un vrai produit où la data d'un élève le suit sur tous ses appareils, chaque élève isolé, une seule base. Le design est déjà spécifié par la preview, on ne réinvente pas l'UX, on branche l'identité et la persistance.
 
 ## Principe d'architecture
