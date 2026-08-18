@@ -127,6 +127,7 @@
   .post .body{font-size:13.5px;color:#2a2e3d;line-height:1.42}
   .post .acts{display:flex;gap:16px;margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600;cursor:pointer}
   .tagchip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eef0ff;color:#3730a3;cursor:pointer}
+  .tagchip.on{background:var(--indigo);color:#fff}
   .tabbar{position:absolute;bottom:0;left:0;right:0;min-height:66px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;z-index:30}
   .modnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
   .modnav button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 11px;font-size:12.5px;font-weight:600;color:var(--indigo);cursor:pointer}
@@ -300,6 +301,7 @@ const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
 ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false; ST.diagAns=ST.diagAns||{}; ST.diag=ST.diag||null; ST.diagDone=ST.diagDone||false; ST.streak=ST.streak||0; ST.lastDay=ST.lastDay||0; ST.exoDone=ST.exoDone||{};
 ST.checkins=ST.checkins||{}; ST.journal=ST.journal||[]; ST.resources=ST.resources||[]; ST.coach=ST.coach||false; ST.students=ST.students||[];
+ST.likes=ST.likes||{}; ST.comments=ST.comments||{}; ST.weekly=ST.weekly||null;
 function save(){localStorage.setItem(KEY,JSON.stringify(ST));if(isSupa)syncRemote();}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
 (function(){var h=(location.hash+location.search).toLowerCase();if(h.indexOf('eleve')>=0||h.indexOf('student')>=0){ST.eleve=true;save();}if(h.indexOf('open')>=0||h.indexOf('admin')>=0){ST.eleve=false;save();}if(h.indexOf('boost')>=0){ST.streak=367;ST.lastDay=Math.floor(Date.now()/86400000);ST.levelForce=327;ST.eleve=false;save();}})();
@@ -662,17 +664,43 @@ function assistantHTML(){
     <div class="coachbar"><input placeholder="Pose ta question au coach..." readonly><button>➤</button></div>`:`<div class="card" style="text-align:center;border-color:#fcd34d;background:#fffbeb;padding:26px 16px"><div style="font-size:34px">🔒</div><div class="nm" style="margin-top:8px">Assistant IA · niveau 5</div><div class="mt" style="margin-top:6px;line-height:1.5">L'assistant IA qui répond à tes questions de vente en direct se débloque au niveau 5. Continue ta formation (quiz, vidéos, bilans) pour y accéder.</div><button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="openLevelInfo()">Comment monter de niveau ?</button></div>`}
   </div>`;
 }
+/* ===== Communauté animée (bots + interactions élève, débloquée niveau 10) ===== */
+const COMBOTS=[{av:'V',who:'Valérie M.'},{av:'T',who:'Thomas C.'},{av:'M',who:'Marc D.'},{av:'L',who:'Léa P.'},{av:'K',who:'Karim B.'},{av:'S',who:'Sophie R.'},{av:'N',who:'Nadia F.'},{av:'J',who:'Julien C.'},{av:'E',who:'Élodie V.'},{av:'H',who:'Hugo D.'}];
+const COMPOSTS=[
+ {id:'c1',av:'S',bg:'#0e1020',who:'Steven · Coach 📌',tag:'Épinglé',min:130,likes:24,replies:[{who:'Léa P.',body:'Je teste ça cette semaine, merci coach 🙏'},{who:'Karim B.',body:'La question qui manque, c\'est un game changer.'}],body:'Défi de la semaine : après un « je vais réfléchir », demande QUELLE info manque, puis tais-toi. Postez ce que ça donne 👇'},
+ {id:'c2',av:'V',who:'Valérie M.',tag:'🏆 Victoire',min:300,likes:31,replies:[{who:'Marc D.',body:'Énorme, bravo !'},{who:'Sophie R.',body:'Tu as ancré comment exactement ?'}],body:'Premier closing sans baisser mon prix ! J\'ai ancré le coût de son problème avant d\'annoncer, il a signé direct.'},
+ {id:'c3',av:'T',who:'Thomas C.',tag:'❓ Question',min:1080,likes:6,replies:[{who:'Nadia F.',body:'Creuse. « Quelle info précise vous manque ? » avant d\'envoyer.'}],body:'Un prospect me dit « envoyez-moi une plaquette et je reviens vers vous ». J\'envoie, ou je creuse ?'},
+ {id:'c4',av:'M',who:'Marc D.',tag:'🏆 Victoire',min:1500,likes:28,replies:[{who:'Julien C.',body:'Le silence, l\'arme la plus dure à tenir 😅'}],body:'J\'ai tenu le silence 4 secondes après mon prix. Le plus dur de ma vie. Il a rempli le blanc et s\'est convaincu tout seul 😅'},
+ {id:'c5',av:'K',who:'Karim B.',tag:'💡 Partage',min:2400,likes:19,replies:[],body:'Astuce qui marche : j\'envoie une ressource utile AVANT le RDV. Réciprocité activée, le call démarre déjà à moitié gagné.'},
+ {id:'c6',av:'L',who:'Léa P.',tag:'❓ Question',min:3200,likes:9,replies:[{who:'Élodie V.',body:'Reformule sa peur avant de rassurer, ça désamorce.'}],body:'Un DAF hyper analytique qui coupe tout le temps. Comment je garde le lead sans le braquer ?'},
+ {id:'c7',av:'N',who:'Nadia F.',tag:'🏆 Victoire',min:4300,likes:22,replies:[],body:'J\'ai chiffré le coût de son inaction : 2 000 €/mois perdus. Mon prix a paru ridicule à côté. Signé.'},
+ {id:'c8',av:'H',who:'Hugo D.',tag:'💡 Partage',min:6000,likes:14,replies:[{who:'Valérie M.',body:'Je fais pareil, ça change tout le début de call.'}],body:'Deux minutes de respiration avant chaque RDV. Mon taux de closing a bougé juste avec ça. Le calme se transmet.'}
+];
+const COMREPLIES=['Bravo, continue comme ça 🔥','Excellent, tu appliques la méthode !','Belle prise de conscience 👏','Ça, c\'est du terrain. Respect.','Tu progresses vite, ça se voit.','Merci du partage, très utile.','Force à toi, lâche rien 💪'];
+const WEEKLY=['Alors, cette semaine ? Une victoire, un blocage, un doute ? Raconte 👇','On fait le point : c\'est quoi ta meilleure interaction de la semaine ?','Comment tu te sens sur tes calls en ce moment ? Partage, on avance ensemble.','Un truc qui a marché cette semaine ? Un truc qui a coincé ? Balance 👇'];
+var _pubTag='',_curPost=null;
+function comHash(s){var h=0;s=''+s;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))%100000;}return Math.abs(h);}
+function whenFromMin(m){if(m<60)return 'il y a '+Math.max(1,Math.round(m))+' min';if(m<1440)return 'il y a '+Math.round(m/60)+' h';var d=Math.round(m/1440);return d===1?'hier':'il y a '+d+' j';}
+function comLikes(p){return (p.likes||0)+(ST.likes[p.id]?1:0);}
+function comCount(p){return (p.replies?p.replies.length:0)+((ST.comments[p.id]||[]).length);}
+function weeklyPost(){var t=dayNum();if(!ST.weekly){ST.weekly={last:t,gap:4+Math.floor(Math.random()*3),idx:0};save();}else if(t>=ST.weekly.last+ST.weekly.gap){ST.weekly={last:t,gap:4+Math.floor(Math.random()*3),idx:(ST.weekly.idx+1)%WEEKLY.length};save();}return {id:'wk'+ST.weekly.last,av:'S',bg:'#4f46e5',who:'Steven · Coach 📌',tag:'check-in de la semaine',min:45,likes:5,replies:[],body:WEEKLY[ST.weekly.idx],weekly:true};}
+function studentPostView(p){var age=(Date.now()-(p.t||Date.now()))/60000;var reps=[];if(age>90)reps.push({who:COMBOTS[comHash(p.id)%COMBOTS.length].who,body:COMREPLIES[comHash(p.id)%COMREPLIES.length]});if(age>360)reps.push({who:COMBOTS[(comHash(p.id)+3)%COMBOTS.length].who,body:COMREPLIES[(comHash(p.id)+2)%COMREPLIES.length]});return {id:p.id,av:(window._fn?window._fn.charAt(0).toUpperCase():'M'),who:(window._fn||'Toi')+' (toi)',tag:p.tag||'',min:age,likes:Math.min(14,Math.floor(age/25)),replies:reps,body:p.body,me:true};}
+function findPost(id){if((''+id).indexOf('wk')===0)return weeklyPost();var c=COMPOSTS.filter(function(x){return x.id===id;})[0];if(c)return c;var m=(ST.posts||[]).filter(function(x){return x.id===id;})[0];return m?studentPostView(m):null;}
 function communauteHTML(){
-  const seed=[
-   {av:"S",bg:"#0e1020",who:"Steven · Coach 📌",when:"Épinglé · il y a 2h",body:'Défi de la semaine : après un "je vais réfléchir", demandez QUELLE info manque, puis taisez-vous. Postez ce que ça donne.',k:24,c:8},
-   {av:"V",who:"Valérie M.",when:"il y a 5h · 🏆 Victoire",body:"Premier closing sans baisser mon prix ! J'ai ancré le coût de son problème avant d'annoncer, il a signé direct.",k:31,c:12},
-   {av:"T",who:"Thomas C.",when:"hier · ❓ Question",body:'Un prospect me dit "envoyez-moi une plaquette et je reviens vers vous". J\'envoie, ou je creuse ?',k:6,c:15},
-   {av:"M",who:"Marc D.",when:"hier · 🏆 Victoire",body:"J'ai tenu le silence 4 secondes après mon prix. Le plus dur de ma vie. Il a rempli le blanc et s'est convaincu tout seul 😅",k:28,c:9}
-  ];
-  const posts=ST.posts.concat(seed);
-  return `<div class="composer"><input id="cinp" placeholder="Partage une victoire, une question, un doute..."><div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><div style="display:flex;gap:6px"><span class="tagchip">🏆 Victoire</span><span class="tagchip">❓ Question</span></div><button class="cta" style="width:auto;margin:0;padding:8px 15px" onclick="publier()">Publier</button></div></div>`+
-   posts.map(p=>`<div class="post"><div class="ph"><div class="av" ${p.bg?`style="background:${p.bg}"`:''}>${p.av}</div><div><div class="who">${p.who}</div><div class="when">${p.when}</div></div></div><div class="body">${p.body}</div><div class="acts"><span>👏 ${p.k}</span><span>💬 ${p.c}</span></div></div>`).join('');
+  var locked=level()<10;
+  var feed=[weeklyPost()].concat((ST.posts||[]).map(studentPostView)).concat(COMPOSTS);
+  feed.sort(function(a,b){if(a.weekly)return -1;if(b.weekly)return 1;return a.min-b.min;});
+  var composer=locked
+   ? '<div class="card" style="text-align:center;border-color:#fcd34d;background:#fffbeb"><div style="font-size:30px">🔒</div><div class="nm" style="margin-top:6px">Interaction · niveau 10</div><div class="mt" style="margin-top:4px;line-height:1.5">Publier, aimer et commenter se débloquent au niveau 10. En attendant, lis et inspire-toi de la communauté.</div><button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="openLevelInfo()">Comment monter de niveau ?</button></div>'
+   : '<div class="composer"><input id="cinp" placeholder="Partage une victoire, une question, un doute..."><div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><div style="display:flex;gap:6px"><span class="tagchip" onclick="pickTag(this)">🏆 Victoire</span><span class="tagchip" onclick="pickTag(this)">❓ Question</span></div><button class="cta" style="width:auto;margin:0;padding:8px 15px" onclick="publier()">Publier</button></div></div>';
+  return composer+feed.map(function(p){return postHTML(p,locked);}).join('');
 }
+function postHTML(p,locked){var liked=!!ST.likes[p.id];return '<div class="post"><div class="ph"><div class="av" '+(p.bg?'style="background:'+p.bg+'"':'')+'>'+esc(p.av)+'</div><div><div class="who">'+esc(p.who)+'</div><div class="when">'+whenFromMin(p.min)+(p.tag?' · '+esc(p.tag):'')+'</div></div></div><div class="body">'+esc(p.body)+'</div><div class="acts"><span onclick="'+(locked?'openLevelInfo()':'toggleLike(\''+p.id+'\')')+'" style="cursor:pointer;'+(liked?'color:var(--indigo);font-weight:700':'')+'">'+(liked?'👏':'👍')+' '+comLikes(p)+'</span><span onclick="'+(locked?'openLevelInfo()':'openComments(\''+p.id+'\')')+'" style="cursor:pointer">💬 '+comCount(p)+'</span></div></div>';}
+function pickTag(el){var was=el.classList.contains('on');el.parentElement.querySelectorAll('.tagchip').forEach(function(c){c.classList.remove('on');});if(!was){el.classList.add('on');_pubTag=el.textContent.trim();}else{_pubTag='';}}
+function toggleLike(id){if(level()<10){openLevelInfo();return;}ST.likes[id]=!ST.likes[id];save();go('communaute');}
+function openComments(id){if(level()<10){openLevelInfo();return;}_curPost=id;renderComments();openModal();}
+function renderComments(){var p=findPost(_curPost);if(!p){closeModal();return;}var all=(p.replies||[]).map(function(r){return {who:r.who,body:r.body};}).concat(ST.comments[_curPost]||[]);setM('Commentaires','<div class="card"><div class="ph"><div class="av" '+(p.bg?'style="background:'+p.bg+'"':'')+'>'+esc(p.av)+'</div><div><div class="who">'+esc(p.who)+'</div><div class="when">'+whenFromMin(p.min)+'</div></div></div><div class="body" style="margin-top:6px">'+esc(p.body)+'</div></div>'+(all.length?all.map(function(r){return '<div class="post" style="padding:11px"><div class="who" style="font-size:13px">'+esc(r.who||((window._fn||'Toi')+' (toi)'))+'</div><div class="body" style="margin-top:3px">'+esc(r.body)+'</div></div>';}).join(''):'<div class="mt" style="text-align:center;padding:12px">Sois le premier à commenter 👇</div>')+'<div class="composer" style="margin-top:10px"><input id="cominp" placeholder="Écris un commentaire..."><button class="cta" style="width:auto;margin:8px 0 0;padding:8px 15px" onclick="addComment()">Envoyer</button></div>');var b=document.querySelector('#modal .ov-body');if(b)b.scrollTop=b.scrollHeight;}
+function addComment(){var el=document.getElementById('cominp'),v=((el&&el.value)||'').trim();if(!v)return;ST.comments[_curPost]=ST.comments[_curPost]||[];ST.comments[_curPost].push({who:(window._fn||'Toi')+' (toi)',body:v});save();renderComments();}
 /* ================= Briques portées de l'espace membre ================= */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
 function todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -1046,7 +1074,7 @@ function openProfil(){
 function togGeste(id){var was=ST.gestes[id];ST.gestes[id]=!was;save();if(!was)xpToast(10);go('gestes');}
 function markRdv(){var k='r'+dayNum();ST.rdv=ST.rdv||{};if(!ST.rdv[k]){ST.rdv[k]=true;save();xpToast(40);refreshHeader();}go('rdv');}
 function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';btn.parentElement.querySelectorAll('.segb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
-function publier(){const el=document.getElementById('cinp');const v=el.value.trim();if(!v)return;ST.posts.unshift({av:"M",who:"Marc D. (toi)",when:"à l'instant",body:v,k:0,c:0});save();go('communaute');}
+function publier(){if(level()<10){openLevelInfo();return;}var el=document.getElementById('cinp');var v=((el&&el.value)||'').trim();if(!v)return;ST.posts.unshift({id:'me'+Date.now(),body:v,tag:_pubTag||'',t:Date.now()});_pubTag='';save();go('communaute');toastMini('Publié dans la communauté ✅');}
 
 /* Tutoriel interactif au premier lancement */
 const ONBOARD=[
