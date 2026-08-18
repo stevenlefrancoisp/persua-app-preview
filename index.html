@@ -274,15 +274,16 @@ async function loadUserData(){
   /* ressources partagées (tous) */
   try{ var rr=await sb.from('resources').select('id,title,description,icon,url,sort').order('sort'); if(rr.data) ST.resources=rr.data; }catch(e){}
   if(ST.coach){
-    /* Vue coach : liste des élèves + agrégats humeur/journal */
-    var rs=await sb.from('profiles').select('id,first_name,email,streak,role').eq('role','eleve');
-    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,email:s.email,streak:s.streak,lastMood:null,lastMoodDay:'',journalCount:0};});
-    var byId={}; students.forEach(function(s){byId[s.id]=s;});
+    /* Vue coach : inscrits + agrégats humeur/journal + statut d'accès croisé */
+    var rs=await sb.from('profiles').select('id,first_name,email,streak,role,created_at').eq('role','eleve');
+    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,email:(s.email||''),streak:s.streak,created_at:s.created_at,lastMood:null,lastMoodDay:'',journalCount:0,hasAccess:false,tier:null};});
+    var byId={},byEmail={}; students.forEach(function(s){byId[s.id]=s;if(s.email)byEmail[s.email.toLowerCase()]=s;});
     var ac=await sb.from('checkins').select('user_id,day,mood');
     (ac.data||[]).forEach(function(c){var s=byId[c.user_id];if(s&&(!s.lastMoodDay||c.day>s.lastMoodDay)){s.lastMoodDay=c.day;s.lastMood=c.mood;}});
     var aj=await sb.from('journal_entries').select('user_id,occurred_at');
     (aj.data||[]).forEach(function(j){var s=byId[j.user_id];if(s)s.journalCount++;});
-    students.sort(function(a,b){var fa=(a.lastMood==='tension'||a.lastMood==='hesitant')?0:1,fb=(b.lastMood==='tension'||b.lastMood==='hesitant')?0:1;return fa-fb;});
+    var ag=await sb.from('access_grants').select('email,active,tier');
+    (ag.data||[]).forEach(function(g){var s=byEmail[(g.email||'').toLowerCase()];if(s){s.hasAccess=!!g.active;s.tier=g.tier||'academie';}});
     ST.students=students;
   }else{
     /* Vue élève : son journal + ses check-ins */
@@ -717,15 +718,31 @@ function openRes(i){var r=(ST.resources||[])[i];if(r&&r.url)window.open(r.url,'_
 /* ---- Vue coach ---- */
 function coachHTML(){
   var st=ST.students||[];
-  var rows=st.length?st.map(function(s,i){var flag=(s.lastMood==='tension'||s.lastMood==='hesitant');return '<div class="card resitem" onclick="openFicheEleve('+i+')"><div class="resico">'+(flag?'⚠️':'🎓')+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+(s.journalCount||0)+' entrées journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(flag?' · <b style="color:#dc2626">à checker</b>':'')+'</div></div><span class="rl">fiche →</span></div>';}).join(''):'<div class="card"><div class="mt">Aucun élève chargé.</div></div>';
-  return '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">👋 Vue coach</div><div class="mt" style="color:#cdd0f2">Tape un élève : bilans, journal, humeurs, diagnostic, analyse IA privée.</div></div>'+
-    '<h3 class="sh">Tes élèves · '+st.length+'</h3>'+rows+
-    '<h3 class="sh">Accès à la formation</h3>'+
-    '<div class="card"><div class="mt">Qui peut entrer dans l\'app. Le paiement active l\'accès tout seul, ou tu ajoutes un email à la main.</div><button class="cta" onclick="openAcces()">Gérer les accès</button></div>'+
-    '<h3 class="sh">Bibliothèque partagée</h3>'+
+  var pending=[],active=[];
+  st.forEach(function(s,i){s._i=i;(s.hasAccess?active:pending).push(s);});
+  pending.sort(function(a,b){return (b.created_at||'').localeCompare(a.created_at||'');});
+  active.sort(function(a,b){var fa=(a.lastMood==='tension'||a.lastMood==='hesitant')?0:1,fb=(b.lastMood==='tension'||b.lastMood==='hesitant')?0:1;return fa-fb;});
+  var pend=pending.length?pending.map(function(s){
+    var d=s.created_at?new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}):'';
+    return '<div class="card" style="border-color:#fcd34d;background:#fffbeb">'+
+      '<div class="nm">'+esc(s.first_name||s.email||'Inscrit')+'</div>'+
+      '<div class="mt" style="word-break:break-all">'+esc(s.email)+(d?' · inscrit le '+d:'')+'</div>'+
+      '<div class="mt" style="margin-top:8px;font-weight:600;color:#92400e">Donner l\'accès :</div>'+
+      '<div class="acctiers">'+TIERS.map(function(t){return '<button class="jtag" onclick="grantStudent('+s._i+',\''+t[0]+'\')">+ '+t[1]+'</button>';}).join('')+'</div></div>';
+  }).join(''):'<div class="card"><div class="mt">Aucune demande en attente.</div></div>';
+  var act=active.length?active.map(function(s){
+    var flag=(s.lastMood==='tension'||s.lastMood==='hesitant');
+    return '<div class="card resitem" onclick="openFicheEleve('+s._i+')"><div class="resico">'+(flag?'⚠️':'🎓')+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+tierLabel(s.tier)+' · '+(s.journalCount||0)+' j. journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(flag?' · <b style="color:#dc2626">à checker</b>':'')+'</div></div><span class="rl">fiche →</span></div>';
+  }).join(''):'<div class="card"><div class="mt">Aucun élève actif pour l\'instant.</div></div>';
+  return '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">👋 Vue coach</div><div class="mt" style="color:#cdd0f2">Les demandes d\'accès en haut à traiter, tes élèves actifs en dessous.</div></div>'+
+    '<h3 class="sh">🔔 Demandes d\'accès · '+pending.length+'</h3>'+pend+
+    '<h3 class="sh">🎓 Tes élèves · '+active.length+'</h3>'+act+
+    '<h3 class="sh">Gestion</h3>'+
+    '<div class="card"><div class="mt">Vue détaillée des accès : suspendre, changer de niveau, ajouter un email à la main.</div><button class="cta" onclick="openAcces()">Gérer tous les accès</button></div>'+
     '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>'+
     (isSupa?'<button class="cta" style="margin-top:12px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'');
 }
+async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
 function openAddRes(){
   setM('Ajouter une ressource',
     '<div class="card"><div class="plabel">Titre</div><input id="r-title" class="jinp" placeholder="Ex : Script d\'ancrage prix">'+
