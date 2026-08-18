@@ -1044,8 +1044,12 @@ function showAuth(mode){mode=mode||'login';var o=document.getElementById('auth')
     <input id="au-pass" type="password" placeholder="Mot de passe" autocomplete="${mode==='login'?'current-password':'new-password'}">
     <div id="au-err" class="auth-err"></div>
     <button class="cta" onclick="authSubmit('${mode}')">${mode==='login'?'Se connecter':'Créer mon compte'}</button>
-    <div class="auth-switch" onclick="showAuth('${mode==='login'?'signup':'login'}')">${mode==='login'?'Pas encore de compte ? En créer un':'Déjà un compte ? Se connecter'}</div></div>`;
+    <div class="auth-switch" onclick="showAuth('${mode==='login'?'signup':'login'}')">${mode==='login'?'Pas encore de compte ? En créer un':'Déjà un compte ? Se connecter'}</div>
+    ${mode==='login'?'<div class="auth-switch" style="opacity:.8" onclick="authForgot()">Mot de passe oublié ?</div>':''}</div>`;
 }
+function authForgot(){var email=(document.getElementById('au-email')||{}).value;if(!email){authErr('Entre ton email d\'abord.');return;}authErr('Envoi…');sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname}).then(function(r){authErr(r.error?r.error.message:'Email envoyé. Regarde ta boîte (et tes spams), le lien ouvre l\'écran nouveau mot de passe.');});}
+function showNewPassword(){var o=document.getElementById('auth');o.style.display='flex';o.innerHTML='<div class="auth-card"><div class="auth-brand">PERSUA</div><div class="auth-t">Nouveau mot de passe</div><input id="np-pass" type="password" placeholder="Nouveau mot de passe" autocomplete="new-password"><div id="au-err" class="auth-err"></div><button class="cta" onclick="submitNewPassword()">Valider</button></div>';}
+function submitNewPassword(){var p=(document.getElementById('np-pass')||{}).value;if(!p||p.length<6){authErr('6 caractères minimum.');return;}authErr('…');sb.auth.updateUser({password:p}).then(function(r){if(r.error){authErr(r.error.message);return;}var au=document.getElementById('auth');if(au)au.style.display='none';loadUserData().then(afterLogin);});}
 function authSubmit(mode){var email=(document.getElementById('au-email')||{}).value,pass=(document.getElementById('au-pass')||{}).value;
   if(!email||!pass){authErr('Email et mot de passe requis.');return;}authErr('…');
   var pr=mode==='login'?sb.auth.signInWithPassword({email:email,password:pass}):sb.auth.signUp({email:email,password:pass});
@@ -1124,7 +1128,10 @@ async function setAccesTier(i,t){var g=ACC[i];if(!g)return;var r=await sb.from('
 /* ---- Démarrage ---- */
 if(isSupa){
   var _sp=document.getElementById('splash');if(_sp)_sp.style.display='none';
+  var _recovery=false;
+  sb.auth.onAuthStateChange(function(event){if(event==='PASSWORD_RECOVERY'){_recovery=true;showNewPassword();}});
   sb.auth.getSession().then(function(res){
+    if(_recovery)return;
     if(res.data&&res.data.session){loadUserData().then(afterLogin);}
     else{go('parcours');showAuth('login');}
   });
