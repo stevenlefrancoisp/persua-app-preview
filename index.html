@@ -174,6 +174,10 @@
   .auth-card input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:13px;font-size:16px;margin-bottom:10px;background:#fff}
   .auth-err{font-size:12.5px;color:#dc2626;min-height:16px;margin-bottom:6px;text-align:center}
   .auth-switch{text-align:center;margin-top:14px;color:var(--indigo);font-size:13px;font-weight:600;cursor:pointer}
+  .auth-card select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:13px;font-size:16px;margin-bottom:10px;background:#fff;color:var(--ink)}
+  .ob-photo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:14px}
+  .ob-av{width:84px;height:84px;border-radius:50%;background:#eef0ff;display:flex;align-items:center;justify-content:center;font-size:30px;border:2px solid var(--line);overflow:hidden}
+  .ob-pick{color:var(--indigo);font-size:13px;font-weight:600;cursor:pointer}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
   /* --- Briques portées (check-in, journal, ressources, coach) --- */
   .moodrow{display:flex;gap:6px;margin-top:10px}
@@ -199,8 +203,8 @@
   <div class="statusbar"><span>9:41</span><span>Persua</span><span>●●●● ▮</span></div>
   <div class="appbar">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-      <div><div class="hi">Salut Marc 👋</div><div class="sub">Ton parcours neurovente</div></div>
-      <div class="profil-round" onclick="openProfil()"><div class="pr-circle">M</div><div class="pr-lbl">Profil</div></div>
+      <div><div class="hi" id="hi">Salut 👋</div><div class="sub">Ton parcours neurovente</div></div>
+      <div class="profil-round" onclick="openProfil()"><div class="pr-circle" id="prcircle">•</div><div class="pr-lbl">Profil</div></div>
     </div>
     <div class="hdrrow">
       <div class="chip">🔥 <b id="streak">1</b> jours</div>
@@ -249,7 +253,12 @@ async function loadUserData(){
     if(prof.positioning && Object.keys(prof.positioning).length){ ST.diagAns=prof.positioning; try{ST.diag=computeDiag(prof.positioning);ST.diagDone=true;}catch(e){} }
     if(prof.app_progress) Object.keys(prof.app_progress).forEach(function(k){ ST[k]=prof.app_progress[k]; });
     window._fn=prof.first_name||'';
+    window._ln=prof.last_name||'';
+    window._onbDone=!!prof.onboarding_done;
     ST.coach = prof.role==='coach';
+    var ob=prof.onboarding||{};
+    if(ob.avatar_url){ST.avatar=ob.avatar_url;window._avatar=ob.avatar_url;}
+    window._sector=ob.sector||''; window._sectorOther=ob.sectorOther||'';
   }
   var rb=await sb.from('bilans').select('*').eq('user_id',u.id).order('taken_at');
   if(rb.data) ST.bilans=rb.data.map(function(b){return {t:new Date(b.taken_at).getTime(),d:b.decouverte,o:b.objections,c:b.closing,m:b.calme};});
@@ -299,7 +308,11 @@ function level(){return ST.levelForce||levelOf(xp());}
 function reqLevel(i){return i+1;}
 function unlocked(i){return !ST.eleve||i===0||(!!ST.quiz[MOD[i-1].id] && xp()>=LV[i]);}
 function lockReason(i){if(i>0 && !ST.quiz[MOD[i-1].id])return `valide d'abord le ${MOD[i-1].num}`;return `encore ${Math.max(0,LV[i]-xp())} XP en utilisant l'app`;}
-function refreshHeader(){var l=document.getElementById('lvl');if(l)l.textContent='Niveau '+level();var s=document.getElementById('streak');if(s)s.textContent=ST.streak;}
+function refreshHeader(){var l=document.getElementById('lvl');if(l)l.textContent='Niveau '+level();var s=document.getElementById('streak');if(s)s.textContent=ST.streak;
+  var fn=window._fn||'';
+  var hi=document.getElementById('hi');if(hi)hi.textContent=fn?('Salut '+fn+' 👋'):'Salut 👋';
+  var pc=document.getElementById('prcircle');
+  if(pc){var av=ST.avatar||window._avatar;if(av){pc.textContent='';pc.style.backgroundImage='url('+av+')';pc.style.backgroundSize='cover';pc.style.backgroundPosition='center';}else{pc.style.backgroundImage='';pc.textContent=fn?fn.charAt(0).toUpperCase():'•';}}}
 function exosCount(){return Object.keys(ST.exoDone||{}).length;}
 function xpToast(n){}
 
@@ -413,8 +426,7 @@ function kpiDashHTML(){
     ${fort}${faible}
     <div class="kcard"><div class="klab">Vidéos vues</div><div class="kbig" style="font-size:30px">${vids}</div></div>
     <div class="kcard"><div class="klab">Exercices faits</div><div class="kbig" style="font-size:30px;color:#14b8a6">${exos}</div></div>
-  </div>
-  <h3 class="sh">Ta photo du moment</h3>${radarChart(l||{d:0,o:0,c:0,m:0},p)}`;
+  </div>`;
 }
 function dashboardHTML(){
   const l=lastBilan(),p=prevBilan();
@@ -473,13 +485,14 @@ const GESTES=[
 
 /* Écrans */
 function accueilHTML(){
-  const g=GESTES.find(x=>!ST.gestes[x.id])||GESTES[0];
+  const c=conseilDuJour();
   return `
   <div class="hero-cta pop" onclick="go('parcours')"><div class="big">Continue ta formation</div><div class="sub">Ton parcours neurovente, module par module. C'est le cœur de ce que tu as rejoint.</div><div class="go">Ouvrir ma formation →</div></div>
   ${moodWidget()}
   ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution.</div></div>`:''}
-  <div class="card geste"><div class="k">Ton geste du jour</div>
-    <div class="txt">${g.t} : fais-le sur ton prochain appel, puis coche-le dans l'onglet Gestes.</div></div>
+  <div class="card geste pop" style="cursor:pointer" onclick="go('assistant')"><div class="k">💡 Conseil de la semaine · ${c.mod}</div>
+    <div class="txt">${c.emoji} ${c.titre}</div>
+    <div class="mt" style="margin-top:6px">${c.texte}</div></div>
   <div class="card" style="cursor:pointer" onclick="openProfil()"><div class="nm">📊 Ton tableau de bord</div><div class="mt">Score, progression, série, tes 4 axes. Tape pour voir.</div></div>
   <div class="card" style="cursor:pointer" onclick="openJournal()"><div class="nm">📓 Ton journal de vente</div><div class="mt">Note tes RDV à chaud. C'est ce qui recâble ton cerveau, et Steven suit ta progression.</div></div>
   <div class="card" style="cursor:pointer" onclick="openResources()"><div class="nm">📁 Tes ressources</div><div class="mt">Les documents et outils que Steven met à ta disposition.</div></div>
@@ -550,7 +563,34 @@ const CONSEILS=[
  {mod:"Module 4",emoji:"❓",titre:"Une question, puis silence.",texte:"Pose ta question, tais-toi trois secondes. C'est là qu'il donne sa vraie raison.",defi:"Tiens le silence après ta prochaine question ouverte."},
  {mod:"Module 1",emoji:"🚨",titre:"Baisse la menace avant de convaincre.",texte:"Un cerveau en alerte n'achète jamais. Rassure d'abord, vends ensuite.",defi:"Pose le cadre « pas de vente forcée » en ouverture."},
  {mod:"Module 7",emoji:"📓",titre:"Débriefe un call par jour.",texte:"Le cerveau se recâble par la répétition. Une leçon par jour te transforme.",defi:"Note une leçon de ton meilleur ou pire call du jour."},
- {mod:"Module 2",emoji:"🎁",titre:"La présuasion.",texte:"Le match se joue avant le match. Envoie de la valeur avant le RDV : tu actives réciprocité et autorité.",defi:"Envoie une ressource utile avant ton prochain RDV."}
+ {mod:"Module 2",emoji:"🎁",titre:"La présuasion.",texte:"Le match se joue avant le match. Envoie de la valeur avant le RDV : tu actives réciprocité et autorité.",defi:"Envoie une ressource utile avant ton prochain RDV."},
+ {mod:"Module 1",emoji:"🔋",titre:"Le cerveau est un radin de l'énergie.",texte:"Il choisit toujours le chemin le moins coûteux à comprendre. Une offre simple et lisible bat une offre riche et confuse.",defi:"Explique ton offre en une phrase qu'un ado comprendrait, teste-la cette semaine."},
+ {mod:"Module 1",emoji:"🧯",titre:"Le cortisol ferme le portefeuille.",texte:"Un prospect sous stress passe en mode survie et n'achète pas. Ton premier travail, c'est de faire baisser la pression.",defi:"Ouvre chaque RDV de la semaine en enlevant un enjeu, pas en en rajoutant un."},
+ {mod:"Module 1",emoji:"🦎",titre:"Le vieux cerveau décide avant toi.",texte:"La partie instinctive tranche en une seconde, le rationnel invente ensuite les raisons. Parle d'abord à l'instinct : sécurité, gain, douleur évitée.",defi:"Commence par l'enjeu vital de ton prospect avant le moindre argument technique."},
+ {mod:"Module 1",emoji:"🪞",titre:"Tes neurones miroirs te trahissent.",texte:"Ton état se transmet sans un mot. Un vendeur tendu fabrique un client tendu.",defi:"Note ton état sur 10 avant chaque appel, ne décroche pas sous 6."},
+ {mod:"Module 1",emoji:"✨",titre:"La dopamine, c'est l'attente du plaisir.",texte:"Le cerveau jouit de l'anticipation plus que de la récompense. Fais-lui vivre le résultat en avance, dans sa tête.",defi:"Fais décrire à un prospect sa vie une fois le problème réglé."},
+ {mod:"Module 2",emoji:"⚓",titre:"Le premier chiffre gagne.",texte:"Ton prospect juge tout par rapport au premier nombre entendu. Ancre haut, sur la valeur, avant de parler tarif.",defi:"Cite le coût du problème avant ton prix, sur chaque devis de la semaine."},
+ {mod:"Module 2",emoji:"🌟",titre:"Un détail soigné rejaillit sur tout.",texte:"Le cerveau généralise à partir d'un seul signal. Un premier contact impeccable te crédibilise sur le reste.",defi:"Soigne un point de contact que tout le monde néglige : ta relance, ta ponctualité."},
+ {mod:"Module 2",emoji:"👥",titre:"La preuve sociale qui ressemble.",texte:"Un cas client qui lui ressemble pèse plus que ton plus gros logo. Le cerveau se projette sur son semblable.",defi:"Prépare un exemple client du même secteur que ton prochain prospect."},
+ {mod:"Module 2",emoji:"⏳",titre:"La rareté vraie accélère.",texte:"Une contrainte réelle de place ou de délai pousse à décider. La fausse urgence, elle, casse la confiance pour toujours.",defi:"Nomme une contrainte honnête de ton agenda ou de ta capacité cette semaine."},
+ {mod:"Module 2",emoji:"🎯",titre:"Chaque profil a son premier mot.",texte:"Le direct veut le résultat, l'analytique veut la preuve, le stable veut la sécurité. Adapte ta première phrase à qui tu as en face.",defi:"Devine le profil de ton prochain prospect et prépare son argument d'ouverture."},
+ {mod:"Module 3",emoji:"🔎",titre:"« C'est-à-dire ? »",texte:"Trois mots qui ouvrent la vraie raison derrière une phrase vague. Le cerveau adore préciser quand on lui laisse la place.",defi:"Réponds « c'est-à-dire ? » à la prochaine généralité d'un prospect."},
+ {mod:"Module 3",emoji:"🕳️",titre:"Le besoin caché est sous le premier.",texte:"Ce qu'il demande n'est pas ce qui le motive. Demande pourquoi deux fois pour toucher le vrai moteur.",defi:"Pose deux « pourquoi » d'affilée sur un besoin exprimé cette semaine."},
+ {mod:"Module 3",emoji:"👂",titre:"Le non-dit parle plus fort.",texte:"Une hésitation, un changement de ton, un silence : le vrai message est là. Écoute la musique, pas juste les paroles.",defi:"Repère une hésitation et pose dessus une question douce, sans juger."},
+ {mod:"Module 3",emoji:"📝",titre:"Prends des notes devant lui.",texte:"Écrire ce qu'il dit lui signale qu'il compte. Un cerveau qui se sent écouté baisse la garde et en dit plus.",defi:"Reprends mot pour mot une phrase notée de ton prospect dans ta réponse."},
+ {mod:"Module 4",emoji:"⚖️",titre:"La valeur d'abord, le prix ensuite.",texte:"Un prix annoncé avant la valeur paraît toujours trop élevé. Fais peser le gain avant de poser le chiffre.",defi:"Ne cite aucun prix tant que la valeur n'est pas explicite, cette semaine."},
+ {mod:"Module 4",emoji:"🔀",titre:"L'alternative qui fait avancer.",texte:"« On part sur A ou sur B ? » fait choisir sans forcer. Le cerveau préfère trancher entre deux options que dire oui ou non.",defi:"Propose un choix fermé pour caler ta prochaine étape, pas une question ouverte."},
+ {mod:"Module 4",emoji:"✅",titre:"Le récap des oui.",texte:"Avant de conclure, rappelle chaque point sur lequel il a dit oui. La cohérence pousse le cerveau à continuer dans le même sens.",defi:"Liste trois accords obtenus avant de proposer de signer."},
+ {mod:"Module 4",emoji:"🤐",titre:"Ne négocie pas contre toi-même.",texte:"Après ton prix, chaque mot en plus est une remise gratuite. Pose le chiffre et laisse le blanc travailler pour toi.",defi:"Compte cinq secondes de silence après ton prochain prix, sans rien ajouter."},
+ {mod:"Module 4",emoji:"⏱️",titre:"Le coût de l'attente.",texte:"Ne rien décider a un prix, souvent invisible. Chiffre ce que son problème lui coûte chaque mois qui passe.",defi:"Fais calculer à un prospect ce que lui coûte un mois d'inaction."},
+ {mod:"Module 5",emoji:"🔁",titre:"Plus il te voit, plus il te fait confiance.",texte:"La simple exposition répétée crée de la familiarité, et la familiarité rassure. Recontacte sans harceler.",defi:"Programme une relance utile pour chaque prospect tiède cette semaine."},
+ {mod:"Module 5",emoji:"🚪",titre:"Les dix premières secondes comptent double.",texte:"Le cerveau grave la première impression et la garde. Prépare ton ouverture comme tu prépares ta fin.",defi:"Écris et répète ta première phrase avant chaque RDV de la semaine."},
+ {mod:"Module 5",emoji:"❤️‍🔥",titre:"Une émotion forte grave le souvenir.",texte:"On oublie les arguments, on retient ce qu'on a ressenti. Fais vivre, ne fais pas que démontrer.",defi:"Raconte une histoire courte qui fait ressentir ton résultat, pas qui l'explique."},
+ {mod:"Module 6",emoji:"🟢",titre:"L'objection est un feu vert déguisé.",texte:"Celui qui objecte s'intéresse, sinon il serait déjà parti. Accueille-la comme un signe d'achat.",defi:"Remercie sincèrement pour la prochaine objection avant d'y répondre."},
+ {mod:"Module 6",emoji:"🤝",titre:"Accueille avant d'argumenter.",texte:"« Je comprends » désarme le cerveau en alerte. Un prospect qui se sent entendu écoute enfin ta réponse.",defi:"Valide l'émotion avant chaque réponse à une objection cette semaine."},
+ {mod:"Module 6",emoji:"🎭",titre:"La vraie objection vient en second.",texte:"La première est souvent un paravent poli. Creuse : « à part ça, qu'est-ce qui vous retient ? »",defi:"Pose la question du « à part ça » à ta prochaine objection prix."},
+ {mod:"Module 7",emoji:"🩺",titre:"La posture du médecin.",texte:"Un médecin ne supplie pas son patient de se soigner, il diagnostique. Prends cette autorité tranquille.",defi:"Entre en RDV pour diagnostiquer, pas pour convaincre, toute la semaine."},
+ {mod:"Module 7",emoji:"🌬️",titre:"Respire avant de décrocher.",texte:"Trois respirations lentes font tomber ton rythme cardiaque, et ta voix se pose. Ton calme s'entend au téléphone.",defi:"Trois respirations lentes avant chaque appel, sans exception, cette semaine."}
 ];
 const OBJS=[
  {obj:"C'est trop cher.",rep:"Ne défends pas ton prix. « Trop cher par rapport à quoi, exactement ? » puis écoute."},
@@ -563,7 +603,8 @@ const OBJS=[
 ];
 let conseilOffset=0;
 function dayNum(){return Math.floor(Date.now()/DAY);}
-function conseilDuJour(){var n=CONSEILS.length;return CONSEILS[(((dayNum()+conseilOffset)%n)+n)%n];}
+function weekNum(){return Math.floor(dayNum()/7);}
+function conseilDuJour(){var n=CONSEILS.length;return CONSEILS[(((weekNum()+conseilOffset)%n)+n)%n];}
 function objDuJour(){return OBJS[dayNum()%OBJS.length];}
 function markAssist(){var k='a'+dayNum();ST.assist=ST.assist||{};if(!ST.assist[k]){ST.assist[k]=true;save();xpToast(15);refreshHeader();}}
 function nextConseil(){conseilOffset++;go('assistant');}
@@ -573,13 +614,13 @@ function assistantHTML(){
   return `
   <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Ton jour</button><button class="segb" onclick="amode('chat',this)">💬 Discuter</button></div>
   <div id="a-quick">
-    <div class="card geste pop"><div class="k">💡 Le conseil du jour · ${c.mod}</div>
+    <div class="card geste pop"><div class="k">💡 Le conseil de la semaine · ${c.mod}</div>
       <div class="txt"><span class="bob">${c.emoji}</span> ${c.titre}</div>
       <div class="mt" style="margin-top:6px">${c.texte}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px">
         <span onclick="nextConseil()" style="color:var(--indigo);font-weight:700;cursor:pointer">↻ un autre</span>
-        <span class="mt">nouveau chaque jour</span></div></div>
-    <div class="card pop" style="animation-delay:.06s;background:#0e1020"><div style="color:#a5b4fc;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">🎯 Ton défi du jour</div>
+        <span class="mt">nouveau chaque semaine</span></div></div>
+    <div class="card pop" style="animation-delay:.06s;background:#0e1020"><div style="color:#a5b4fc;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">🎯 Ton défi de la semaine</div>
       <div style="color:#fff;font-size:15px;font-weight:600;margin-top:6px;line-height:1.35">${c.defi}</div></div>
     <h3 class="sh">L'objection du jour</h3>
     <div class="obj pop" style="animation-delay:.1s"><div class="q">« ${o.obj} »</div><div class="a">${o.rep}</div></div>
@@ -590,7 +631,7 @@ function assistantHTML(){
   </div>
   <div id="a-chat" style="display:none">
     <div style="padding:4px 2px 10px">
-      <div class="bub co">Salut Marc. Prêt pour ton RDV ? Dis-moi qui tu as en face.</div>
+      <div class="bub co">Salut${window._fn?' '+window._fn:''}. Prêt pour ton RDV ? Dis-moi qui tu as en face.</div>
       <div class="bub me">Un DAF très analytique, il coupe tout le temps. J'ai peur de me faire écraser.</div>
       <div class="bub co">Profil Système 2 : il veut du mécanisme et des preuves. Ton avantage, c'est le calme. Pose une question précise, puis tais-toi. Son besoin d'analyser va remplir le silence à ta place.</div>
       <div class="bub me">Et s'il attaque sur le prix ?</div>
@@ -760,10 +801,10 @@ async function genAnalyse(){
   }catch(e){box.value=prev;toastMini('Génération indisponible ici.');}
 }
 
-const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,gestes:gestesHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
+const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
 
 /* Navigation */
-function buildTabs(){var t=[["parcours","🎓","Formation"],["accueil","🏠","Accueil"],["gestes","✅","Gestes"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
+function buildTabs(){var t=[["parcours","🎓","Formation"],["accueil","🏠","Accueil"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
 function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><span class="e">'+t[1]+'</span><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
 renderTabs('parcours');
 function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);refreshHeader();}
@@ -926,6 +967,8 @@ function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=t
 /* ---- Section Profil : résultats des deux tests + notation (dashboard déplacé ici) ---- */
 function openProfil(){
   var d=ST.diag;
+  var l=lastBilan(),p=prevBilan();
+  var photo='<h3 class="sh" style="margin-top:0">Ta photo du moment</h3>'+radarChart(l||{d:0,o:0,c:0,m:0},p);
   var perso=d?`
     <div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0">
       <div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton archétype de vendeur</div>
@@ -944,11 +987,10 @@ function openProfil(){
     <h3 class="sh">Ton positionnement terrain</h3>
     <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>`
   :`<div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0;cursor:pointer" onclick="diagStart()"><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton profil de vendeur</div><div style="font-size:20px;font-weight:800;margin-top:4px">Fais ton diagnostic</div><div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">5 min, réponses 1→5. Révèle ton archétype, ton profil DISC et tes leviers d'achat.</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:700">Commencer →</div></div>`;
-  setM('Ton profil',perso+`
+  setM('Ton profil',photo+perso+`
     <h3 class="sh">Ton tableau de bord</h3>
     ${kpiDashHTML()}
     ${bilanDue()?`<button class="cta" style="margin-top:12px" onclick="openBilan()">📊 Faire mon bilan de la semaine</button>`:''}
-    ${d?`<button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="diagStart()">↻ Refaire mon diagnostic</button>`:''}
     <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>`);
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
@@ -996,16 +1038,60 @@ function authSubmit(mode){var email=(document.getElementById('au-email')||{}).va
   var pr=mode==='login'?sb.auth.signInWithPassword({email:email,password:pass}):sb.auth.signUp({email:email,password:pass});
   pr.then(function(res){if(res.error){authErr(res.error.message);return;}
     if(mode==='signup'&&!res.data.session){authErr('Compte créé. Confirme ton email puis connecte-toi.');return;}
-    document.getElementById('auth').style.display='none';
-    loadUserData().then(function(){touchStreak();go('parcours');});
+    loadUserData().then(afterLogin);
   },function(){authErr('Erreur, réessaie.');});
 }
 function logout(){if(isSupa&&sb){sb.auth.signOut().then(function(){location.reload();});}}
+/* ---- Onboarding 1re connexion (nom, prénom, photo, secteur) ---- */
+const SECTORS=['Entrepreneur / Dirigeant','Commercial','Directeur commercial','Consultant / Freelance','Coach / Formateur','Autre'];
+var _obFile=null,_obDataUrl='';
+function showOnboarding(){
+  var o=document.getElementById('auth');o.style.display='flex';
+  var sec=window._sector||'';
+  o.innerHTML='<div class="auth-card"><div class="auth-brand">PERSUA</div><div class="auth-t">On fait connaissance</div>'+
+    '<div class="ob-photo"><div id="ob-av" class="ob-av"'+(_obDataUrl?' style="background-image:url('+_obDataUrl+');background-size:cover;background-position:center"':'')+'>'+(_obDataUrl?'':'📷')+'</div>'+
+    '<label class="ob-pick">Ajouter ta photo<input id="ob-file" type="file" accept="image/*" style="display:none" onchange="obPreview(event)"></label></div>'+
+    '<input id="ob-first" placeholder="Prénom" value="'+esc(window._fn||'')+'">'+
+    '<input id="ob-last" placeholder="Nom" value="'+esc(window._ln||'')+'">'+
+    '<select id="ob-sector" onchange="obSectorChange()">'+
+      '<option value="">Ton secteur…</option>'+SECTORS.map(function(s){return '<option value="'+s+'"'+(sec===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select>'+
+    '<input id="ob-other" placeholder="Précise ton secteur" value="'+esc(window._sectorOther||'')+'" style="'+(sec==='Autre'?'':'display:none')+'">'+
+    '<div id="ob-err" class="auth-err"></div>'+
+    '<button class="cta" onclick="submitOnboarding()">C\'est parti →</button></div>';
+}
+function obSectorChange(){var s=document.getElementById('ob-sector').value,o=document.getElementById('ob-other');if(o)o.style.display=(s==='Autre')?'':'none';}
+function obPreview(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;_obFile=f;var r=new FileReader();r.onload=function(e){_obDataUrl=e.target.result;var av=document.getElementById('ob-av');if(av){av.style.backgroundImage='url('+_obDataUrl+')';av.style.backgroundSize='cover';av.style.backgroundPosition='center';av.textContent='';}};r.readAsDataURL(f);}
+async function submitOnboarding(){
+  var first=(document.getElementById('ob-first')||{}).value||'',last=(document.getElementById('ob-last')||{}).value||'';
+  var sector=(document.getElementById('ob-sector')||{}).value||'',other=(document.getElementById('ob-other')||{}).value||'';
+  if(!first.trim()){document.getElementById('ob-err').textContent='Ton prénom, au minimum.';return;}
+  if(!sector){document.getElementById('ob-err').textContent='Choisis ton secteur.';return;}
+  if(sector==='Autre'&&!other.trim()){document.getElementById('ob-err').textContent='Précise ton secteur.';return;}
+  document.getElementById('ob-err').textContent='…';
+  var avatar_url=window._avatar||'';
+  try{
+    if(_obFile&&isSupa&&sb._uid){
+      var ext=(_obFile.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+      var path=sb._uid+'/avatar_'+Date.now()+'.'+ext;
+      var up=await sb.storage.from('avatars').upload(path,_obFile,{upsert:true});
+      if(!up.error) avatar_url=sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+    }
+  }catch(e){}
+  window._fn=first.trim();window._ln=last.trim();window._sector=sector;window._sectorOther=other.trim();
+  if(avatar_url){ST.avatar=avatar_url;window._avatar=avatar_url;}
+  window._onbDone=true;save();
+  if(isSupa&&sb._uid){sb.from('profiles').update({first_name:first.trim(),last_name:last.trim(),onboarding_done:true,onboarding:{sector:sector,sectorOther:other.trim(),avatar_url:avatar_url}}).eq('id',sb._uid).then(function(){},function(){});}
+  var au=document.getElementById('auth');if(au)au.style.display='none';
+  enterAppFlow();
+}
+/* ---- Flux post-connexion ---- */
+function enterAppFlow(){touchStreak();if(ST.coach){go('coach');return;}go('parcours');if(!ST.diagDone)setTimeout(diagStart,300);}
+function afterLogin(){renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._onbDone){showOnboarding();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
 /* ---- Démarrage ---- */
 if(isSupa){
   var _sp=document.getElementById('splash');if(_sp)_sp.style.display='none';
   sb.auth.getSession().then(function(res){
-    if(res.data&&res.data.session){loadUserData().then(function(){renderTabs(ST.coach?'coach':'parcours');touchStreak();go(ST.coach?'coach':'parcours');});}
+    if(res.data&&res.data.session){loadUserData().then(afterLogin);}
     else{go('parcours');showAuth('login');}
   });
 }else{
