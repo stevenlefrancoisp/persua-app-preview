@@ -723,7 +723,8 @@ function coachHTML(){
     '<h3 class="sh">Accès à la formation</h3>'+
     '<div class="card"><div class="mt">Qui peut entrer dans l\'app. Le paiement active l\'accès tout seul, ou tu ajoutes un email à la main.</div><button class="cta" onclick="openAcces()">Gérer les accès</button></div>'+
     '<h3 class="sh">Bibliothèque partagée</h3>'+
-    '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>';
+    '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>'+
+    (isSupa?'<button class="cta" style="margin-top:12px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'');
 }
 function openAddRes(){
   setM('Ajouter une ressource',
@@ -1004,7 +1005,8 @@ function openProfil(){
   setM('Ton profil',photo+bilanBlock+perso+`
     <h3 class="sh">Ton tableau de bord</h3>
     ${kpiDashHTML()}
-    <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>`);
+    <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>
+    ${isSupa?`<button class="cta" style="margin-top:8px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>`:''}`);
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
 
@@ -1058,7 +1060,7 @@ function authSubmit(mode){var email=(document.getElementById('au-email')||{}).va
     loadUserData().then(afterLogin);
   },function(){authErr('Erreur, réessaie.');});
 }
-function logout(){if(isSupa&&sb){sb.auth.signOut().then(function(){location.reload();});}}
+function logout(){if(isSupa&&sb){sb.auth.signOut().then(function(){location.reload();},function(){location.reload();});setTimeout(function(){location.reload();},1500);}else{location.reload();}}
 /* ---- Onboarding 1re connexion (nom, prénom, photo, secteur) ---- */
 const SECTORS=['Entrepreneur / Dirigeant','Commercial','Directeur commercial','Consultant / Freelance','Coach / Formateur','Autre'];
 var _obFile=null,_obDataUrl='';
