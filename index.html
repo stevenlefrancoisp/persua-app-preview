@@ -664,43 +664,71 @@ function assistantHTML(){
     <div class="coachbar"><input placeholder="Pose ta question au coach..." readonly><button>➤</button></div>`:`<div class="card" style="text-align:center;border-color:#fcd34d;background:#fffbeb;padding:26px 16px"><div style="font-size:34px">🔒</div><div class="nm" style="margin-top:8px">Assistant IA · niveau 5</div><div class="mt" style="margin-top:6px;line-height:1.5">L'assistant IA qui répond à tes questions de vente en direct se débloque au niveau 5. Continue ta formation (quiz, vidéos, bilans) pour y accéder.</div><button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="openLevelInfo()">Comment monter de niveau ?</button></div>`}
   </div>`;
 }
-/* ===== Communauté animée (bots + interactions élève, débloquée niveau 10) ===== */
-const COMBOTS=[{av:'V',who:'Valérie M.'},{av:'T',who:'Thomas C.'},{av:'M',who:'Marc D.'},{av:'L',who:'Léa P.'},{av:'K',who:'Karim B.'},{av:'S',who:'Sophie R.'},{av:'N',who:'Nadia F.'},{av:'J',who:'Julien C.'},{av:'E',who:'Élodie V.'},{av:'H',who:'Hugo D.'}];
-const COMPOSTS=[
- {id:'c1',av:'S',bg:'#0e1020',who:'Steven · Coach 📌',tag:'Épinglé',min:130,likes:24,replies:[{who:'Léa P.',body:'Je teste ça cette semaine, merci coach 🙏'},{who:'Karim B.',body:'La question qui manque, c\'est un game changer.'}],body:'Défi de la semaine : après un « je vais réfléchir », demande QUELLE info manque, puis tais-toi. Postez ce que ça donne 👇'},
- {id:'c2',av:'V',who:'Valérie M.',tag:'🏆 Victoire',min:300,likes:31,replies:[{who:'Marc D.',body:'Énorme, bravo !'},{who:'Sophie R.',body:'Tu as ancré comment exactement ?'}],body:'Premier closing sans baisser mon prix ! J\'ai ancré le coût de son problème avant d\'annoncer, il a signé direct.'},
- {id:'c3',av:'T',who:'Thomas C.',tag:'❓ Question',min:1080,likes:6,replies:[{who:'Nadia F.',body:'Creuse. « Quelle info précise vous manque ? » avant d\'envoyer.'}],body:'Un prospect me dit « envoyez-moi une plaquette et je reviens vers vous ». J\'envoie, ou je creuse ?'},
- {id:'c4',av:'M',who:'Marc D.',tag:'🏆 Victoire',min:1500,likes:28,replies:[{who:'Julien C.',body:'Le silence, l\'arme la plus dure à tenir 😅'}],body:'J\'ai tenu le silence 4 secondes après mon prix. Le plus dur de ma vie. Il a rempli le blanc et s\'est convaincu tout seul 😅'},
- {id:'c5',av:'K',who:'Karim B.',tag:'💡 Partage',min:2400,likes:19,replies:[],body:'Astuce qui marche : j\'envoie une ressource utile AVANT le RDV. Réciprocité activée, le call démarre déjà à moitié gagné.'},
- {id:'c6',av:'L',who:'Léa P.',tag:'❓ Question',min:3200,likes:9,replies:[{who:'Élodie V.',body:'Reformule sa peur avant de rassurer, ça désamorce.'}],body:'Un DAF hyper analytique qui coupe tout le temps. Comment je garde le lead sans le braquer ?'},
- {id:'c7',av:'N',who:'Nadia F.',tag:'🏆 Victoire',min:4300,likes:22,replies:[],body:'J\'ai chiffré le coût de son inaction : 2 000 €/mois perdus. Mon prix a paru ridicule à côté. Signé.'},
- {id:'c8',av:'H',who:'Hugo D.',tag:'💡 Partage',min:6000,likes:14,replies:[{who:'Valérie M.',body:'Je fais pareil, ça change tout le début de call.'}],body:'Deux minutes de respiration avant chaque RDV. Mon taux de closing a bougé juste avec ça. Le calme se transmet.'}
-];
-const COMREPLIES=['Bravo, continue comme ça 🔥','Excellent, tu appliques la méthode !','Belle prise de conscience 👏','Ça, c\'est du terrain. Respect.','Tu progresses vite, ça se voit.','Merci du partage, très utile.','Force à toi, lâche rien 💪'];
-const WEEKLY=['Alors, cette semaine ? Une victoire, un blocage, un doute ? Raconte 👇','On fait le point : c\'est quoi ta meilleure interaction de la semaine ?','Comment tu te sens sur tes calls en ce moment ? Partage, on avance ensemble.','Un truc qui a marché cette semaine ? Un truc qui a coincé ? Balance 👇'];
+/* ===== Communauté PARTAGÉE (Supabase) : posts / j'aime / commentaires ===== */
+var COM={posts:[],comby:{},likeCount:{},myLikes:{},loaded:false};
 var _pubTag='',_curPost=null;
-function comHash(s){var h=0;s=''+s;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))%100000;}return Math.abs(h);}
-function whenFromMin(m){if(m<60)return 'il y a '+Math.max(1,Math.round(m))+' min';if(m<1440)return 'il y a '+Math.round(m/60)+' h';var d=Math.round(m/1440);return d===1?'hier':'il y a '+d+' j';}
-function comLikes(p){return (p.likes||0)+(ST.likes[p.id]?1:0);}
-function comCount(p){return (p.replies?p.replies.length:0)+((ST.comments[p.id]||[]).length);}
-function weeklyPost(){var t=dayNum();if(!ST.weekly){ST.weekly={last:t,gap:4+Math.floor(Math.random()*3),idx:0};save();}else if(t>=ST.weekly.last+ST.weekly.gap){ST.weekly={last:t,gap:4+Math.floor(Math.random()*3),idx:(ST.weekly.idx+1)%WEEKLY.length};save();}return {id:'wk'+ST.weekly.last,av:'S',bg:'#4f46e5',who:'Steven · Coach 📌',tag:'check-in de la semaine',min:45,likes:5,replies:[],body:WEEKLY[ST.weekly.idx],weekly:true};}
-function studentPostView(p){var age=(Date.now()-(p.t||Date.now()))/60000;var reps=[];if(age>90)reps.push({who:COMBOTS[comHash(p.id)%COMBOTS.length].who,body:COMREPLIES[comHash(p.id)%COMREPLIES.length]});if(age>360)reps.push({who:COMBOTS[(comHash(p.id)+3)%COMBOTS.length].who,body:COMREPLIES[(comHash(p.id)+2)%COMREPLIES.length]});return {id:p.id,av:(window._fn?window._fn.charAt(0).toUpperCase():'M'),who:(window._fn||'Toi')+' (toi)',tag:p.tag||'',min:age,likes:Math.min(14,Math.floor(age/25)),replies:reps,body:p.body,me:true};}
-function findPost(id){if((''+id).indexOf('wk')===0)return weeklyPost();var c=COMPOSTS.filter(function(x){return x.id===id;})[0];if(c)return c;var m=(ST.posts||[]).filter(function(x){return x.id===id;})[0];return m?studentPostView(m):null;}
+function comWhen(ts){var m=(Date.now()-new Date(ts).getTime())/60000;if(m<1)return 'à l\'instant';if(m<60)return 'il y a '+Math.max(1,Math.round(m))+' min';if(m<1440)return 'il y a '+Math.round(m/60)+' h';var d=Math.round(m/1440);return d===1?'hier':'il y a '+d+' j';}
+function comName(){return (window._fn||'Élève')+(window._ln?' '+window._ln.charAt(0).toUpperCase()+'.':'');}
+async function loadCommunity(){
+  if(!isSupa)return;
+  try{
+    var pr=await sb.from('community_posts').select('*').order('created_at',{ascending:false}).limit(80);
+    var posts=pr.data||[];
+    var ids=posts.map(function(p){return p.id;});if(!ids.length)ids=['00000000-0000-0000-0000-000000000000'];
+    var cr=await sb.from('community_comments').select('*').in('post_id',ids).order('created_at');
+    var comby={};(cr.data||[]).forEach(function(c){(comby[c.post_id]=comby[c.post_id]||[]).push(c);});
+    var lr=await sb.from('community_likes').select('post_id,user_id');
+    var lc={},my={};(lr.data||[]).forEach(function(l){lc[l.post_id]=(lc[l.post_id]||0)+1;if(l.user_id===sb._uid)my[l.post_id]=true;});
+    COM={posts:posts,comby:comby,likeCount:lc,myLikes:my,loaded:true};
+    renderComFeed();
+  }catch(e){var f=document.getElementById('comfeed');if(f)f.innerHTML='<div class="card"><div class="mt" style="text-align:center;padding:14px">Communauté indisponible, réessaie plus tard.</div></div>';}
+}
+function comPostHTML(p,locked){
+  var liked=!!COM.myLikes[p.id];
+  var likes=(p.bot_likes||0)+(COM.likeCount[p.id]||0);
+  var comc=(COM.comby[p.id]||[]).length;
+  var coach=p.kind==='coach';
+  var av=p.author_avatar||(p.author_name?p.author_name.charAt(0):'?');
+  var bg=p.author_bg||(coach?'#3730a3':'');
+  return '<div class="post"><div class="ph"><div class="av" '+(bg?'style="background:'+bg+'"':'')+'>'+esc(av)+'</div><div><div class="who">'+esc(p.author_name)+'</div><div class="when">'+comWhen(p.created_at)+(p.tag?' · '+esc(p.tag):'')+'</div></div></div><div class="body">'+esc(p.body)+'</div><div class="acts"><span onclick="'+(locked?'openLevelInfo()':'comLike(\''+p.id+'\')')+'" style="cursor:pointer;'+(liked?'color:var(--indigo);font-weight:700':'')+'">'+(liked?'👏':'👍')+' '+likes+'</span><span onclick="'+(locked?'openLevelInfo()':'comOpen(\''+p.id+'\')')+'" style="cursor:pointer">💬 '+comc+'</span></div></div>';
+}
+function renderComFeed(){
+  var f=document.getElementById('comfeed');if(!f)return;
+  var locked=level()<10;
+  if(!COM.loaded){f.innerHTML='<div class="card"><div class="mt" style="text-align:center;padding:16px">Chargement…</div></div>';return;}
+  if(!COM.posts.length){f.innerHTML='<div class="card"><div class="mt" style="text-align:center;padding:16px">Sois le premier à publier 👇</div></div>';return;}
+  f.innerHTML=COM.posts.map(function(p){return comPostHTML(p,locked);}).join('');
+}
 function communauteHTML(){
   var locked=level()<10;
-  var feed=[weeklyPost()].concat((ST.posts||[]).map(studentPostView)).concat(COMPOSTS);
-  feed.sort(function(a,b){if(a.weekly)return -1;if(b.weekly)return 1;return a.min-b.min;});
   var composer=locked
    ? '<div class="card" style="text-align:center;border-color:#fcd34d;background:#fffbeb"><div style="font-size:30px">🔒</div><div class="nm" style="margin-top:6px">Interaction · niveau 10</div><div class="mt" style="margin-top:4px;line-height:1.5">Publier, aimer et commenter se débloquent au niveau 10. En attendant, lis et inspire-toi de la communauté.</div><button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="openLevelInfo()">Comment monter de niveau ?</button></div>'
    : '<div class="composer"><input id="cinp" placeholder="Partage une victoire, une question, un doute..."><div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><div style="display:flex;gap:6px"><span class="tagchip" onclick="pickTag(this)">🏆 Victoire</span><span class="tagchip" onclick="pickTag(this)">❓ Question</span></div><button class="cta" style="width:auto;margin:0;padding:8px 15px" onclick="publier()">Publier</button></div></div>';
-  return composer+feed.map(function(p){return postHTML(p,locked);}).join('');
+  return composer+'<div id="comfeed"><div class="card"><div class="mt" style="text-align:center;padding:16px">Chargement de la communauté…</div></div></div>';
 }
-function postHTML(p,locked){var liked=!!ST.likes[p.id];return '<div class="post"><div class="ph"><div class="av" '+(p.bg?'style="background:'+p.bg+'"':'')+'>'+esc(p.av)+'</div><div><div class="who">'+esc(p.who)+'</div><div class="when">'+whenFromMin(p.min)+(p.tag?' · '+esc(p.tag):'')+'</div></div></div><div class="body">'+esc(p.body)+'</div><div class="acts"><span onclick="'+(locked?'openLevelInfo()':'toggleLike(\''+p.id+'\')')+'" style="cursor:pointer;'+(liked?'color:var(--indigo);font-weight:700':'')+'">'+(liked?'👏':'👍')+' '+comLikes(p)+'</span><span onclick="'+(locked?'openLevelInfo()':'openComments(\''+p.id+'\')')+'" style="cursor:pointer">💬 '+comCount(p)+'</span></div></div>';}
 function pickTag(el){var was=el.classList.contains('on');el.parentElement.querySelectorAll('.tagchip').forEach(function(c){c.classList.remove('on');});if(!was){el.classList.add('on');_pubTag=el.textContent.trim();}else{_pubTag='';}}
-function toggleLike(id){if(level()<10){openLevelInfo();return;}ST.likes[id]=!ST.likes[id];save();go('communaute');}
-function openComments(id){if(level()<10){openLevelInfo();return;}_curPost=id;renderComments();openModal();}
-function renderComments(){var p=findPost(_curPost);if(!p){closeModal();return;}var all=(p.replies||[]).map(function(r){return {who:r.who,body:r.body};}).concat(ST.comments[_curPost]||[]);setM('Commentaires','<div class="card"><div class="ph"><div class="av" '+(p.bg?'style="background:'+p.bg+'"':'')+'>'+esc(p.av)+'</div><div><div class="who">'+esc(p.who)+'</div><div class="when">'+whenFromMin(p.min)+'</div></div></div><div class="body" style="margin-top:6px">'+esc(p.body)+'</div></div>'+(all.length?all.map(function(r){return '<div class="post" style="padding:11px"><div class="who" style="font-size:13px">'+esc(r.who||((window._fn||'Toi')+' (toi)'))+'</div><div class="body" style="margin-top:3px">'+esc(r.body)+'</div></div>';}).join(''):'<div class="mt" style="text-align:center;padding:12px">Sois le premier à commenter 👇</div>')+'<div class="composer" style="margin-top:10px"><input id="cominp" placeholder="Écris un commentaire..."><button class="cta" style="width:auto;margin:8px 0 0;padding:8px 15px" onclick="addComment()">Envoyer</button></div>');var b=document.querySelector('#modal .ov-body');if(b)b.scrollTop=b.scrollHeight;}
-function addComment(){var el=document.getElementById('cominp'),v=((el&&el.value)||'').trim();if(!v)return;ST.comments[_curPost]=ST.comments[_curPost]||[];ST.comments[_curPost].push({who:(window._fn||'Toi')+' (toi)',body:v});save();renderComments();}
+async function comLike(id){
+  if(level()<10){openLevelInfo();return;}
+  if(!isSupa)return;
+  if(COM.myLikes[id]){delete COM.myLikes[id];COM.likeCount[id]=Math.max(0,(COM.likeCount[id]||1)-1);renderComFeed();sb.from('community_likes').delete().eq('post_id',id).eq('user_id',sb._uid).then(function(){},function(){});}
+  else{COM.myLikes[id]=true;COM.likeCount[id]=(COM.likeCount[id]||0)+1;renderComFeed();sb.from('community_likes').insert({post_id:id,user_id:sb._uid}).then(function(){},function(){});}
+}
+function comOpen(id){if(level()<10){openLevelInfo();return;}_curPost=id;renderComComments();openModal();}
+function renderComComments(){
+  var p=(COM.posts||[]).filter(function(x){return x.id===_curPost;})[0];if(!p){closeModal();return;}
+  var cs=COM.comby[_curPost]||[];
+  var av=p.author_avatar||(p.author_name?p.author_name.charAt(0):'?');var bg=p.author_bg||(p.kind==='coach'?'#3730a3':'');
+  setM('Commentaires','<div class="card"><div class="ph"><div class="av" '+(bg?'style="background:'+bg+'"':'')+'>'+esc(av)+'</div><div><div class="who">'+esc(p.author_name)+'</div><div class="when">'+comWhen(p.created_at)+'</div></div></div><div class="body" style="margin-top:6px">'+esc(p.body)+'</div></div>'+(cs.length?cs.map(function(c){return '<div class="post" style="padding:11px"><div class="who" style="font-size:13px">'+esc(c.author_name)+'</div><div class="body" style="margin-top:3px">'+esc(c.body)+'</div></div>';}).join(''):'<div class="mt" style="text-align:center;padding:12px">Sois le premier à commenter 👇</div>')+'<div class="composer" style="margin-top:10px"><input id="cominp" placeholder="Écris un commentaire..."><button class="cta" style="width:auto;margin:8px 0 0;padding:8px 15px" onclick="comAddComment()">Envoyer</button></div>');
+  var b=document.querySelector('#modal .ov-body');if(b)b.scrollTop=b.scrollHeight;
+}
+async function comAddComment(){
+  var el=document.getElementById('cominp'),v=((el&&el.value)||'').trim();if(!v)return;
+  if(!isSupa)return;
+  var r=await sb.from('community_comments').insert({post_id:_curPost,user_id:sb._uid,author_name:comName(),kind:'eleve',body:v});
+  if(r.error){toastMini('Échec');return;}
+  (COM.comby[_curPost]=COM.comby[_curPost]||[]).push({author_name:comName(),kind:'eleve',body:v,created_at:new Date().toISOString()});
+  if(el)el.value='';renderComComments();
+}
 /* ================= Briques portées de l'espace membre ================= */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
 function todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -877,7 +905,7 @@ const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,rdv:rdvHTML,assistant:a
 function buildTabs(){var t=[["parcours","🎓","Formation"],["accueil","🏠","Accueil"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
 function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><span class="e">'+t[1]+'</span><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
 renderTabs('parcours');
-function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);refreshHeader();}
+function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);refreshHeader();}
 
 /* Modal */
 function openModal(){document.getElementById('modal').classList.add('open');document.querySelector('#modal .ov-body').scrollTop=0;}
@@ -1074,7 +1102,7 @@ function openProfil(){
 function togGeste(id){var was=ST.gestes[id];ST.gestes[id]=!was;save();if(!was)xpToast(10);go('gestes');}
 function markRdv(){var k='r'+dayNum();ST.rdv=ST.rdv||{};if(!ST.rdv[k]){ST.rdv[k]=true;save();xpToast(40);refreshHeader();}go('rdv');}
 function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';btn.parentElement.querySelectorAll('.segb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
-function publier(){if(level()<10){openLevelInfo();return;}var el=document.getElementById('cinp');var v=((el&&el.value)||'').trim();if(!v)return;ST.posts.unshift({id:'me'+Date.now(),body:v,tag:_pubTag||'',t:Date.now()});_pubTag='';save();go('communaute');toastMini('Publié dans la communauté ✅');}
+async function publier(){if(level()<10){openLevelInfo();return;}var el=document.getElementById('cinp');var v=((el&&el.value)||'').trim();if(!v)return;if(!isSupa){toastMini('Connecte-toi pour publier.');return;}var r=await sb.from('community_posts').insert({user_id:sb._uid,author_name:comName(),author_avatar:(window._fn?window._fn.charAt(0).toUpperCase():'?'),kind:'eleve',body:v,tag:_pubTag||null});if(r.error){toastMini('Échec : '+r.error.message);return;}_pubTag='';if(el)el.value='';toastMini('Publié dans la communauté ✅');loadCommunity();}
 
 /* Tutoriel interactif au premier lancement */
 const ONBOARD=[
