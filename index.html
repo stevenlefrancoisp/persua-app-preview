@@ -234,7 +234,7 @@ function scrollToCal(){var s=document.getElementById('screen'),c=document.getEle
 
 /* État persistant */
 /* ===== Supabase : si configuré -> vraie app (auth + backend), sinon -> démo localStorage ===== */
-const SUPA_URL=''; const SUPA_ANON='';   /* <-- remplir pour app.persua-neurovente (anon key = publique, RLS protège) */
+const SUPA_URL='https://rkbvnploxblebwprzvdg.supabase.co'; const SUPA_ANON='sb_publishable_3pFq-QH1oD9Oi0ziqvWMJw_0X77pr74';   /* clé publishable = publique, RLS protège */
 const isSupa = !!(SUPA_URL && SUPA_ANON && window.supabase);
 const sb = isSupa ? window.supabase.createClient(SUPA_URL, SUPA_ANON) : null;
 let syncT=null;
