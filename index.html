@@ -209,7 +209,7 @@
     </div>
     <div class="hdrrow">
       <div class="chip">🔥 <b id="streak">1</b> jours</div>
-      <div class="chip">⭐ <span id="lvl">Niveau 1</span></div>
+      <div class="chip" style="cursor:pointer" onclick="openLevelInfo()">⭐ <span id="lvl">Niveau 1</span></div>
     </div>
   </div>
   <div class="screen" id="screen"></div>
@@ -315,6 +315,16 @@ const LV=[0,300,620,960,1280,1560,1820];   // XP TOTAL requis pour débloquer M1
 function xp(){return Object.keys(ST.done).length*25 + Object.keys(ST.quiz).length*100 + Object.keys(ST.gestes).filter(function(k){return ST.gestes[k];}).length*10 + Object.keys(ST.assist||{}).length*15 + (ST.bilans?ST.bilans.length*30:0) + Object.keys(ST.rdv||{}).length*40;}
 function levelOf(x){let n=1;for(let i=0;i<LV.length;i++){if(x>=LV[i])n=i+1;}return n;}
 function level(){return ST.levelForce||levelOf(xp());}
+function openLevelInfo(){
+  var lv=level(),ia=lv>=5;
+  setM('Ton niveau',
+    '<div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0"><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton niveau actuel</div><div style="font-size:28px;font-weight:800;margin-top:4px">Niveau '+lv+'</div></div>'+
+    '<div class="card"><div class="plabel">Comment tu montes de niveau</div><div class="mt" style="color:#2a2e3d;margin-top:6px">Ton niveau grimpe quand tu fais vivre ta formation. Ce qui pèse le plus :</div>'+
+    '<div class="mt" style="color:#2a2e3d;margin-top:10px;line-height:2">✅ <b>Valider un quiz de module</b> (le plus gros bond)<br>🎥 Regarder tes vidéos de formation<br>📊 Faire ton bilan de la semaine<br>📅 Réserver et faire tes séances avec Steven<br>💡 Passer chaque jour sur l\'assistant</div></div>'+
+    '<div class="card" style="'+(ia?'border-color:#86efac;background:#f0fdf4':'border-color:#fcd34d;background:#fffbeb')+'"><div class="nm">'+(ia?'🔓 Assistant IA débloqué':'🔒 Assistant IA · niveau 5')+'</div><div class="mt" style="margin-top:4px">'+(ia?'Tu y as accès dans l\'onglet Assistant, mode « Discuter ».':'Atteins le niveau 5 pour débloquer l\'assistant IA qui répond à tes questions de vente en direct.')+'</div></div>'+
+    '<button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="closeModal()">Fermer</button>');
+  openModal();
+}
 function reqLevel(i){return i+1;}
 function unlocked(i){return !ST.eleve||i===0||(!!ST.quiz[MOD[i-1].id] && xp()>=LV[i]);}
 function lockReason(i){if(i>0 && !ST.quiz[MOD[i-1].id])return `valide d'abord le ${MOD[i-1].num}`;return `encore ${Math.max(0,LV[i]-xp())} XP en utilisant l'app`;}
@@ -622,7 +632,7 @@ function assistantHTML(){
   markAssist();
   const c=conseilDuJour(),o=objDuJour();
   return `
-  <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Ton jour</button><button class="segb" onclick="amode('chat',this)">💬 Discuter</button></div>
+  <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Ton jour</button><button class="segb" onclick="amode('chat',this)">💬 Discuter${level()>=5?'':' 🔒'}</button></div>
   <div id="a-quick">
     <div class="card geste pop"><div class="k">💡 Le conseil de la semaine · ${c.mod}</div>
       <div class="txt"><span class="bob">${c.emoji}</span> ${c.titre}</div>
@@ -640,14 +650,14 @@ function assistantHTML(){
       <div class="mt">🔴 Tu pousses ta valeur, son cerveau lit une pression. Reformule en question : « Qu'est-ce qui vous ferait dire qu'une solution est la bonne, pour vous ? »</div></div>
   </div>
   <div id="a-chat" style="display:none">
-    <div style="padding:4px 2px 10px">
+    ${level()>=5?`<div style="padding:4px 2px 10px">
       <div class="bub co">Salut${window._fn?' '+window._fn:''}. Prêt pour ton RDV ? Dis-moi qui tu as en face.</div>
       <div class="bub me">Un DAF très analytique, il coupe tout le temps. J'ai peur de me faire écraser.</div>
       <div class="bub co">Profil Système 2 : il veut du mécanisme et des preuves. Ton avantage, c'est le calme. Pose une question précise, puis tais-toi. Son besoin d'analyser va remplir le silence à ta place.</div>
       <div class="bub me">Et s'il attaque sur le prix ?</div>
       <div class="bub co">Tu ne réponds pas au prix, tu ramènes au coût de son problème. Obstacles avant le prix, toujours.</div>
     </div>
-    <div class="coachbar"><input placeholder="Pose ta question au coach..." readonly><button>➤</button></div>
+    <div class="coachbar"><input placeholder="Pose ta question au coach..." readonly><button>➤</button></div>`:`<div class="card" style="text-align:center;border-color:#fcd34d;background:#fffbeb;padding:26px 16px"><div style="font-size:34px">🔒</div><div class="nm" style="margin-top:8px">Assistant IA · niveau 5</div><div class="mt" style="margin-top:6px;line-height:1.5">L'assistant IA qui répond à tes questions de vente en direct se débloque au niveau 5. Continue ta formation (quiz, vidéos, bilans) pour y accéder.</div><button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="openLevelInfo()">Comment monter de niveau ?</button></div>`}
   </div>`;
 }
 function communauteHTML(){
@@ -1053,7 +1063,10 @@ function renderOnboard(){var o=document.getElementById('onboard');if(!o)return;v
 function obNext(){if(obStep<ONBOARD.length-1){obStep++;renderOnboard();}else obDone();}
 function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');if(o)o.remove();}
 
-function enterApp(){var s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);}if(!ST.diagDone)setTimeout(diagStart,300);}
+function enterApp(){var s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);}
+  if(isSupa){if(!ST.coach&&!window._onbDone){setTimeout(showOnboarding,350);}else{enterAppFlow();}return;}
+  if(!ST.diagDone)setTimeout(diagStart,300);}
+function showSplash(){var au=document.getElementById('auth');if(au)au.style.display='none';var s=document.getElementById('splash');if(s){s.classList.remove('hide');s.style.display='flex';s.style.opacity='';}}
 function touchStreak(){var t=dayNum();if(ST.lastDay===t)return;if(ST.lastDay===t-1)ST.streak=(ST.streak||0)+1;else ST.streak=1;ST.lastDay=t;save();}
 /* ---- Auth (vraie app, quand Supabase configuré) ---- */
 function authErr(m){var e=document.getElementById('au-err');if(e)e.textContent=m;}
@@ -1124,7 +1137,7 @@ async function submitOnboarding(){
 function enterAppFlow(){touchStreak();if(ST.coach){go('coach');return;}go('parcours');if(!ST.diagDone)setTimeout(diagStart,300);}
 function afterLogin(){
   if((location.hash+location.search).toLowerCase().indexOf('boost')>=0){ST.streak=367;ST.levelForce=327;ST.lastDay=dayNum();save();}
-  renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._access){showNoAccess();return;}if(!ST.coach&&!window._onbDone){showOnboarding();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
+  renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._access){showNoAccess();return;}if(!ST.coach&&!window._onbDone){showSplash();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
 function showNoAccess(){var o=document.getElementById('auth');o.style.display='flex';o.innerHTML='<div class="auth-card"><div class="auth-brand">PERSUA</div><div class="auth-t">Accès en attente</div><div class="mt" style="text-align:center;line-height:1.55">Ton compte est bien créé, mais l\'accès à la formation n\'est pas encore activé pour cet email. Si tu viens de régler, ça s\'active en quelques minutes. Sinon, écris à Steven pour débloquer ton accès.</div><button class="cta" style="margin-top:16px" onclick="location.reload()">↻ J\'ai réglé, rafraîchir</button><div class="auth-switch" onclick="logout()">Se déconnecter</div></div>';}
 /* ---- Back-office coach : gestion des accès (access_grants) ---- */
 var ACC=[];
