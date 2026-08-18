@@ -244,7 +244,7 @@ const isSupa = !!(SUPA_URL && SUPA_ANON && window.supabase);
 const sb = isSupa ? window.supabase.createClient(SUPA_URL, SUPA_ANON) : null;
 let syncT=null;
 function syncRemote(){ if(!isSupa||!sb._uid) return; clearTimeout(syncT); syncT=setTimeout(function(){
-  sb.from('profiles').update({ app_progress:{done:ST.done,quiz:ST.quiz,gestes:ST.gestes,exoDone:ST.exoDone,assist:ST.assist,rdv:ST.rdv,seen:ST.seen,levelForce:ST.levelForce}, streak:ST.streak }).eq('id',sb._uid).then(function(){},function(){});
+  sb.from('profiles').update({ app_progress:{done:ST.done,quiz:ST.quiz,gestes:ST.gestes,exoDone:ST.exoDone,assist:ST.assist,rdv:ST.rdv,seen:ST.seen,levelForce:ST.levelForce,lastDay:ST.lastDay}, streak:ST.streak }).eq('id',sb._uid).then(function(){},function(){});
 },800); }
 async function loadUserData(){
   var u=(await sb.auth.getUser()).data.user; if(!u) return; sb._uid=u.id;
