@@ -13,7 +13,7 @@
 <title>Persua · mon parcours</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-  :root{--indigo:#4f46e5;--indigo-d:#3730a3;--ink:#0e1020;--muted:#7a7f92;--line:#eceef6;
+  :root{--indigo:#4f46e5;--indigo-d:#3730a3;--ink:#0e1020;--muted:#54596b;--line:#eceef6;
     --bg:#f6f7fb;--card:#fff;--green:#16a34a;--amber:#d97706;--red:#dc2626;--warm:#f59e0b;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0e1020;color:var(--ink)}
@@ -144,7 +144,7 @@
   .vthumb-badge{font-size:11.5px;color:#dcdcf7;margin-top:6px;font-weight:600}
   .vthumb-done{position:absolute;top:10px;right:10px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;z-index:2}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
-  .tab .e{font-size:20px;filter:grayscale(1);opacity:.55}
+  .tab .e{font-size:20px;filter:grayscale(1);opacity:.72}
   .tab.on{color:var(--indigo)}.tab.on .e{filter:none;opacity:1}
   .pop{animation:slideUp .38s ease both}
   @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
@@ -182,7 +182,7 @@
   /* --- Briques portées (check-in, journal, ressources, coach) --- */
   .moodrow{display:flex;gap:6px;margin-top:10px}
   .moodb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 3px;cursor:pointer;min-height:44px}
-  .moodb .me{font-size:20px}.moodb .ml{font-size:9.5px;color:var(--muted);line-height:1.1;text-align:center}
+  .moodb .moode{font-size:22px;line-height:1}.moodb .ml{font-size:10.5px;color:var(--ink);opacity:.75;line-height:1.15;text-align:center;font-weight:600}
   .moodb.on{border-color:var(--indigo);background:#eef0ff}.moodb.on .ml{color:var(--indigo);font-weight:700}
   .jinp{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px;background:#fff;font-family:inherit}
   textarea.jinp{resize:vertical}
@@ -442,14 +442,14 @@ function dashboardHTML(){
     ${p?`<div class="mt" style="text-align:center;margin-top:2px">Trait plein = aujourd'hui, pointillé = ton bilan précédent.</div>`:`<div class="mt" style="text-align:center;margin-top:2px">Ta photo du moment. Refais ton bilan chaque semaine pour voir ta progression sur le radar.</div>`}
     <button class="cta" style="background:#eef0ff;color:#3730a3;margin-top:12px" onclick="toggleAxes(this)">📈 Voir l'évolution dans le temps</button>
     <div class="axcharts" style="display:none;margin-top:6px"><div class="plabel">Moyenne globale</div>${timeGlobal}${timeAx}</div>
-    ${due?`<button class="cta" onclick="openBilan()">📊 C'est l'heure de ton bilan de la semaine</button>`:`<div class="mt" style="text-align:center;margin-top:10px">${ST.bilans.length} bilan${ST.bilans.length>1?'s':''} · prochain dans ${daysToBilan()} j. <span onclick="openBilan()" style="color:var(--indigo);cursor:pointer;font-weight:600">le faire maintenant</span></div>`}</div>`;
+    ${due?`<button class="cta" onclick="openBilan()">📊 C'est l'heure de ton bilan de la semaine</button>`:`<div class="mt" style="text-align:center;margin-top:10px">${ST.bilans.length} bilan${ST.bilans.length>1?'s':''} · prochain dans ${daysToBilan()} j.</div>`}</div>`;
 }
 let BL=null;
 const BILAN_PER_AXIS=4;
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function shufOpts(q){var idx=q.o.map(function(_,i){return i;});shuffle(idx);return {ax:q.ax,q:q.q,o:idx.map(function(i){return q.o[i];}),a:idx.indexOf(q.a)};}
 function pickBilanSet(){var by={d:[],o:[],c:[],m:[]};BILAN.forEach(function(q){by[q.ax].push(q);});var out=[];['d','o','c','m'].forEach(function(k){shuffle(by[k]);out=out.concat(by[k].slice(0,BILAN_PER_AXIS));});return shuffle(out).map(shufOpts);}
-function openBilan(){BL={i:0,ans:{},set:pickBilanSet()};renderBilan();openModal();}
+function openBilan(){if(!bilanDue()){toastMini('Ton prochain bilan dans '+daysToBilan()+' j.');return;}BL={i:0,ans:{},set:pickBilanSet()};renderBilan();openModal();}
 function renderBilan(){const S=BL.set,q=S[BL.i],last=BL.i===S.length-1,picked=BL.ans[BL.i];
   setM('Bilan de la semaine',`
     <div class="mt" style="margin-bottom:8px">Question ${BL.i+1} / ${S.length}</div>
@@ -660,7 +660,7 @@ function curTab(){var t=document.querySelector('.tab.on');return t?t.dataset.k:'
 /* ---- Check-in humeur (élève) ---- */
 const MOODS=[{k:'tension',e:'😣',l:'Sous tension'},{k:'hesitant',e:'😕',l:'Hésitant'},{k:'pose',e:'🙂',l:'Posé'},{k:'confiance',e:'😎',l:'En confiance'},{k:'top',e:'🚀',l:'Au top'}];
 function moodLabel(k){var m=MOODS.find(function(x){return x.k===k;});return m?m.e+' '+m.l:k;}
-function moodWidget(){var cur=ST.checkins[todayISO()];return '<div class="card"><div class="nm">Ton état avant tes RDV du jour</div><div class="moodrow">'+MOODS.map(function(m){return '<button class="moodb '+(cur===m.k?'on':'')+'" onclick="setMood(\''+m.k+'\')"><span class="me">'+m.e+'</span><span class="ml">'+m.l+'</span></button>';}).join('')+'</div></div>';}
+function moodWidget(){var cur=ST.checkins[todayISO()];return '<div class="card"><div class="nm">Ton état avant tes RDV du jour</div><div class="moodrow">'+MOODS.map(function(m){return '<button class="moodb '+(cur===m.k?'on':'')+'" onclick="setMood(\''+m.k+'\')"><span class="moode">'+m.e+'</span><span class="ml">'+m.l+'</span></button>';}).join('')+'</div></div>';}
 function setMood(k){var d=todayISO();ST.checkins[d]=k;touchStreak();save();if(isSupa&&sb._uid)sb.from('checkins').upsert({user_id:sb._uid,day:d,mood:k}).then(function(){},function(){});toastMini('Check-in enregistré. Bonne séance 🎯');if(curTab()==='accueil')go('accueil');}
 
 /* ---- Journal de vente (élève) ---- */
@@ -969,6 +969,9 @@ function openProfil(){
   var d=ST.diag;
   var l=lastBilan(),p=prevBilan();
   var photo='<h3 class="sh" style="margin-top:0">Ta photo du moment</h3>'+radarChart(l||{d:0,o:0,c:0,m:0},p);
+  var bilanBlock=bilanDue()
+    ? '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine</div><div class="mt" style="color:#cdd0f2">16 questions, 5 min. Il met à jour ta photo du moment et ta progression.</div><button class="cta" style="margin-top:11px" onclick="openBilan()">Faire mon bilan</button></div>'
+    : '<div class="card"><div class="nm">✅ Bilan de la semaine fait</div><div class="mt">Prochain dans '+daysToBilan()+' j. Reviens la semaine prochaine pour voir bouger ton radar.</div></div>';
   var perso=d?`
     <div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0">
       <div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton archétype de vendeur</div>
@@ -987,10 +990,9 @@ function openProfil(){
     <h3 class="sh">Ton positionnement terrain</h3>
     <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>`
   :`<div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0;cursor:pointer" onclick="diagStart()"><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton profil de vendeur</div><div style="font-size:20px;font-weight:800;margin-top:4px">Fais ton diagnostic</div><div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">5 min, réponses 1→5. Révèle ton archétype, ton profil DISC et tes leviers d'achat.</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:700">Commencer →</div></div>`;
-  setM('Ton profil',photo+perso+`
+  setM('Ton profil',photo+bilanBlock+perso+`
     <h3 class="sh">Ton tableau de bord</h3>
     ${kpiDashHTML()}
-    ${bilanDue()?`<button class="cta" style="margin-top:12px" onclick="openBilan()">📊 Faire mon bilan de la semaine</button>`:''}
     <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>`);
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
