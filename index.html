@@ -752,7 +752,8 @@ function coachHTML(){
     '<h3 class="sh">Gestion</h3>'+
     '<div class="card"><div class="mt">Vue détaillée des accès : suspendre, changer de niveau, ajouter un email à la main.</div><button class="cta" onclick="openAcces()">Gérer tous les accès</button></div>'+
     '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>'+
-    (isSupa?'<button class="cta" style="margin-top:12px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'');
+    (isSupa?'<button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="openAccount()">⚙️ Mon compte</button>':'')+
+    (isSupa?'<button class="cta" style="margin-top:8px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'');
 }
 async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
 function openAddRes(){
@@ -1034,6 +1035,7 @@ function openProfil(){
   setM('Ton profil',photo+bilanBlock+perso+`
     <h3 class="sh">Ton tableau de bord</h3>
     ${kpiDashHTML()}
+    ${isSupa?`<button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="openAccount()">⚙️ Mon compte</button>`:''}
     <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>
     ${isSupa?`<button class="cta" style="margin-top:8px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>`:''}`);
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
@@ -1093,6 +1095,35 @@ function authSubmit(mode){var email=(document.getElementById('au-email')||{}).va
   },function(){authErr('Erreur, réessaie.');});
 }
 function logout(){if(isSupa&&sb){sb.auth.signOut().then(function(){location.reload();},function(){location.reload();});setTimeout(function(){location.reload();},1500);}else{location.reload();}}
+/* ---- Mon compte : photo, nom/prénom, mot de passe ---- */
+var _acFile=null,_acDataUrl='';
+function openAccount(){
+  var av=ST.avatar||window._avatar||'';_acFile=null;_acDataUrl='';
+  setM('Mon compte',
+    '<div class="ob-photo"><div id="ac-av" class="ob-av"'+(av?' style="background-image:url('+av+');background-size:cover;background-position:center"':'')+'>'+(av?'':'📷')+'</div>'+
+    '<label class="ob-pick">Changer ma photo<input id="ac-file" type="file" accept="image/*" style="display:none" onchange="acPreview(event)"></label></div>'+
+    '<div class="card"><div class="plabel">Prénom</div><input id="ac-first" class="jinp" value="'+esc(window._fn||'')+'">'+
+    '<div class="plabel" style="margin-top:10px">Nom</div><input id="ac-last" class="jinp" value="'+esc(window._ln||'')+'">'+
+    '<button class="cta" style="margin-top:12px" onclick="saveAccount()">Enregistrer</button></div>'+
+    '<div class="card"><div class="plabel">Nouveau mot de passe</div><input id="ac-pass" class="jinp" type="password" placeholder="6 caractères minimum" autocomplete="new-password">'+
+    '<button class="cta" style="margin-top:12px" onclick="changePassword()">Changer mon mot de passe</button></div>'+
+    '<div id="ac-err" class="auth-err"></div>'+
+    '<button class="cta" style="margin-top:4px;background:#eef0ff;color:#3730a3" onclick="closeModal()">Fermer</button>');
+  openModal();
+}
+function acErr(m){var e=document.getElementById('ac-err');if(e)e.textContent=m;}
+function acPreview(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;_acFile=f;var r=new FileReader();r.onload=function(e){_acDataUrl=e.target.result;var a=document.getElementById('ac-av');if(a){a.style.backgroundImage='url('+_acDataUrl+')';a.style.backgroundSize='cover';a.style.backgroundPosition='center';a.textContent='';}};r.readAsDataURL(f);}
+async function saveAccount(){
+  var first=((document.getElementById('ac-first')||{}).value)||'',last=((document.getElementById('ac-last')||{}).value)||'';
+  if(!first.trim()){acErr('Ton prénom, au minimum.');return;}
+  acErr('…');
+  var avatar_url=window._avatar||'';
+  try{ if(_acFile&&isSupa&&sb._uid){var ext=(_acFile.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';var path=sb._uid+'/avatar_'+Date.now()+'.'+ext;var up=await sb.storage.from('avatars').upload(path,_acFile,{upsert:true});if(!up.error)avatar_url=sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;} }catch(e){}
+  window._fn=first.trim();window._ln=last.trim();if(avatar_url){ST.avatar=avatar_url;window._avatar=avatar_url;}save();refreshHeader();
+  if(isSupa&&sb._uid){var ob={};try{var r=await sb.from('profiles').select('onboarding').eq('id',sb._uid).maybeSingle();ob=(r.data&&r.data.onboarding)||{};}catch(e){}ob.avatar_url=avatar_url;sb.from('profiles').update({first_name:first.trim(),last_name:last.trim(),onboarding:ob}).eq('id',sb._uid).then(function(){},function(){});}
+  _acFile=null;toastMini('Compte mis à jour ✅');closeModal();
+}
+function changePassword(){var p=((document.getElementById('ac-pass')||{}).value)||'';if(!p||p.length<6){acErr('Mot de passe : 6 caractères minimum.');return;}if(!isSupa){toastMini('Dispo avec le backend.');return;}acErr('…');sb.auth.updateUser({password:p}).then(function(r){if(r.error){acErr(r.error.message);return;}var f=document.getElementById('ac-pass');if(f)f.value='';acErr('');toastMini('Mot de passe changé ✅');},function(){acErr('Échec, réessaie.');});}
 /* ---- Onboarding 1re connexion (nom, prénom, photo, secteur) ---- */
 const SECTORS=['Entrepreneur / Dirigeant','Commercial','Directeur commercial','Consultant / Freelance','Coach / Formateur','Autre'];
 var _obFile=null,_obDataUrl='';
@@ -1174,6 +1205,6 @@ if(isSupa){
   go('parcours');
 }
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
+<script>if("serviceWorker" in navigator){var _swRefreshing=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(_swRefreshing)return;_swRefreshing=true;location.reload();});window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js")})}</script>
 </body>
 </html>
