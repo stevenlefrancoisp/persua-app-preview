@@ -244,7 +244,7 @@ const isSupa = !!(SUPA_URL && SUPA_ANON && window.supabase);
 const sb = isSupa ? window.supabase.createClient(SUPA_URL, SUPA_ANON) : null;
 let syncT=null;
 function syncRemote(){ if(!isSupa||!sb._uid) return; clearTimeout(syncT); syncT=setTimeout(function(){
-  sb.from('profiles').update({ app_progress:{done:ST.done,quiz:ST.quiz,gestes:ST.gestes,exoDone:ST.exoDone,assist:ST.assist,rdv:ST.rdv,seen:ST.seen}, streak:ST.streak }).eq('id',sb._uid).then(function(){},function(){});
+  sb.from('profiles').update({ app_progress:{done:ST.done,quiz:ST.quiz,gestes:ST.gestes,exoDone:ST.exoDone,assist:ST.assist,rdv:ST.rdv,seen:ST.seen,levelForce:ST.levelForce}, streak:ST.streak }).eq('id',sb._uid).then(function(){},function(){});
 },800); }
 async function loadUserData(){
   var u=(await sb.auth.getUser()).data.user; if(!u) return; sb._uid=u.id;
@@ -1099,7 +1099,9 @@ async function submitOnboarding(){
 }
 /* ---- Flux post-connexion ---- */
 function enterAppFlow(){touchStreak();if(ST.coach){go('coach');return;}go('parcours');if(!ST.diagDone)setTimeout(diagStart,300);}
-function afterLogin(){renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._access){showNoAccess();return;}if(!ST.coach&&!window._onbDone){showOnboarding();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
+function afterLogin(){
+  if((location.hash+location.search).toLowerCase().indexOf('boost')>=0){ST.streak=367;ST.levelForce=327;ST.lastDay=dayNum();save();}
+  renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._access){showNoAccess();return;}if(!ST.coach&&!window._onbDone){showOnboarding();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
 function showNoAccess(){var o=document.getElementById('auth');o.style.display='flex';o.innerHTML='<div class="auth-card"><div class="auth-brand">PERSUA</div><div class="auth-t">Accès en attente</div><div class="mt" style="text-align:center;line-height:1.55">Ton compte est bien créé, mais l\'accès à la formation n\'est pas encore activé pour cet email. Si tu viens de régler, ça s\'active en quelques minutes. Sinon, écris à Steven pour débloquer ton accès.</div><button class="cta" style="margin-top:16px" onclick="location.reload()">↻ J\'ai réglé, rafraîchir</button><div class="auth-switch" onclick="logout()">Se déconnecter</div></div>';}
 /* ---- Back-office coach : gestion des accès (access_grants) ---- */
 var ACC=[];
