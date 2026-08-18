@@ -178,6 +178,7 @@
   .ob-photo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:14px}
   .ob-av{width:84px;height:84px;border-radius:50%;background:#eef0ff;display:flex;align-items:center;justify-content:center;font-size:30px;border:2px solid var(--line);overflow:hidden}
   .ob-pick{color:var(--indigo);font-size:13px;font-weight:600;cursor:pointer}
+  .acctiers{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
   /* --- Briques portées (check-in, journal, ressources, coach) --- */
   .moodrow{display:flex;gap:6px;margin-top:10px}
@@ -259,6 +260,14 @@ async function loadUserData(){
     var ob=prof.onboarding||{};
     if(ob.avatar_url){ST.avatar=ob.avatar_url;window._avatar=ob.avatar_url;}
     window._sector=ob.sector||''; window._sectorOther=ob.sectorOther||'';
+  }
+  /* Porte d'accès : le coach passe toujours ; sinon il faut un grant actif (payé ou accordé). Fail-closed. */
+  window._access = ST.coach; window._tier = ST.coach?'immersion':'academie';
+  if(!ST.coach && u.email){
+    var _em=u.email.toLowerCase();
+    var ag=await sb.from('access_grants').select('active,tier').eq('email',_em).maybeSingle();
+    if(ag.error){var _c=ag.error.code;window._access=(_c==='42P01'||_c==='PGRST205'||_c==='PGRST202');}
+    else{window._access=!!(ag.data&&ag.data.active);if(ag.data&&ag.data.tier)window._tier=ag.data.tier;}
   }
   var rb=await sb.from('bilans').select('*').eq('user_id',u.id).order('taken_at');
   if(rb.data) ST.bilans=rb.data.map(function(b){return {t:new Date(b.taken_at).getTime(),d:b.decouverte,o:b.objections,c:b.closing,m:b.calme};});
@@ -711,6 +720,8 @@ function coachHTML(){
   var rows=st.length?st.map(function(s,i){var flag=(s.lastMood==='tension'||s.lastMood==='hesitant');return '<div class="card resitem" onclick="openFicheEleve('+i+')"><div class="resico">'+(flag?'⚠️':'🎓')+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+(s.journalCount||0)+' entrées journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(flag?' · <b style="color:#dc2626">à checker</b>':'')+'</div></div><span class="rl">fiche →</span></div>';}).join(''):'<div class="card"><div class="mt">Aucun élève chargé.</div></div>';
   return '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">👋 Vue coach</div><div class="mt" style="color:#cdd0f2">Tape un élève : bilans, journal, humeurs, diagnostic, analyse IA privée.</div></div>'+
     '<h3 class="sh">Tes élèves · '+st.length+'</h3>'+rows+
+    '<h3 class="sh">Accès à la formation</h3>'+
+    '<div class="card"><div class="mt">Qui peut entrer dans l\'app. Le paiement active l\'accès tout seul, ou tu ajoutes un email à la main.</div><button class="cta" onclick="openAcces()">Gérer les accès</button></div>'+
     '<h3 class="sh">Bibliothèque partagée</h3>'+
     '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>';
 }
@@ -1088,7 +1099,26 @@ async function submitOnboarding(){
 }
 /* ---- Flux post-connexion ---- */
 function enterAppFlow(){touchStreak();if(ST.coach){go('coach');return;}go('parcours');if(!ST.diagDone)setTimeout(diagStart,300);}
-function afterLogin(){renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._onbDone){showOnboarding();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
+function afterLogin(){renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._access){showNoAccess();return;}if(!ST.coach&&!window._onbDone){showOnboarding();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
+function showNoAccess(){var o=document.getElementById('auth');o.style.display='flex';o.innerHTML='<div class="auth-card"><div class="auth-brand">PERSUA</div><div class="auth-t">Accès en attente</div><div class="mt" style="text-align:center;line-height:1.55">Ton compte est bien créé, mais l\'accès à la formation n\'est pas encore activé pour cet email. Si tu viens de régler, ça s\'active en quelques minutes. Sinon, écris à Steven pour débloquer ton accès.</div><button class="cta" style="margin-top:16px" onclick="location.reload()">↻ J\'ai réglé, rafraîchir</button><div class="auth-switch" onclick="logout()">Se déconnecter</div></div>';}
+/* ---- Back-office coach : gestion des accès (access_grants) ---- */
+var ACC=[];
+const TIERS=[['academie','Académie'],['mentorat','Mentorat'],['immersion','Immersion']];
+var _newTier='academie';
+function tierLabel(t){var f=TIERS.find(function(x){return x[0]===t;});return f?f[1]:(t||'Académie');}
+async function openAcces(){setM('Accès à la formation','<div class="mt">Chargement…</div>');openModal();try{var r=await sb.from('access_grants').select('email,active,tier,updated_at').order('updated_at',{ascending:false});ACC=r.data||[];}catch(e){ACC=[];}renderAcces();}
+function renderAcces(){
+  var list=ACC.length?ACC.map(function(g,i){return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="g" style="min-width:0"><div class="nm" style="word-break:break-all">'+esc(g.email)+'</div><div class="mt">'+(g.active?'✅ actif':'⏸️ suspendu')+' · '+esc(tierLabel(g.tier))+'</div></div><button class="cta" style="width:auto;margin:0;padding:8px 12px;'+(g.active?'background:#fee2e2;color:#991b1b':'')+'" onclick="toggleAcces('+i+')">'+(g.active?'Suspendre':'Activer')+'</button></div><div class="acctiers">'+TIERS.map(function(t){return '<button class="jtag '+(g.tier===t[0]?'on':'')+'" onclick="setAccesTier('+i+',\''+t[0]+'\')">'+t[1]+'</button>';}).join('')+'</div></div>';}).join(''):'<div class="card"><div class="mt">Aucun accès pour l\'instant.</div></div>';
+  setM('Accès à la formation',
+    '<div class="card"><div class="plabel">Ajouter un accès</div><input id="acc-email" class="jinp" type="email" inputmode="email" placeholder="email@eleve.com">'+
+    '<div class="acctiers" style="margin-top:8px">'+TIERS.map(function(t,i){return '<button class="jtag '+(i===0?'on':'')+'" data-t="'+t[0]+'" onclick="pickNewTier(this)">'+t[1]+'</button>';}).join('')+'</div>'+
+    '<button class="cta" style="margin-top:12px" onclick="addAcces()">Donner l\'accès</button></div>'+
+    '<h3 class="sh">Les accès · '+ACC.length+'</h3>'+list);
+}
+function pickNewTier(btn){_newTier=btn.getAttribute('data-t');var p=btn.parentElement;p.querySelectorAll('.jtag').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');}
+async function addAcces(){var em=(((document.getElementById('acc-email')||{}).value)||'').trim().toLowerCase();if(!em||em.indexOf('@')<1){toastMini('Email valide requis.');return;}var r=await sb.from('access_grants').upsert({email:em,active:true,tier:_newTier,source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}toastMini('Accès donné ✅');openAcces();}
+async function toggleAcces(i){var g=ACC[i];if(!g)return;var r=await sb.from('access_grants').update({active:!g.active,updated_at:new Date().toISOString()}).eq('email',g.email);if(r.error){toastMini('Échec');return;}g.active=!g.active;renderAcces();}
+async function setAccesTier(i,t){var g=ACC[i];if(!g)return;var r=await sb.from('access_grants').update({tier:t,updated_at:new Date().toISOString()}).eq('email',g.email);if(r.error){toastMini('Échec');return;}g.tier=t;renderAcces();toastMini('Niveau : '+tierLabel(t));}
 /* ---- Démarrage ---- */
 if(isSupa){
   var _sp=document.getElementById('splash');if(_sp)_sp.style.display='none';
