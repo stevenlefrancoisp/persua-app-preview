@@ -261,6 +261,8 @@ async function loadUserData(){
     if(ob.avatar_url){ST.avatar=ob.avatar_url;window._avatar=ob.avatar_url;}
     window._sector=ob.sector||''; window._sectorOther=ob.sectorOther||'';
   }
+  /* Compte de Steven : série depuis le 26/02/2026 (auto-actualisée) + niveau 327, forcés à l'affichage. */
+  if((u.email||'').toLowerCase()==='pro.stevenzed@gmail.com'){ ST.levelForce=327; ST.lastDay=dayNum(); ST.streak=dayNum()-20510; }
   /* Porte d'accès : le coach passe toujours ; sinon il faut un grant actif (payé ou accordé). Fail-closed. */
   window._access = ST.coach; window._tier = ST.coach?'immersion':'academie';
   if(!ST.coach && u.email){
