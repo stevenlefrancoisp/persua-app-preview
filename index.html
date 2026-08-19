@@ -357,8 +357,11 @@ async function loadUserData(){
   try{ var rr=await sb.from('resources').select('id,title,description,icon,url,sort').order('sort'); if(rr.data) ST.resources=rr.data; }catch(e){}
   if(ST.coach){
     /* Vue coach : inscrits + agrégats humeur/journal + statut d'accès croisé */
-    var rs=await sb.from('profiles').select('id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding').eq('role','eleve');
-    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,last_name:s.last_name||'',email:(s.email||''),streak:s.streak||0,created_at:s.created_at,ap:s.app_progress||{},positioning:s.positioning||null,onboarding:s.onboarding||{},lastMood:null,lastMoodDay:'',journalCount:0,bilans:[],bilansN:0,hasAccess:false,tier:null,asked:false};});
+    var _sel='id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding,coach_id';
+    var rs=await sb.from('profiles').select(_sel).eq('role','eleve');
+    var _hasCoachCol=!rs.error;
+    if(rs.error){rs=await sb.from('profiles').select('id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding').eq('role','eleve');}
+    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,last_name:s.last_name||'',email:(s.email||''),streak:s.streak||0,created_at:s.created_at,ap:s.app_progress||{},positioning:s.positioning||null,onboarding:s.onboarding||{},coach_id:s.coach_id||null,lastMood:null,lastMoodDay:'',journalCount:0,bilans:[],bilansN:0,hasAccess:false,tier:null,asked:false};});
     var byId={},byEmail={}; students.forEach(function(s){byId[s.id]=s;if(s.email)byEmail[s.email.toLowerCase()]=s;});
     var ac=await sb.from('checkins').select('user_id,day,mood');
     (ac.data||[]).forEach(function(c){var s=byId[c.user_id];if(s&&(!s.lastMoodDay||c.day>s.lastMoodDay)){s.lastMoodDay=c.day;s.lastMood=c.mood;}});
@@ -370,6 +373,9 @@ async function loadUserData(){
     var ag=await sb.from('access_grants').select('email,active,tier');
     (ag.data||[]).forEach(function(g){var s=byEmail[(g.email||'').toLowerCase()];if(s){s.hasAccess=!!g.active;s.tier=g.tier||'academie';}});
     students.forEach(function(s){s.bilansN=s.bilans.length;s.stats=studentStats(s.ap,s.bilansN);try{s.diag=(s.positioning&&Object.keys(s.positioning).length)?computeDiag(s.positioning):null;}catch(e){s.diag=null;}s.lastActive=s.stats.lastDay?Math.max(0,dayNum()-s.stats.lastDay):null;});
+    var _isHead=(u.email||'').toLowerCase()==='pro.stevenzed@gmail.com';window._isHead=_isHead;
+    if(!_isHead&&_hasCoachCol){students=students.filter(function(s){return s.coach_id===sb._uid;});}
+    if(_isHead){try{var rco=await sb.from('profiles').select('id,first_name,last_name').eq('role','coach');window._coaches=(rco.data||[]).filter(function(c){return c.id!==sb._uid;}).map(function(c){return {id:c.id,name:((c.first_name||'')+' '+(c.last_name||'')).trim()||'Coach'};});}catch(e){window._coaches=[];}}
     ST.students=students;
   }else{
     /* Vue élève : son journal + ses check-ins */
@@ -1007,6 +1013,7 @@ function coachHTML(){
 }
 async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';closeModal();toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
 function filterEleves(){var q=(((document.getElementById('coachq')||{}).value)||'').toLowerCase();document.querySelectorAll('#eleves-list .eleve-row').forEach(function(r){r.style.display=(!q||(r.dataset.n||'').indexOf(q)>=0)?'':'none';});}
+function assignCoach(studentId,coachId){if(!isSupa)return;sb.rpc('assign_coach',{student:studentId,coach:coachId||null}).then(function(r){if(r.error){toastMini('Échec : '+r.error.message);return;}var s=(ST.students||[]).filter(function(x){return x.id===studentId;})[0];if(s)s.coach_id=coachId||null;if(FE&&FE.prof)FE.prof.coach_id=coachId||null;toastMini(coachId?'Élève assigné ✅':'Élève désassigné');},function(){toastMini('Échec de l\'assignation');});}
 function openCoachDash(){
   var st=ST.students||[];
   var active=st.filter(function(s){return s.hasAccess;});
@@ -1065,7 +1072,7 @@ async function openFicheEleve(i){
     var jr=await sb.from('journal_entries').select('*').eq('user_id',uid).order('occurred_at',{ascending:false});
     var ck=await sb.from('checkins').select('day,mood').eq('user_id',uid).order('day',{ascending:false});
     var bl=await sb.from('bilans').select('*').eq('user_id',uid).order('taken_at');
-    var pr=await sb.from('profiles').select('positioning,streak,onboarding,first_name,last_name,app_progress').eq('id',uid).maybeSingle();
+    var pr=await sb.from('profiles').select('positioning,streak,onboarding,first_name,last_name,app_progress,coach_id').eq('id',uid).maybeSingle();
     var an=await sb.from('coach_analyses').select('analysis,updated_at').eq('user_id',uid).maybeSingle();
     FE.journal=jr.data||[];FE.checkins=ck.data||[];FE.bilans=bl.data||[];FE.prof=pr.data||{};FE.analysis=(an.data&&an.data.analysis)||'';FE.analysisAt=(an.data&&an.data.updated_at)||'';
   }catch(e){}
@@ -1109,9 +1116,10 @@ function renderFicheEleve(){
   /* 5. Réponses au diagnostic (data brute) */
   var qa=[];try{var pos=prof.positioning||{};qa=POSQ.map(function(q){var v=pos[q.id];var a=v;if(q.kind!=='scale'&&q.options){var o=q.options.find(function(x){return x.tag===v;});a=o?o.label:v;}else if(q.kind==='scale'&&v)a=v+'/5';return {q:q.title,a:a};}).filter(function(x){return x.a!=null&&x.a!=='';});}catch(e){}
   var repHTML=qa.length?'<h3 class="sh">Ses réponses</h3><details class="repdet"><summary>Voir ses '+qa.length+' réponses au diagnostic</summary><div class="card" style="margin-top:8px">'+qa.map(function(x){return '<div class="rr" style="border-bottom:1px solid #f2f3f8;padding:7px 0;display:block"><div class="mt" style="color:#2a2e3d;font-weight:600">'+esc(x.q)+'</div><div class="mt" style="color:var(--indigo);margin-top:2px">'+esc(String(x.a))+'</div></div>';}).join('')+'</div></details>':'';
+  var assignHTML=window._isHead?'<div class="card"><div class="plabel">Coach référent</div><select class="jinp" onchange="assignCoach(\''+s.id+'\',this.value)"><option value="">— Non assigné</option>'+((window._coaches||[]).map(function(c){return '<option value="'+c.id+'"'+(((prof.coach_id||s.coach_id))===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join(''))+'</select><div class="mt" style="margin-top:6px">Cet élève apparaîtra dans la file du coach choisi.</div></div>':'';
   var apiNote=location.hostname.indexOf('github.io')>=0?'<div class="mt" style="margin-top:6px">La génération IA s\'active une fois l\'app déployée sur le domaine. Ici tu peux écrire l\'analyse à la main.</div>':'';
   setM('Fiche · '+esc(name),
-    progHTML+posHTML+bilanHTML+
+    progHTML+assignHTML+posHTML+bilanHTML+
     '<h3 class="sh">Journal de vente · '+FE.journal.length+'</h3><div class="card">'+jHTML+'</div>'+
     '<h3 class="sh">Humeurs récentes</h3><div class="card">'+cHTML+'</div>'+
     repHTML+
