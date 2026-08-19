@@ -164,6 +164,14 @@
   .seg{display:flex;background:#eceef6;border-radius:12px;padding:3px;margin-bottom:12px}
   .segb{flex:1;border:0;background:transparent;padding:9px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
   .segb.on{background:#fff;color:var(--indigo);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .segb-ai{position:relative;overflow:hidden;color:var(--indigo);font-weight:800}
+  .segb-ai::after{content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(129,140,248,.55),transparent);transform:skewX(-20deg);animation:aishine 2.8s ease-in-out infinite;pointer-events:none}
+  @keyframes aishine{0%{left:-70%}60%{left:140%}100%{left:140%}}
+  .ai-msgs{padding:6px 0 4px;min-height:120px}
+  .ai-msgs .bub{white-space:pre-wrap}
+  .ai-sug{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .ai-chip{background:#eef0ff;color:#3730a3;border-radius:12px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;line-height:1.3}
+  .ai-typing{opacity:.55;font-style:italic}
   .composer{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
   .composer input{width:100%;border:0;font-size:16px;outline:none;background:transparent}
   .post{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
@@ -370,7 +378,7 @@ function openLevelInfo(){
     '<div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0"><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton niveau actuel</div><div style="font-size:28px;font-weight:800;margin-top:4px">Niveau '+lv+'</div></div>'+
     '<div class="card"><div class="plabel">Comment tu montes de niveau</div><div class="mt" style="color:#2a2e3d;margin-top:6px">Ton niveau grimpe quand tu fais vivre ta formation. Ce qui pèse le plus :</div>'+
     '<div class="mt" style="color:#2a2e3d;margin-top:10px;line-height:2">✅ <b>Valider un quiz de module</b> (le plus gros bond)<br>🎥 Regarder tes vidéos de formation<br>📊 Faire ton bilan de la semaine<br>📅 Réserver et faire tes séances avec Steven<br>💡 Passer chaque jour sur l\'assistant</div></div>'+
-    '<div class="card" style="'+(ia?'border-color:#86efac;background:#f0fdf4':'border-color:#fcd34d;background:#fffbeb')+'"><div class="nm">'+(ia?'🔓 Assistant IA débloqué':'🔒 Assistant IA · niveau 5')+'</div><div class="mt" style="margin-top:4px">'+(ia?'Tu y as accès dans l\'onglet Assistant, mode « Discuter ».':'Atteins le niveau 5 pour débloquer l\'assistant IA qui répond à tes questions de vente en direct.')+'</div></div>'+
+    '<div class="card" style="border-color:#c7d2fe;background:#eef2ff"><div class="nm">✨ Ton Coach IA · dispo maintenant</div><div class="mt" style="margin-top:4px">Onglet <b>Assistant</b> → <b>✨ Coach IA</b> : pose-lui tes questions de vente, prépare tes RDV, il répond en direct en connaissant ton profil.</div></div>'+
     '<button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="closeModal()">Fermer</button>');
   openModal();
 }
@@ -681,7 +689,7 @@ function assistantHTML(){
   markAssist();
   const c=conseilDuJour(),o=objDuJour();
   return `
-  <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Ton jour</button><button class="segb" onclick="amode('chat',this)">💬 Discuter${level()>=5?'':' 🔒'}</button></div>
+  <div class="seg"><button class="segb on" onclick="amode('quick',this)">⚡ Ton jour</button><button class="segb segb-ai" onclick="amode('chat',this)">✨ Coach IA</button></div>
   <div id="a-quick">
     <div class="card geste pop"><div class="k">💡 Le conseil de la semaine · ${c.mod}</div>
       <div class="txt"><span class="bob">${c.emoji}</span> ${c.titre}</div>
@@ -699,15 +707,45 @@ function assistantHTML(){
       <div class="mt">🔴 Tu pousses ta valeur, son cerveau lit une pression. Reformule en question : « Qu'est-ce qui vous ferait dire qu'une solution est la bonne, pour vous ? »</div></div>
   </div>
   <div id="a-chat" style="display:none">
-    ${level()>=5?`<div style="padding:4px 2px 10px">
-      <div class="bub co">Salut${window._fn?' '+window._fn:''}. Prêt pour ton RDV ? Dis-moi qui tu as en face.</div>
-      <div class="bub me">Un DAF très analytique, il coupe tout le temps. J'ai peur de me faire écraser.</div>
-      <div class="bub co">Profil Système 2 : il veut du mécanisme et des preuves. Ton avantage, c'est le calme. Pose une question précise, puis tais-toi. Son besoin d'analyser va remplir le silence à ta place.</div>
-      <div class="bub me">Et s'il attaque sur le prix ?</div>
-      <div class="bub co">Tu ne réponds pas au prix, tu ramènes au coût de son problème. Obstacles avant le prix, toujours.</div>
-    </div>
-    <div class="coachbar"><input placeholder="Pose ta question au coach..." readonly><button>➤</button></div>`:`<div class="card" style="text-align:center;border-color:#fcd34d;background:#fffbeb;padding:26px 16px"><div style="font-size:34px">🔒</div><div class="nm" style="margin-top:8px">Assistant IA · niveau 5</div><div class="mt" style="margin-top:6px;line-height:1.5">L'assistant IA qui répond à tes questions de vente en direct se débloque au niveau 5. Continue ta formation (quiz, vidéos, bilans) pour y accéder.</div><button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="openLevelInfo()">Comment monter de niveau ?</button></div>`}
+    <div id="ai-msgs" class="ai-msgs"></div>
+    <div class="coachbar"><input id="ai-input" placeholder="Pose ta question au coach…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();aiSend();}"><button onclick="aiSend()" aria-label="Envoyer">➤</button></div>
   </div>`;
+}
+/* ===== Coach IA réel (streaming via /api/chat) ===== */
+var AICHAT={msgs:[],busy:false};
+function aiProfile(){var d=ST.diag;if(!d)return null;var strongest=null;if(d.funnel&&d.funnel.length){var f=d.funnel.filter(function(x){return x.score>0;});if(f.length)strongest=f.reduce(function(a,b){return b.score>a.score?b:a;}).label;}return {firstName:window._fn||'',type:d.type,nickname:d.nickname,discDominant:(d.disc&&d.disc.label)||d.dom,discSecondary:(DDISC[d.sec]&&DDISC[d.sec].label)||d.sec,archetype:d.arch&&d.arch.name,moteur:d.moteur,soncas:(d.son||[]).map(function(s){return s.label;}),weakest:d.weakest&&d.weakest.label,strongest:strongest};}
+function aiMsgsHTML(){
+  if(!AICHAT.msgs.length){
+    var sug=['Prépare mon prochain RDV','Traiter « c\'est trop cher »','Un prospect qui dit « je vais réfléchir »','Comment closer sans forcer ?'];
+    return '<div class="bub co">Salut'+(window._fn?' '+esc(window._fn):'')+' 👋 Je suis ton coach IA, dispo 24/7. Dis-moi qui tu as en face ou ta situation, je te prépare le bon move.</div>'+
+      '<div class="ai-sug">'+sug.map(function(s){return '<span class="ai-chip" onclick="aiQuick(this)">'+esc(s)+'</span>';}).join('')+'</div>';
+  }
+  return AICHAT.msgs.map(function(m){return '<div class="bub '+(m.role==='user'?'me':'co')+'">'+(m.text?esc(m.text):'<span class="ai-typing">le coach réfléchit…</span>')+'</div>';}).join('');
+}
+function renderAIMsgs(){var e=document.getElementById('ai-msgs');if(!e)return;e.innerHTML=aiMsgsHTML();var sc=document.getElementById('screen');if(sc)sc.scrollTop=sc.scrollHeight;}
+function aiQuick(el){var i=document.getElementById('ai-input');if(i)i.value=el.textContent;aiSend();}
+function aiSetLast(t){for(var i=AICHAT.msgs.length-1;i>=0;i--){if(AICHAT.msgs[i].role==='assistant'){AICHAT.msgs[i].text=t;break;}}renderAIMsgs();}
+function aiSend(){
+  if(AICHAT.busy)return;
+  var el=document.getElementById('ai-input');var v=((el&&el.value)||'').trim();if(!v)return;
+  if(el)el.value='';
+  AICHAT.msgs.push({role:'user',text:v});AICHAT.msgs.push({role:'assistant',text:''});
+  renderAIMsgs();streamAI();
+}
+async function streamAI(){
+  if(!isSupa){aiSetLast('Le coach IA est dispo sur l\'app en ligne (app.persua-neurovente.com).');return;}
+  AICHAT.busy=true;
+  var token='';try{var s=await sb.auth.getSession();token=(s&&s.data&&s.data.session&&s.data.session.access_token)||'';}catch(e){}
+  if(!token){aiSetLast('⚠️ Reconnecte-toi pour parler au coach.');AICHAT.busy=false;return;}
+  try{
+    var payload={messages:AICHAT.msgs.filter(function(m){return m.text&&m.text.trim();}).map(function(m){return {role:m.role,text:m.text};}),profile:aiProfile()};
+    var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(payload)});
+    if(!res.ok||!res.body){var t='';try{t=await res.text();}catch(e){}aiSetLast('⚠️ '+((t&&t.slice(0,200))||('Erreur '+res.status)));AICHAT.busy=false;return;}
+    var reader=res.body.getReader(),dec=new TextDecoder(),acc='';
+    for(;;){var r=await reader.read();if(r.done)break;acc+=dec.decode(r.value,{stream:true});aiSetLast(acc);}
+    if(!acc.trim())aiSetLast('(le coach n\'a rien renvoyé, réessaie)');
+  }catch(e){aiSetLast('⚠️ Connexion interrompue, réessaie.');}
+  AICHAT.busy=false;
 }
 /* ===== Communauté PARTAGÉE (Supabase) : posts / j'aime / commentaires ===== */
 var COM={posts:[],comby:{},likeCount:{},myLikes:{},loaded:false};
@@ -1213,7 +1251,7 @@ function openDashboard(){go('suivi');}
 /* Gestes / Assistant / Communauté */
 function togGeste(id){var was=ST.gestes[id];ST.gestes[id]=!was;save();if(!was)xpToast(10);go('gestes');}
 function markRdv(){var k='r'+dayNum();ST.rdv=ST.rdv||{};if(!ST.rdv[k]){ST.rdv[k]=true;save();xpToast(40);refreshHeader();}go('rdv');}
-function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';btn.parentElement.querySelectorAll('.segb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function amode(m,btn){document.getElementById('a-quick').style.display=m==='quick'?'':'none';document.getElementById('a-chat').style.display=m==='chat'?'':'none';btn.parentElement.querySelectorAll('.segb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');if(m==='chat'){renderAIMsgs();var i=document.getElementById('ai-input');if(i)setTimeout(function(){i.focus();},60);}}
 async function publier(){if(level()<10){openLevelInfo();return;}var el=document.getElementById('cinp');var v=((el&&el.value)||'').trim();if(!v)return;if(!isSupa){toastMini('Connecte-toi pour publier.');return;}var r=await sb.from('community_posts').insert({user_id:sb._uid,author_name:comName(),author_avatar:(window._fn?window._fn.charAt(0).toUpperCase():'?'),kind:'eleve',body:v,tag:_pubTag||null});if(r.error){toastMini('Échec : '+r.error.message);return;}_pubTag='';if(el)el.value='';toastMini('Publié dans la communauté ✅');loadCommunity();}
 
 /* Tutoriel interactif au premier lancement */
