@@ -205,6 +205,9 @@
   .ob-dots span{width:7px;height:7px;border-radius:50%;background:#d7dbe6;transition:all .2s}
   .ob-dots span.on{background:var(--indigo);width:20px;border-radius:4px}
   .ob-skip{margin-top:12px;color:var(--muted);font-size:13px;cursor:pointer}
+  #gate{position:absolute;inset:0;z-index:66;background:var(--bg);display:flex;flex-direction:column}
+  .gate-head{background:var(--indigo-d);color:#fff;font-size:12.5px;font-weight:800;text-align:center;padding:calc(11px + env(safe-area-inset-top)) 16px 11px;line-height:1.35}
+  .gate-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 18px calc(24px + env(safe-area-inset-bottom))}
   #splash{position:absolute;inset:0;z-index:70;background:linear-gradient(160deg,#3730a3,#4f46e5 58%,#6d63ff);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;cursor:pointer;transition:opacity .45s ease}
   #splash.hide{opacity:0;pointer-events:none}
   #splash .brand{color:rgba(255,255,255,.8);font-size:13px;font-weight:800;letter-spacing:4px;margin-bottom:26px}
@@ -1113,7 +1116,9 @@ function computeDiag(ans){
   return {type:type,nickname:t.nickname,blurb:t.blurb,dom:dom,sec:sec,disc:DDISC[dom],arch:DARCH[dom],funnel:funnel,weakest:weakest,son:sonTop,moteur:DMOT[ans['m_moteur']]||'ta réussite'};
 }
 /* ---- Déroulé des deux tests (personnalité + niveau terrain), réponses 1->5 en barre ---- */
-function diagStart(){ST.diagAns=ST.diagAns||{};ST.DR={i:0};renderDiag();openModal();}
+var _diagTarget='modal';
+function diagStart(){_diagTarget='modal';ST.diagAns=ST.diagAns||{};ST.DR={i:0};renderDiag();openModal();}
+function forceDiag(){_diagTarget='gate';ST.diagAns=ST.diagAns||{};ST.DR={i:0};renderDiag();}
 function renderDiag(){var i=ST.DR.i,q=POSQ[i],picked=ST.diagAns[q.id];
   var phase=(q.cat==='funnel')?'Test 2 · ton niveau terrain':'Test 1 · ton profil de vendeur';
   var body;
@@ -1123,20 +1128,28 @@ function renderDiag(){var i=ST.DR.i,q=POSQ[i],picked=ST.diagAns[q.id];
     body=q.options.map(function(o){return '<div class="qopt '+(picked===o.tag?'on':'')+'" onclick="diagAns(\''+q.id+'\',\''+o.tag+'\')">'+o.label+'</div>';}).join('');
   }
   var last=i===POSQ.length-1;
-  setM('Diagnostic',`
+  var inner=`
     <div class="mt" style="margin-bottom:6px">${phase} · ${i+1}/${POSQ.length}</div>
     <div class="pbar" style="margin-bottom:16px"><i style="width:${Math.round((i+1)/POSQ.length*100)}%"></i></div>
     <div class="plabel">${q.section}</div>
     <div class="nm" style="font-size:16px;margin:6px 0 14px;line-height:1.4">${q.title}</div>
     ${body}
     <div style="display:flex;gap:8px;margin-top:18px">${i>0?'<button class="cta" style="background:#eef0ff;color:#3730a3" onclick="diagNav(-1)">Précédent</button>':''}
-    <button class="cta" style="${picked==null?'opacity:.45;pointer-events:none':''}" onclick="diagNext()">${last?'Voir mon profil':'Suivant →'}</button></div>`);
-  document.querySelector('#modal .ov-body').scrollTop=0;
+    <button class="cta" style="${picked==null?'opacity:.45;pointer-events:none':''}" onclick="diagNext()">${last?'Voir mon profil':'Suivant →'}</button></div>`;
+  if(_diagTarget==='gate'){
+    var g=document.getElementById('gate');
+    if(!g){g=document.createElement('div');g.id='gate';document.querySelector('.device').appendChild(g);}
+    g.innerHTML='<div class="gate-head">🎯 Ton positionnement · indispensable pour accéder à ta formation</div><div class="gate-body" id="gate-body">'+inner+'</div>';
+    var gb=document.getElementById('gate-body');if(gb)gb.scrollTop=0;
+  } else {
+    setM('Diagnostic',inner);
+    document.querySelector('#modal .ov-body').scrollTop=0;
+  }
 }
 function diagAns(id,val){ST.diagAns[id]=val;save();ST.DR.i=Math.min(POSQ.length-1,ST.DR.i);renderDiag();}
 function diagNav(d){ST.DR.i+=d;renderDiag();}
 function diagNext(){if(ST.DR.i<POSQ.length-1){ST.DR.i++;renderDiag();}else diagFinish();}
-function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=true;save();refreshHeader();xpToast(60);if(isSupa&&sb._uid)sb.from('profiles').update({positioning:ST.diagAns,positioning_submitted_at:new Date().toISOString()}).eq('id',sb._uid).then(function(){},function(){});openProfil();}
+function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=true;save();refreshHeader();xpToast(60);if(isSupa&&sb._uid)sb.from('profiles').update({positioning:ST.diagAns,positioning_submitted_at:new Date().toISOString()}).eq('id',sb._uid).then(function(){},function(){});var g=document.getElementById('gate');if(g||_diagTarget==='gate'){if(g)g.remove();_diagTarget='modal';toastMini('Positionnement enregistré 🎯');enterAppFlow();}else{closeModal();go('suivi');}}
 /* ---- Section Profil : résultats des deux tests + notation (dashboard déplacé ici) ---- */
 function sectorSelectHTML(){var sec=window._sector||'';return '<div class="plabel" style="margin-top:10px">Secteur</div><select id="ac-sector" class="jinp"><option value="">Ton secteur…</option>'+SECTORS.map(function(s){return '<option value="'+esc(s)+'"'+(sec===s?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select>';}
 function openProfil(){
@@ -1208,14 +1221,13 @@ function startOnboarding(){obStep=0;var o=document.createElement('div');o.id='on
 function renderOnboard(){var o=document.getElementById('onboard');if(!o)return;var s=ONBOARD[obStep],last=obStep===ONBOARD.length-1;
   o.innerHTML=`<div class="ob-card pop"><div class="ob-emoji bob">${s.e}</div><div class="ob-title">${s.t}</div><div class="ob-text">${s.x}</div>
     <div class="ob-dots">${ONBOARD.map(function(_,i){return `<span class="${i===obStep?'on':''}"></span>`;}).join('')}</div>
-    <button class="cta" onclick="obNext()">${last?"C'est parti":'Suivant'}</button>${last?'':'<div class="ob-skip" onclick="obDone()">passer</div>'}</div>`;
+    <button class="cta" onclick="obNext()">${last?"C'est parti":'Suivant'}</button></div>`;
 }
 function obNext(){if(obStep<ONBOARD.length-1){obStep++;renderOnboard();}else obDone();}
-function obDone(){ST.seen=true;save();var o=document.getElementById('onboard');if(o)o.remove();}
+function obDone(){ST.seen=true;save();if(typeof syncRemote==='function')syncRemote();var o=document.getElementById('onboard');if(o)o.remove();enterAppFlow();}
 
 function enterApp(){var s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(function(){s.style.display='none';},450);}
-  if(isSupa){if(!ST.coach&&!window._onbDone){setTimeout(showOnboarding,350);}else{enterAppFlow();}return;}
-  if(!ST.diagDone)setTimeout(diagStart,300);}
+  setTimeout(enterAppFlow,120);}
 function showSplash(){var au=document.getElementById('auth');if(au)au.style.display='none';var s=document.getElementById('splash');if(s){s.classList.remove('hide');s.style.display='flex';s.style.opacity='';}}
 function touchStreak(){var t=dayNum();if(ST.lastDay===t)return;if(ST.lastDay===t-1)ST.streak=(ST.streak||0)+1;else ST.streak=1;ST.lastDay=t;save();}
 /* ---- Auth (vraie app, quand Supabase configuré) ---- */
@@ -1294,8 +1306,10 @@ async function submitOnboarding(){
   var first=(document.getElementById('ob-first')||{}).value||'',last=(document.getElementById('ob-last')||{}).value||'';
   var sector=(document.getElementById('ob-sector')||{}).value||'',other=(document.getElementById('ob-other')||{}).value||'';
   if(!first.trim()){document.getElementById('ob-err').textContent='Ton prénom, au minimum.';return;}
+  if(!last.trim()){document.getElementById('ob-err').textContent='Ton nom aussi.';return;}
   if(!sector){document.getElementById('ob-err').textContent='Choisis ton secteur.';return;}
   if(sector==='Autre'&&!other.trim()){document.getElementById('ob-err').textContent='Précise ton secteur.';return;}
+  if(!_obDataUrl&&!window._avatar){document.getElementById('ob-err').textContent='Ajoute ta photo, elle apparaît dans la communauté.';return;}
   document.getElementById('ob-err').textContent='…';
   var avatar_url=window._avatar||'';
   try{
@@ -1314,7 +1328,14 @@ async function submitOnboarding(){
   enterAppFlow();
 }
 /* ---- Flux post-connexion ---- */
-function enterAppFlow(){touchStreak();if(ST.coach){go('coach');return;}go('parcours');if(!ST.diagDone)setTimeout(diagStart,300);}
+function enterAppFlow(){touchStreak();
+  if(!ST.coach){
+    if(!window._onbDone){showOnboarding();return;}
+    if(!ST.seen){startOnboarding();return;}
+    if(!ST.diagDone){forceDiag();return;}
+  }
+  if(ST.coach){go('coach');return;}
+  go('parcours');}
 function afterLogin(){
   if((location.hash+location.search).toLowerCase().indexOf('boost')>=0){ST.streak=367;ST.levelForce=327;ST.lastDay=dayNum();save();}
   renderTabs(ST.coach?'coach':'parcours');if(!ST.coach&&!window._access){showNoAccess();return;}if(!ST.coach&&!window._onbDone){showSplash();return;}var au=document.getElementById('auth');if(au)au.style.display='none';enterAppFlow();}
