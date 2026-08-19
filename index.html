@@ -37,6 +37,20 @@
   .statrow .go2{margin-left:auto;color:var(--indigo);font-weight:800;font-size:12.5px}
   .nudge2{display:flex;align-items:center;gap:11px;padding:13px 15px;border:1px solid var(--line);border-radius:16px;margin-bottom:11px;cursor:pointer;font-size:13.5px}
   .nudge2 .em{font-size:17px}.nudge2 .go2{margin-left:auto;color:var(--indigo);font-weight:800}
+  .modnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .modnav button{background:#eef0ff;color:var(--indigo-d);border:0;border-radius:10px;padding:8px 12px;font-weight:800;font-size:13px;cursor:pointer}
+  .vitem{display:flex;align-items:center;gap:13px;padding:12px 2px;border-bottom:1px solid var(--line)}
+  .vth{width:56px;height:40px;border-radius:10px;flex:none;background:linear-gradient(135deg,#3730a3,#6d63ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;cursor:pointer}
+  .vth.at{background:linear-gradient(135deg,#c2410c,#f97316)}.vth.fi{background:linear-gradient(135deg,#1e40af,#3b82f6)}
+  .vitem .g{flex:1;min-width:0;cursor:pointer}
+  .vt{font-size:14.5px;font-weight:700}.vs{font-size:12px;color:var(--muted);margin-top:2px}
+  .vst{margin-left:auto;font-size:12.5px;font-weight:800;color:var(--indigo);flex:none;padding:5px 9px;border-radius:9px;background:#eef0ff;cursor:pointer}
+  .tool{display:flex;align-items:center;gap:13px;padding:14px 12px;border:1px solid var(--line);border-radius:16px;margin-bottom:9px;cursor:pointer}
+  .tool .tem{font-size:20px;flex:none}.tool .g{flex:1;min-width:0}.tool .tgo{margin-left:auto;color:#c2c7d3;font-size:20px}
+  .ckpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px}
+  .ckc{border:1px solid var(--line);border-radius:16px;padding:14px 8px;text-align:center}
+  .ckk{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+  .ckv{font-size:26px;font-weight:800;margin-top:5px}
   .hdrrow{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
   .chip{background:rgba(255,255,255,.16);border-radius:12px;padding:8px 12px;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
   .chip b{font-size:15px}
@@ -527,7 +541,11 @@ function accueilHTML(){
   var stat='<div class="statrow" onclick="openDashboard()"><div class="grp"><span>🔥 <b>'+(ST.streak||0)+'</b> j</span><span class="d"></span><span>Niv. <b>'+level()+'</b></span><span class="d"></span><span><b>'+sc+' %</b></span></div><span class="go2">Tableau de bord →</span></div>';
   var bilan=(bilanDue()&&ST.bilans.length)?'<div class="nudge2" onclick="openBilan()"><span class="em">📊</span><span>Ton point de la semaine est prêt</span><span class="go2">Faire →</span></div>':'';
   var mods=MOD.map(function(m,i){var done=!!ST.quiz[m.id],unl=unlocked(i);var rq=reqV(m),v2=vDone(m);var node=done?'<div class="node n-done">✓</div>':unl?'<div class="node n-cur">'+(i+1)+'</div>':'<div class="node n-lock">🔒</div>';var status=done?'terminé':unl?(v2+'/'+rq.length+' contenus'):lockReason(i);return '<div class="mod" '+(unl?'onclick="openModule(\''+m.id+'\')" style="cursor:pointer"':'')+'>'+node+'<div class="modc"><div class="t">'+esc(m.t)+'</div><div class="s">'+esc(status)+'</div>'+(unl&&!done?'<div class="pbar"><i style="width:'+(rq.length?Math.round(v2/rq.length*100):0)+'%"></i></div>':'')+'</div></div>';}).join('');
-  return resume+stat+bilan+'<h3 class="sh">Ta formation</h3>'+mods;
+  var tools='<h3 class="sh">Tes outils</h3>'+
+    '<div class="tool" onclick="openJournal()"><span class="tem">📓</span><div class="g"><div class="vt">Journal de vente</div><div class="vs">Note tes RDV, demande conseil à la communauté</div></div><span class="tgo">›</span></div>'+
+    '<div class="tool" onclick="openResources()"><span class="tem">📁</span><div class="g"><div class="vt">Ressources</div><div class="vs">Les docs que Steven met à ta disposition</div></div><span class="tgo">›</span></div>'+
+    '<div class="tool" onclick="go(\'assistant\')"><span class="tem">🤖</span><div class="g"><div class="vt">Assistant IA</div><div class="vs">Ton coach de vente, conseil du jour</div></div><span class="tgo">›</span></div>';
+  return resume+stat+bilan+'<h3 class="sh">Ta formation</h3>'+mods+tools;
 }
 function parcoursHTML(){
   const head=!ST.eleve?`<h3 class="sh">Ta formation · tous les modules ouverts</h3>`
@@ -767,8 +785,21 @@ function renderJournal(){
     '<div class="jtags">'+JTAGS.map(function(t,i){return '<button class="jtag '+(JF.tags.indexOf(t)>=0?'on':'')+'" onclick="jTag('+i+')">'+t+'</button>';}).join('')+'</div>'+
     '<div class="plabel" style="margin-top:12px">Ce qui a marché, ton ressenti</div>'+
     '<textarea id="j-note" class="jinp" rows="3" placeholder="Ce que tu retiens…">'+esc(JF.note)+'</textarea>'+
-    '<button class="cta" style="margin-top:14px" onclick="saveJournal()">Enregistrer l\'entrée</button></div>'+
+    '<button class="cta" style="margin-top:14px" onclick="saveJournal()">Enregistrer l\'entrée</button>'+
+    '<button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="journalAskCommunity()">🙋 Demander conseil à la communauté</button></div>'+
     '<h3 class="sh">Ton historique · '+hist.length+'</h3>'+histHTML);
+}
+function journalAskCommunity(){
+  syncJForm();
+  var title=(JF.title||'').trim(), note=(JF.note||'').trim();
+  if(!title&&!note){toastMini('Décris ta situation d\'abord.');return;}
+  if(!isSupa){toastMini('Connecte-toi pour poster.');return;}
+  var body=title?(title+(note?' — '+note:'')):note;
+  var name=(window._fn||'Élève')+(window._ln?' '+window._ln.charAt(0).toUpperCase()+'.':'');
+  sb.from('community_posts').insert({user_id:sb._uid,author_name:name,author_avatar:(window._fn?window._fn.charAt(0).toUpperCase():'?'),kind:'eleve',body:body,tag:'❓ Question'}).then(function(r){
+    if(r&&r.error){toastMini('Échec : '+r.error.message);return;}
+    toastMini('Posté 🙋 la communauté va te répondre');closeModal();go('communaute');if(typeof loadCommunity==='function')setTimeout(loadCommunity,300);
+  },function(){toastMini('Échec, réessaie.');});
 }
 function saveJournal(){
   syncJForm();
@@ -805,11 +836,16 @@ function coachHTML(){
   }).join(''):'<div class="card"><div class="mt">Aucune demande en attente.</div></div>';
   var act=active.length?active.map(function(s){
     var flag=(s.lastMood==='tension'||s.lastMood==='hesitant');
-    return '<div class="card resitem" onclick="openFicheEleve('+s._i+')"><div class="resico">'+(flag?'⚠️':'🎓')+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+tierLabel(s.tier)+' · '+(s.journalCount||0)+' j. journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(flag?' · <b style="color:#dc2626">à checker</b>':'')+'</div></div><span class="rl">fiche →</span></div>';
+    return '<div class="card resitem eleve-row" data-n="'+esc(((s.first_name||'')+' '+(s.email||'')).toLowerCase())+'" onclick="openFicheEleve('+s._i+')"><div class="resico">'+(flag?'⚠️':'🎓')+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+tierLabel(s.tier)+' · '+(s.journalCount||0)+' j. journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(flag?' · <b style="color:#dc2626">à checker</b>':'')+'</div></div><span class="rl">fiche →</span></div>';
   }).join(''):'<div class="card"><div class="mt">Aucun élève actif pour l\'instant.</div></div>';
-  return '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">👋 Vue coach</div><div class="mt" style="color:#cdd0f2">Les demandes d\'accès en haut à traiter, tes élèves actifs en dessous.</div></div>'+
-    '<h3 class="sh">🔔 Demandes d\'accès · '+pending.length+'</h3>'+pend+
-    '<h3 class="sh">🎓 Tes élèves · '+active.length+'</h3>'+act+
+  var checkC=active.filter(function(s){return s.lastMood==='tension'||s.lastMood==='hesitant';}).length;
+  var head='<div class="top" style="padding:6px 0 14px"><div class="hi">Tes élèves<small>'+active.length+' actifs · '+pending.length+' en attente</small></div></div>'+
+    '<div class="ckpi"><div class="ckc"><div class="ckk">Actifs</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">En attente</div><div class="ckv" style="color:#d97706">'+pending.length+'</div></div><div class="ckc"><div class="ckk">À checker</div><div class="ckv" style="color:#dc2626">'+checkC+'</div></div></div>';
+  return head+
+    (pending.length?'<h3 class="sh">🔔 Demandes d\'accès · '+pending.length+'</h3>'+pend:'')+
+    '<h3 class="sh">🎓 Tes élèves · '+active.length+'</h3>'+
+    (active.length>5?'<input id="coachq" class="jinp" placeholder="🔍 Chercher un élève…" oninput="filterEleves()" style="margin-bottom:10px">':'')+
+    '<div id="eleves-list">'+act+'</div>'+
     '<h3 class="sh">Gestion</h3>'+
     '<div class="card"><div class="mt">Vue détaillée des accès : suspendre, changer de niveau, ajouter un email à la main.</div><button class="cta" onclick="openAcces()">Gérer tous les accès</button></div>'+
     '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>'+
@@ -817,6 +853,7 @@ function coachHTML(){
     (isSupa?'<button class="cta" style="margin-top:8px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'');
 }
 async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
+function filterEleves(){var q=(((document.getElementById('coachq')||{}).value)||'').toLowerCase();document.querySelectorAll('#eleves-list .eleve-row').forEach(function(r){r.style.display=(!q||(r.dataset.n||'').indexOf(q)>=0)?'':'none';});}
 function openAddRes(){
   setM('Ajouter une ressource',
     '<div class="card"><div class="plabel">Titre</div><input id="r-title" class="jinp" placeholder="Ex : Script d\'ancrage prix">'+
@@ -919,33 +956,22 @@ function setM(tl,body){document.getElementById('mtl').textContent=tl;document.ge
 
 /* Module : contenu réel (vidéo / atelier 1:1 / fiche) + quiz réel */
 let curMod={id:null,i:0};
-function openModule(mId,idx){
-  const m=M(mId),items=m.V;
-  idx=idx||0;if(idx<0)idx=0;if(idx>items.length-1)idx=items.length-1;
-  curMod={id:mId,i:idx};
-  const v=items[idx],t=iType(v),done=!!ST.done[v.id],last=idx===items.length-1;
-  const passed=!!ST.quiz[mId],canQuiz=allWatched(m),midx=MOD.findIndex(x=>x.id===mId);
-  let itemHTML;
-  if(t==='atelier'){
-    itemHTML=`<div class="card" style="background:#fff7ed;border-color:#fed7aa;cursor:pointer" onclick="bookAtelier('${mId}','${v.id}')"><div class="nm">📅 ${v.title}</div><div class="mt" style="margin-top:4px">${v.num} · Atelier 1:1 avec Steven ${done?'· réservé ✓':'· réserver ↗'}</div></div>`;
-  } else if(t==='fiche'){
-    itemHTML=`<div class="card" style="background:#eff6ff;border-color:#bfdbfe;cursor:pointer" onclick="openFiche('${mId}','${v.id}')"><div class="nm">📄 ${v.title}</div><div class="mt" style="margin-top:4px">${v.num} · Fiche pratique ${done?'· lue ✓':'· tape pour lire'}</div></div>`;
-  } else if(!v.videoUrl){
-    itemHTML=`<div class="vthumb locked"><div class="vthumb-play">🔒</div><div class="vthumb-cap"><div class="vthumb-num">${v.num}</div><div class="vthumb-title">${v.title}</div><div class="vthumb-badge">bientôt disponible</div></div></div>`;
-  } else {
-    itemHTML=`<div class="vthumb h${midx%5}" onclick="watchVideo('${mId}','${v.id}')">${done?'<div class="vthumb-done">✓ vu</div>':''}<div class="vthumb-play">▶</div><div class="vthumb-cap"><div class="vthumb-num">${v.num}</div><div class="vthumb-title">${v.title}</div><div class="vthumb-badge">Regarder la vidéo ↗</div></div></div>
-    <button class="cta" onclick="openTrainV('${mId}','${v.id}')" style="margin-top:12px;background:#0e1020">🎮 Faire les exercices de cette vidéo</button>`;
-  }
-  setM(m.num,`
-    <div class="modnav"><button onclick="closeModal();go('parcours')">← Parcours</button><div class="mt" style="font-weight:600">${m.icon} ${m.num}</div></div>
-    <div class="mt" style="margin-bottom:6px">${idx+1} / ${items.length}${passed?' · module validé ✓':''}</div>
-    <div class="pbar" style="margin-bottom:14px"><i style="width:${Math.round((idx+1)/items.length*100)}%"></i></div>
-    ${itemHTML}
-    <div style="display:flex;gap:8px;margin-top:18px">
-      <button class="cta" style="flex:1;background:#eef0ff;color:#3730a3;${idx>0?'':'opacity:.4;pointer-events:none'}" onclick="openModule('${mId}',${idx-1})">◀ Préc.</button>
-      ${last?`<button class="cta" style="flex:1;${canQuiz?'':'opacity:.5;pointer-events:none'}" onclick="openQuiz('${mId}')">${passed?'Refaire le quiz':'Quiz de validation'} ${canQuiz?'':'🔒'}</button>`:`<button class="cta" style="flex:1" onclick="openModule('${mId}',${idx+1})">Suivant ▶</button>`}
-    </div>
-    ${last&&!canQuiz?`<div class="mt" style="text-align:center;margin-top:8px">Regarde les vidéos et lis les fiches pour débloquer le quiz.</div>`:''}`);
+function openModule(mId){
+  const m=M(mId);
+  const passed=!!ST.quiz[mId], canQuiz=allWatched(m);
+  curMod={id:mId,i:0};
+  var rows=m.V.map(function(v){
+    var t=iType(v), done=!!ST.done[v.id], ex=qForVideo(m,v.id).length;
+    if(t==='atelier') return '<div class="vitem" onclick="bookAtelier(\''+mId+'\',\''+v.id+'\')"><div class="vth at">🎥</div><div class="g"><div class="vt">'+esc(v.title)+'</div><div class="vs">Atelier 1:1 avec Steven</div></div><span class="vst">'+(done?'réservé ✓':'réserver →')+'</span></div>';
+    if(t==='fiche') return '<div class="vitem" onclick="openFiche(\''+mId+'\',\''+v.id+'\')"><div class="vth fi">🧠</div><div class="g"><div class="vt">'+esc(v.title)+'</div><div class="vs">Fiche du module</div></div><span class="vst">'+(done?'lue ✓':'lire →')+'</span></div>';
+    if(!v.videoUrl) return '<div class="vitem" style="opacity:.5"><div class="vth" style="background:#e9ebf2;color:#9aa0b0">▶</div><div class="g"><div class="vt">'+esc(v.title)+'</div><div class="vs">bientôt</div></div><span class="vst" style="color:#c2c7d3">🔒</span></div>';
+    return '<div class="vitem"><div class="vth" onclick="watchVideo(\''+mId+'\',\''+v.id+'\')">▶</div><div class="g" onclick="watchVideo(\''+mId+'\',\''+v.id+'\')"><div class="vt">'+esc(v.title)+'</div><div class="vs">'+esc(v.num)+(ex?' · '+ex+' exercices':'')+(done?' · vu ✓':'')+'</div></div>'+(ex?'<span class="vst" onclick="openTrainV(\''+mId+'\',\''+v.id+'\')">Exos</span>':'')+'</div>';
+  }).join('');
+  setM(m.t,
+    '<div class="modnav"><button onclick="closeModal();go(\'parcours\')">← Formation</button><span class="mt" style="font-weight:700">'+esc(m.num)+(passed?' · validé ✓':'')+'</span></div>'+
+    '<h3 class="sh" style="margin-top:4px">Vidéos &amp; exercices</h3>'+rows+
+    '<button class="cta" style="margin-top:18px;'+(canQuiz?'':'opacity:.5;pointer-events:none')+'" onclick="openQuiz(\''+mId+'\')">🎯 '+(passed?'Refaire le quiz du module':'Quiz du module')+(canQuiz?'':' 🔒')+'</button>'+
+    (canQuiz?'':'<div class="mt" style="text-align:center;margin-top:8px">Regarde les vidéos et lis la fiche pour débloquer le quiz.</div>'));
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
 function watchVideo(mId,vId){const m=M(mId),v=m.V.find(x=>x.id===vId);ST.done[vId]=true;save();refreshHeader();if(v&&v.videoUrl){var w=window.open(v.videoUrl,'_blank','noopener');if(!w)window.location.href=v.videoUrl;}openModule(mId,curMod.i);}
