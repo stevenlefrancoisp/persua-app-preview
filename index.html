@@ -517,7 +517,7 @@ function accueilHTML(){
   <div class="card geste pop" style="cursor:pointer" onclick="go('assistant')"><div class="k">💡 Conseil de la semaine · ${c.mod}</div>
     <div class="txt">${c.emoji} ${c.titre}</div>
     <div class="mt" style="margin-top:6px">${c.texte}</div></div>
-  <div class="card" style="cursor:pointer" onclick="openProfil()"><div class="nm">📊 Ton tableau de bord</div><div class="mt">Score, progression, série, tes 4 axes. Tape pour voir.</div></div>
+  <div class="card" style="cursor:pointer" onclick="openDashboard()"><div class="nm">📊 Ton tableau de bord</div><div class="mt">Score, progression, série, tes 4 axes. Tape pour voir.</div></div>
   <div class="card" style="cursor:pointer" onclick="openJournal()"><div class="nm">📓 Ton journal de vente</div><div class="mt">Note tes RDV à chaud. C'est ce qui recâble ton cerveau, et Steven suit ta progression.</div></div>
   <div class="card" style="cursor:pointer" onclick="openResources()"><div class="nm">📁 Tes ressources</div><div class="mt">Les documents et outils que Steven met à ta disposition.</div></div>
   <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven, quand tu veux</div>
@@ -808,7 +808,7 @@ function coachHTML(){
     '<h3 class="sh">Gestion</h3>'+
     '<div class="card"><div class="mt">Vue détaillée des accès : suspendre, changer de niveau, ajouter un email à la main.</div><button class="cta" onclick="openAcces()">Gérer tous les accès</button></div>'+
     '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>'+
-    (isSupa?'<button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="openAccount()">⚙️ Mon compte</button>':'')+
+    (isSupa?'<button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="openProfil()">👤 Mon profil</button>':'')+
     (isSupa?'<button class="cta" style="margin-top:8px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'');
 }
 async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
@@ -1065,12 +1065,18 @@ function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=t
 /* ---- Section Profil : résultats des deux tests + notation (dashboard déplacé ici) ---- */
 function openProfil(){
   var d=ST.diag;
-  var l=lastBilan(),p=prevBilan();
-  var photo='<h3 class="sh" style="margin-top:0">Ta photo du moment</h3>'+radarChart(l||{d:0,o:0,c:0,m:0},p);
-  var bilanBlock=bilanDue()
-    ? '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine</div><div class="mt" style="color:#cdd0f2">16 questions, 5 min. Il met à jour ta photo du moment et ta progression.</div><button class="cta" style="margin-top:11px" onclick="openBilan()">Faire mon bilan</button></div>'
-    : '<div class="card"><div class="nm">✅ Bilan de la semaine fait</div><div class="mt">Prochain dans '+daysToBilan()+' j. Reviens la semaine prochaine pour voir bouger ton radar.</div></div>';
+  var av=ST.avatar||window._avatar||'';_acFile=null;_acDataUrl='';
+  var account=
+    '<div class="ob-photo"><div id="ac-av" class="ob-av"'+(av?' style="background-image:url('+av+');background-size:cover;background-position:center"':'')+'>'+(av?'':'📷')+'</div>'+
+    '<label class="ob-pick">Changer ma photo<input id="ac-file" type="file" accept="image/*" style="display:none" onchange="acPreview(event)"></label></div>'+
+    '<div class="card"><div class="plabel">Prénom</div><input id="ac-first" class="jinp" value="'+esc(window._fn||'')+'">'+
+    '<div class="plabel" style="margin-top:10px">Nom</div><input id="ac-last" class="jinp" value="'+esc(window._ln||'')+'">'+
+    '<button class="cta" style="margin-top:12px" onclick="saveAccount()">Enregistrer</button></div>'+
+    '<div class="card"><div class="plabel">Nouveau mot de passe</div><input id="ac-pass" class="jinp" type="password" placeholder="6 caractères minimum" autocomplete="new-password">'+
+    '<button class="cta" style="margin-top:12px" onclick="changePassword()">Changer mon mot de passe</button></div>'+
+    '<div id="ac-err" class="auth-err"></div>';
   var perso=d?`
+    <h3 class="sh">Ton profil de vendeur</h3>
     <div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0">
       <div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton archétype de vendeur</div>
       <div style="font-size:23px;font-weight:800;margin-top:4px">${d.arch.name}</div>
@@ -1087,13 +1093,20 @@ function openProfil(){
     ${d.son&&d.son.length?`<div class="card"><div class="plabel">Tes leviers d'achat (SONCAS)</div>${d.son.map(function(s){return `<div class="mt" style="color:#2a2e3d;font-size:12.5px;margin-top:5px"><b>${s.label}</b> · ${s.desc}</div>`;}).join('')}</div>`:''}
     <h3 class="sh">Ton positionnement terrain</h3>
     <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>`
-  :`<div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0;cursor:pointer" onclick="diagStart()"><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton profil de vendeur</div><div style="font-size:20px;font-weight:800;margin-top:4px">Fais ton diagnostic</div><div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">5 min, réponses 1→5. Révèle ton archétype, ton profil DISC et tes leviers d'achat.</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:700">Commencer →</div></div>`;
-  setM('Ton profil',photo+bilanBlock+perso+`
-    <h3 class="sh">Ton tableau de bord</h3>
-    ${kpiDashHTML()}
-    ${isSupa?`<button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="openAccount()">⚙️ Mon compte</button>`:''}
-    <button class="cta" style="margin-top:8px" onclick="closeModal();go('accueil')">← Retour</button>
-    ${isSupa?`<button class="cta" style="margin-top:8px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>`:''}`);
+  :(ST.coach?'':`<h3 class="sh">Ton profil de vendeur</h3><div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0;cursor:pointer" onclick="diagStart()"><div style="font-size:20px;font-weight:800">Fais ton diagnostic</div><div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">5 min, réponses 1→5. Révèle ton archétype, ton profil DISC et tes leviers d'achat.</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:700">Commencer →</div></div>`);
+  setM('Ton profil',account+perso+
+    (isSupa?'<button class="cta" style="margin-top:12px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'')+
+    '<button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="closeModal();go(\'accueil\')">← Retour</button>');
+  openModal();document.querySelector('#modal .ov-body').scrollTop=0;
+}
+function openDashboard(){
+  var l=lastBilan(),p=prevBilan();
+  var photo='<h3 class="sh" style="margin-top:0">Ta photo du moment</h3>'+radarChart(l||{d:0,o:0,c:0,m:0},p);
+  var bilanBlock=bilanDue()
+    ? '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine</div><div class="mt" style="color:#cdd0f2">16 questions, 5 min. Il met à jour ta photo du moment et ta progression.</div><button class="cta" style="margin-top:11px" onclick="openBilan()">Faire mon bilan</button></div>'
+    : '<div class="card"><div class="nm">✅ Bilan de la semaine fait</div><div class="mt">Prochain dans '+daysToBilan()+' j. Reviens la semaine prochaine pour voir bouger ton radar.</div></div>';
+  setM('Ton tableau de bord',photo+bilanBlock+'<h3 class="sh">Tes indicateurs</h3>'+kpiDashHTML()+
+    '<button class="cta" style="margin-top:8px" onclick="closeModal();go(\'accueil\')">← Retour</button>');
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
 }
 
