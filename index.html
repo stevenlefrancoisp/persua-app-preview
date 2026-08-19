@@ -974,12 +974,13 @@ async function genAnalyse(){
   }catch(e){box.value=prev;toastMini('Génération indisponible ici.');}
 }
 
-const SCREENS={accueil:accueilHTML,parcours:accueilHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
+const SCREENS={accueil:accueilHTML,parcours:accueilHTML,suivi:suiviHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
 
 /* Navigation */
-function buildTabs(){var t=[["parcours","🎓","Formation"],["communaute","👥","Communauté"],["rdv","📅","Séances"],["assistant","🤖","Assistant"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
+function buildTabs(){var t=[["parcours","🎓","Formation"],["suivi","📊","Suivi"],["communaute","👥","Communauté"],["rdv","📅","Séances"],["assistant","🤖","Assistant"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
 var TABICONS={
  parcours:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+ suivi:'<path d="M4 4v16h16"/><path d="M8 14l3-3 2 2 4-5"/>',
  communaute:'<path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>',
  rdv:'<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>',
  assistant:'<path d="M12 3l1.6 4L18 8.6l-4.4 1.6L12 15l-1.6-4.8L6 8.6l4.4-1.6zM18 14l.9 2.2L21 17l-2.1.8L18 20l-.9-2.2L15 17l2.1-.8z"/>',
@@ -987,7 +988,7 @@ var TABICONS={
 };
 function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><svg class="i" viewBox="0 0 24 24">'+(TABICONS[t[0]]||'')+'</svg><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
 renderTabs('parcours');
-function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);var _subs={parcours:"Prêt à progresser aujourd'hui ?",communaute:"Entre vendeurs Persua",rdv:"Ton coaching avec Steven",assistant:"Ton coach de vente, dans ta poche",coach:"Tes élèves · vue coach"};var _subEl=document.querySelector('.appbar .sub');if(_subEl)_subEl.textContent=_subs[k]||'Ton parcours neurovente';refreshHeader();}
+function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);var _subs={parcours:"Prêt à progresser aujourd'hui ?",suivi:"Ta progression, tes graphs",communaute:"Entre vendeurs Persua",rdv:"Ton coaching avec Steven",assistant:"Ton coach de vente, dans ta poche",coach:"Tes élèves · vue coach"};var _subEl=document.querySelector('.appbar .sub');if(_subEl)_subEl.textContent=_subs[k]||'Ton parcours neurovente';refreshHeader();}
 
 /* Modal */
 function openModal(){document.getElementById('modal').classList.add('open');document.querySelector('#modal .ov-body').scrollTop=0;}
@@ -1137,19 +1138,27 @@ function diagNav(d){ST.DR.i+=d;renderDiag();}
 function diagNext(){if(ST.DR.i<POSQ.length-1){ST.DR.i++;renderDiag();}else diagFinish();}
 function diagFinish(){ST.diag=computeDiag(ST.diagAns);ST.diagDone=true;ST.test=true;save();refreshHeader();xpToast(60);if(isSupa&&sb._uid)sb.from('profiles').update({positioning:ST.diagAns,positioning_submitted_at:new Date().toISOString()}).eq('id',sb._uid).then(function(){},function(){});openProfil();}
 /* ---- Section Profil : résultats des deux tests + notation (dashboard déplacé ici) ---- */
+function sectorSelectHTML(){var sec=window._sector||'';return '<div class="plabel" style="margin-top:10px">Secteur</div><select id="ac-sector" class="jinp"><option value="">Ton secteur…</option>'+SECTORS.map(function(s){return '<option value="'+esc(s)+'"'+(sec===s?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select>';}
 function openProfil(){
-  var d=ST.diag;
   var av=ST.avatar||window._avatar||'';_acFile=null;_acDataUrl='';
   var account=
     '<div class="ob-photo"><div id="ac-av" class="ob-av"'+(av?' style="background-image:url('+av+');background-size:cover;background-position:center"':'')+'>'+(av?'':'📷')+'</div>'+
     '<label class="ob-pick">Changer ma photo<input id="ac-file" type="file" accept="image/*" style="display:none" onchange="acPreview(event)"></label></div>'+
     '<div class="card"><div class="plabel">Prénom</div><input id="ac-first" class="jinp" value="'+esc(window._fn||'')+'">'+
     '<div class="plabel" style="margin-top:10px">Nom</div><input id="ac-last" class="jinp" value="'+esc(window._ln||'')+'">'+
+    sectorSelectHTML()+
     '<button class="cta" style="margin-top:12px" onclick="saveAccount()">Enregistrer</button></div>'+
     '<div class="card"><div class="plabel">Nouveau mot de passe</div><input id="ac-pass" class="jinp" type="password" placeholder="6 caractères minimum" autocomplete="new-password">'+
     '<button class="cta" style="margin-top:12px" onclick="changePassword()">Changer mon mot de passe</button></div>'+
     '<div id="ac-err" class="auth-err"></div>';
-  var perso=d?`
+  setM('Ton profil',account+
+    (isSupa?'<button class="cta" style="margin-top:12px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':''));
+  openModal();document.querySelector('#modal .ov-body').scrollTop=0;
+}
+function vendeurHTML(){
+  var d=ST.diag;
+  if(!d) return '<h3 class="sh">Ton profil de vendeur</h3><div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0;cursor:pointer" onclick="diagStart()"><div style="font-size:20px;font-weight:800">Fais ton positionnement</div><div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">5 min. Révèle ton archétype de vendeur, ton profil DISC et tes leviers d\'achat, et débloque tes graphs.</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:700">Commencer →</div></div>';
+  return `
     <h3 class="sh">Ton profil de vendeur</h3>
     <div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0">
       <div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.6px">Ton archétype de vendeur</div>
@@ -1166,23 +1175,17 @@ function openProfil(){
     <div class="card"><div class="plabel">Ton moteur</div><div class="mt" style="color:#2a2e3d;font-size:13px">Ce qui te fait vibrer : ${d.moteur}.</div></div>
     ${d.son&&d.son.length?`<div class="card"><div class="plabel">Tes leviers d'achat (SONCAS)</div>${d.son.map(function(s){return `<div class="mt" style="color:#2a2e3d;font-size:12.5px;margin-top:5px"><b>${s.label}</b> · ${s.desc}</div>`;}).join('')}</div>`:''}
     <h3 class="sh">Ton positionnement terrain</h3>
-    <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>`
-  :(ST.coach?'':`<h3 class="sh">Ton profil de vendeur</h3><div class="card" style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border:0;cursor:pointer" onclick="diagStart()"><div style="font-size:20px;font-weight:800">Fais ton diagnostic</div><div style="font-size:13px;color:#dcdcf7;margin-top:7px;line-height:1.45">5 min, réponses 1→5. Révèle ton archétype, ton profil DISC et tes leviers d'achat.</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:700">Commencer →</div></div>`);
-  setM('Ton profil',account+perso+
-    (isSupa?'<button class="cta" style="margin-top:12px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'')+
-    '<button class="cta" style="margin-top:8px;background:#eef0ff;color:#3730a3" onclick="closeModal();go(\'accueil\')">← Retour</button>');
-  openModal();document.querySelector('#modal .ov-body').scrollTop=0;
+    <div class="card">${d.funnel.map(function(f){return `<div class="axrow"><span class="lb">${f.label}</span><span class="bar"><i style="width:${f.score*20}%"></i></span><span class="vv">${f.score*20}%</span></div>`;}).join('')}</div>`;
 }
-function openDashboard(){
+function suiviHTML(){
   var l=lastBilan(),p=prevBilan();
   var photo='<h3 class="sh" style="margin-top:0">Ta photo du moment</h3>'+radarChart(l||{d:0,o:0,c:0,m:0},p);
   var bilanBlock=bilanDue()
-    ? '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine</div><div class="mt" style="color:#cdd0f2">16 questions, 5 min. Il met à jour ta photo du moment et ta progression.</div><button class="cta" style="margin-top:11px" onclick="openBilan()">Faire mon bilan</button></div>'
-    : '<div class="card"><div class="nm">✅ Bilan de la semaine fait</div><div class="mt">Prochain dans '+daysToBilan()+' j. Reviens la semaine prochaine pour voir bouger ton radar.</div></div>';
-  setM('Ton tableau de bord',photo+bilanBlock+'<h3 class="sh">Tes indicateurs</h3>'+kpiDashHTML()+
-    '<button class="cta" style="margin-top:8px" onclick="closeModal();go(\'accueil\')">← Retour</button>');
-  openModal();document.querySelector('#modal .ov-body').scrollTop=0;
+    ? '<div class="card" style="background:#0e1020;color:#fff"><div class="nm" style="color:#fff">📊 Ton positionnement de la semaine</div><div class="mt" style="color:#cdd0f2">16 questions, 5 min. Il met à jour ta photo du moment et tes courbes.</div><button class="cta" style="margin-top:11px" onclick="openBilan()">Faire mon point hebdo</button></div>'
+    : '<div class="card"><div class="nm">✅ Positionnement de la semaine fait</div><div class="mt">Prochain dans '+daysToBilan()+' j. Reviens la semaine prochaine pour voir bouger ton radar.</div></div>';
+  return photo+bilanBlock+'<h3 class="sh">Tes indicateurs</h3>'+kpiDashHTML()+vendeurHTML();
 }
+function openDashboard(){go('suivi');}
 
 
 /* Gestes / Assistant / Communauté */
@@ -1258,12 +1261,13 @@ function acErr(m){var e=document.getElementById('ac-err');if(e)e.textContent=m;}
 function acPreview(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;_acFile=f;var r=new FileReader();r.onload=function(e){_acDataUrl=e.target.result;var a=document.getElementById('ac-av');if(a){a.style.backgroundImage='url('+_acDataUrl+')';a.style.backgroundSize='cover';a.style.backgroundPosition='center';a.textContent='';}};r.readAsDataURL(f);}
 async function saveAccount(){
   var first=((document.getElementById('ac-first')||{}).value)||'',last=((document.getElementById('ac-last')||{}).value)||'';
+  var sector=((document.getElementById('ac-sector')||{}).value)||'';
   if(!first.trim()){acErr('Ton prénom, au minimum.');return;}
   acErr('…');
   var avatar_url=window._avatar||'';
   try{ if(_acFile&&isSupa&&sb._uid){var ext=(_acFile.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';var path=sb._uid+'/avatar_'+Date.now()+'.'+ext;var up=await sb.storage.from('avatars').upload(path,_acFile,{upsert:true});if(!up.error)avatar_url=sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;} }catch(e){}
-  window._fn=first.trim();window._ln=last.trim();if(avatar_url){ST.avatar=avatar_url;window._avatar=avatar_url;}save();refreshHeader();
-  if(isSupa&&sb._uid){var ob={};try{var r=await sb.from('profiles').select('onboarding').eq('id',sb._uid).maybeSingle();ob=(r.data&&r.data.onboarding)||{};}catch(e){}ob.avatar_url=avatar_url;sb.from('profiles').update({first_name:first.trim(),last_name:last.trim(),onboarding:ob}).eq('id',sb._uid).then(function(){},function(){});}
+  window._fn=first.trim();window._ln=last.trim();if(sector){window._sector=sector;}if(avatar_url){ST.avatar=avatar_url;window._avatar=avatar_url;}save();refreshHeader();
+  if(isSupa&&sb._uid){var ob={};try{var r=await sb.from('profiles').select('onboarding').eq('id',sb._uid).maybeSingle();ob=(r.data&&r.data.onboarding)||{};}catch(e){}ob.avatar_url=avatar_url;if(sector)ob.sector=sector;sb.from('profiles').update({first_name:first.trim(),last_name:last.trim(),onboarding:ob}).eq('id',sb._uid).then(function(){},function(){});}
   _acFile=null;toastMini('Compte mis à jour ✅');closeModal();
 }
 function changePassword(){var p=((document.getElementById('ac-pass')||{}).value)||'';if(!p||p.length<6){acErr('Mot de passe : 6 caractères minimum.');return;}if(!isSupa){toastMini('Dispo avec le backend.');return;}acErr('…');sb.auth.updateUser({password:p}).then(function(r){if(r.error){acErr(r.error.message);return;}var f=document.getElementById('ac-pass');if(f)f.value='';acErr('');toastMini('Mot de passe changé ✅');},function(){acErr('Échec, réessaie.');});}
