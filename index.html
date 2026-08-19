@@ -254,6 +254,30 @@
   .resitem{display:flex;align-items:center;gap:11px;cursor:pointer}.resitem .g{flex:1;min-width:0}.resico{font-size:24px;width:34px;text-align:center;flex:none}
   .repdet summary{cursor:pointer;font-weight:700;color:var(--indigo);font-size:13px;padding:8px 2px;list-style:none}
   .repdet summary::-webkit-details-marker{display:none}.repdet summary::before{content:"▸ "}.repdet[open] summary::before{content:"▾ "}
+  .ckpi.four{grid-template-columns:repeat(4,1fr);gap:7px}.ckpi.four .ckc{padding:11px 3px}.ckpi.four .ckv{font-size:21px}.ckpi.four .ckk{font-size:9px}
+  .cpcard{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-left-width:4px;border-radius:14px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
+  .cpcard.red{border-left-color:#dc2626}.cpcard.amb{border-left-color:#d97706}.cpcard.new{border-left-color:#16a34a}.cpcard.blue{border-left-color:var(--indigo)}
+  .cpav{width:38px;height:38px;border-radius:50%;flex:none;background:#eef0fb;color:var(--indigo-d);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+  .cpi{flex:1;min-width:0}.cpn{font-size:14.5px;font-weight:800;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .cpt{font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px}
+  .cpt.red{background:#fee2e2;color:#991b1b}.cpt.amb{background:#fef3c7;color:#92400e}.cpt.new{background:#dcfce7;color:#166534}.cpt.blue{background:#eef0ff;color:#3730a3}
+  .cpw{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .cpb{flex:none;background:var(--indigo);color:#fff;border:0;border-radius:11px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
+  .cpb.ghost{background:#eef0ff;color:#3730a3}
+  .csearch{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:13px;padding:9px 12px;margin:6px 0 10px}
+  .csearch input{flex:1;border:0;outline:0;font-size:16px;background:transparent}
+  .cfils{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:2px}.cfils::-webkit-scrollbar{display:none}
+  .cfil{flex:none;border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .cfil.on{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+  .csort{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 6px}.csort .l{font-size:12px;color:var(--muted);font-weight:600}
+  .csort select{border:1px solid var(--line);border-radius:9px;padding:5px 8px;font-size:12px;font-weight:700;background:#fff;color:var(--ink)}
+  .crow{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  .cdot{width:9px;height:9px;border-radius:50%;flex:none}.cdot.g{background:#16a34a}.cdot.a{background:#d97706}.cdot.r{background:#dc2626}.cdot.s{background:#9aa0b0}.cdot.n{background:#4f46e5}
+  .crav{width:34px;height:34px;border-radius:50%;flex:none;background:#eef0fb;color:var(--indigo-d);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+  .cri{flex:1;min-width:0}.crn{font-size:14px;font-weight:700}.crs{font-size:11.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cmini{flex:none;width:54px;text-align:right}.cmini .p{font-size:13px;font-weight:800;color:var(--indigo)}.cmini .l{font-size:10px;color:var(--muted)}
+  .cdone{text-align:center;color:#166534;font-size:14px;font-weight:600;padding:26px 10px;line-height:1.6}
+  .cempty{text-align:center;color:var(--muted);font-size:13px;padding:24px 10px}
   .caform{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;background:#fff;font-family:inherit;line-height:1.5;resize:vertical}
   .toastmini{position:fixed;left:50%;bottom:96px;transform:translate(-50%,14px);background:#0e1020;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.28);opacity:0;transition:opacity .28s,transform .28s;z-index:999;max-width:82%;text-align:center}
   .toastmini.show{opacity:1;transform:translate(-50%,0)}
@@ -334,7 +358,7 @@ async function loadUserData(){
   if(ST.coach){
     /* Vue coach : inscrits + agrégats humeur/journal + statut d'accès croisé */
     var rs=await sb.from('profiles').select('id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding').eq('role','eleve');
-    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,last_name:s.last_name||'',email:(s.email||''),streak:s.streak||0,created_at:s.created_at,ap:s.app_progress||{},positioning:s.positioning||null,onboarding:s.onboarding||{},lastMood:null,lastMoodDay:'',journalCount:0,bilans:[],bilansN:0,hasAccess:false,tier:null};});
+    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,last_name:s.last_name||'',email:(s.email||''),streak:s.streak||0,created_at:s.created_at,ap:s.app_progress||{},positioning:s.positioning||null,onboarding:s.onboarding||{},lastMood:null,lastMoodDay:'',journalCount:0,bilans:[],bilansN:0,hasAccess:false,tier:null,asked:false};});
     var byId={},byEmail={}; students.forEach(function(s){byId[s.id]=s;if(s.email)byEmail[s.email.toLowerCase()]=s;});
     var ac=await sb.from('checkins').select('user_id,day,mood');
     (ac.data||[]).forEach(function(c){var s=byId[c.user_id];if(s&&(!s.lastMoodDay||c.day>s.lastMoodDay)){s.lastMoodDay=c.day;s.lastMood=c.mood;}});
@@ -342,6 +366,7 @@ async function loadUserData(){
     (aj.data||[]).forEach(function(j){var s=byId[j.user_id];if(s)s.journalCount++;});
     var abl=await sb.from('bilans').select('user_id,taken_at,decouverte,objections,closing,calme').order('taken_at');
     (abl.data||[]).forEach(function(b){var s=byId[b.user_id];if(s)s.bilans.push(b);});
+    try{var aq=await sb.from('community_posts').select('user_id,tag,created_at').eq('kind','eleve').order('created_at',{ascending:false}).limit(300);var qsince=Date.now()-10*86400000;(aq.data||[]).forEach(function(p){var s=byId[p.user_id];if(s&&p.tag&&/question/i.test(p.tag)&&new Date(p.created_at).getTime()>=qsince)s.asked=true;});}catch(e){}
     var ag=await sb.from('access_grants').select('email,active,tier');
     (ag.data||[]).forEach(function(g){var s=byEmail[(g.email||'').toLowerCase()];if(s){s.hasAccess=!!g.active;s.tier=g.tier||'academie';}});
     students.forEach(function(s){s.bilansN=s.bilans.length;s.stats=studentStats(s.ap,s.bilansN);try{s.diag=(s.positioning&&Object.keys(s.positioning).length)?computeDiag(s.positioning):null;}catch(e){s.diag=null;}s.lastActive=s.stats.lastDay?Math.max(0,dayNum()-s.stats.lastDay):null;});
@@ -892,42 +917,95 @@ function renderResources(){
 function openRes(i){var r=(ST.resources||[])[i];if(r&&r.url)window.open(r.url,'_blank','noopener');}
 
 /* ---- Vue coach ---- */
-function coachHTML(){
-  var st=ST.students||[];
-  var pending=[],active=[];
-  st.forEach(function(s,i){s._i=i;(s.hasAccess?active:pending).push(s);});
-  pending.sort(function(a,b){return (b.created_at||'').localeCompare(a.created_at||'');});
-  active.sort(function(a,b){var fa=(a.lastMood==='tension'||a.lastMood==='hesitant')?0:1,fb=(b.lastMood==='tension'||b.lastMood==='hesitant')?0:1;return fa-fb;});
-  var pend=pending.length?pending.map(function(s){
-    var d=s.created_at?new Date(s.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}):'';
-    return '<div class="card" style="border-color:#fcd34d;background:#fffbeb">'+
-      '<div class="nm">'+esc(s.first_name||s.email||'Inscrit')+'</div>'+
-      '<div class="mt" style="word-break:break-all">'+esc(s.email)+(d?' · inscrit le '+d:'')+'</div>'+
-      '<div class="mt" style="margin-top:8px;font-weight:600;color:#92400e">Donner l\'accès :</div>'+
-      '<div class="acctiers">'+TIERS.map(function(t){return '<button class="jtag" onclick="grantStudent('+s._i+',\''+t[0]+'\')">+ '+t[1]+'</button>';}).join('')+'</div></div>';
-  }).join(''):'<div class="card"><div class="mt">Aucune demande en attente.</div></div>';
-  var act=active.length?active.map(function(s){
-    var flag=(s.lastMood==='tension'||s.lastMood==='hesitant');
-    var stt=s.stats||{level:1,compl:0};
-    var inact=(s.lastActive!=null&&s.lastActive>=7);
-    var sub1='Niv '+stt.level+' · '+stt.compl+'% formation · 🔥'+(s.streak||0)+'j';
-    var sub2=tierLabel(s.tier)+' · '+(s.journalCount||0)+' j. journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(inact?' · <b style="color:#d97706">inactif '+s.lastActive+'j</b>':'')+(flag?' · <b style="color:#dc2626">à checker</b>':'');
-    return '<div class="card resitem eleve-row" data-n="'+esc(((s.first_name||'')+' '+(s.last_name||'')+' '+(s.email||'')).toLowerCase())+'" onclick="openFicheEleve('+s._i+')"><div class="resico">'+(flag?'⚠️':(inact?'😴':'🎓'))+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+sub1+'</div><div class="mt" style="margin-top:1px">'+sub2+'</div></div><span class="rl">fiche →</span></div>';
-  }).join(''):'<div class="card"><div class="mt">Aucun élève actif pour l\'instant.</div></div>';
-  var checkC=active.filter(function(s){return s.lastMood==='tension'||s.lastMood==='hesitant';}).length;
-  var head='<div class="ckpi" onclick="openCoachDash()" style="cursor:pointer"><div class="ckc"><div class="ckk">Actifs</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">En attente</div><div class="ckv" style="color:#d97706">'+pending.length+'</div></div><div class="ckc"><div class="ckk">À checker</div><div class="ckv" style="color:#dc2626">'+checkC+'</div></div></div><div class="mt" style="text-align:right;color:var(--indigo);font-weight:800;font-size:12px;margin:-2px 2px 4px">Voir mon tableau de bord →</div>';
-  return head+
-    (pending.length?'<h3 class="sh">🔔 Demandes d\'accès · '+pending.length+'</h3>'+pend:'')+
-    '<h3 class="sh">🎓 Tes élèves · '+active.length+'</h3>'+
-    (active.length>5?'<input id="coachq" class="jinp" placeholder="🔍 Chercher un élève…" oninput="filterEleves()" style="margin-bottom:10px">':'')+
-    '<div id="eleves-list">'+act+'</div>'+
-    '<h3 class="sh">Gestion</h3>'+
-    '<div class="card"><div class="mt">Vue détaillée des accès : suspendre, changer de niveau, ajouter un email à la main.</div><button class="cta" onclick="openAcces()">Gérer tous les accès</button></div>'+
-    '<div class="card"><div class="mt">Une ressource ajoutée ici apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>'+
-    (isSupa?'<button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="openProfil()">👤 Mon profil</button>':'')+
-    (isSupa?'<button class="cta" style="margin-top:8px;background:#fee2e2;color:#991b1b" onclick="logout()">Se déconnecter</button>':'');
+var CV={tab:'todo',filter:'all',sort:'alert',q:''};
+function coachStudents(){var st=ST.students||[];st.forEach(function(s,i){s._i=i;});return st;}
+function stuName(s){return (s.first_name||'')+(s.last_name?' '+s.last_name.charAt(0).toUpperCase()+'.':'')||s.email||'Élève';}
+function stuInit(s){return (s.first_name||s.email||'?').charAt(0).toUpperCase();}
+function stuStatus(s){
+  if(!s.hasAccess) return {k:'n',label:'nouveau'};
+  if(s.lastMood==='tension'||s.lastMood==='hesitant') return {k:'r',label:'à checker'};
+  if(s.lastActive!=null&&s.lastActive>=7) return {k:'s',label:'inactif'};
+  if(((s.stats&&s.stats.compl)||0)>=55&&(s.lastActive==null||s.lastActive<=2)) return {k:'g',label:'au top'};
+  return {k:'a',label:'à surveiller'};
 }
-async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
+function stuPriority(s){
+  if(!s.hasAccess) return {rank:1,tag:'nouveau',cls:'new',why:'Inscrit, en attente d\'accès à la formation',act:'new'};
+  if(s.lastMood==='tension') return {rank:2,tag:'à checker',cls:'red',why:'😣 Sous tension · un mot ne ferait pas de mal',act:'voir'};
+  if(s.asked) return {rank:3,tag:'demande',cls:'blue',why:'💬 A demandé conseil à la communauté',act:'rep'};
+  if(s.lastMood==='hesitant') return {rank:4,tag:'à checker',cls:'red',why:'😕 Hésitant · à rassurer',act:'voir'};
+  if(s.lastActive!=null&&s.lastActive>=14) return {rank:5,tag:'inactif',cls:'amb',why:'😴 Plus connecté depuis '+s.lastActive+' jours',act:'voir'};
+  if(s.lastActive!=null&&s.lastActive>=10) return {rank:6,tag:'inactif',cls:'amb',why:'😴 Inactif depuis '+s.lastActive+' jours',act:'voir'};
+  return null;
+}
+function coachTodo(){return coachStudents().map(function(s){return {s:s,p:stuPriority(s)};}).filter(function(x){return x.p;}).sort(function(a,b){return a.p.rank-b.p.rank||((b.s.lastActive||0)-(a.s.lastActive||0));});}
+function todoHTML(){
+  var list=coachTodo();
+  if(!list.length) return '<div class="cdone">✅ Tout est sous contrôle.<br>Aucun élève à traiter aujourd\'hui.</div>';
+  return '<h3 class="sh">À traiter aujourd\'hui · '+list.length+'</h3>'+list.map(function(x){var s=x.s,p=x.p,act;
+    if(p.act==='new') act='<button class="cpb" onclick="event.stopPropagation();openGrant('+s._i+')">Activer</button>';
+    else if(p.act==='rep') act='<button class="cpb ghost" onclick="event.stopPropagation();go(\'communaute\')">Répondre</button>';
+    else act='<button class="cpb" onclick="event.stopPropagation();openFicheEleve('+s._i+')">Voir</button>';
+    return '<div class="cpcard '+p.cls+'" onclick="openFicheEleve('+s._i+')"><div class="cpav">'+esc(stuInit(s))+'</div><div class="cpi"><div class="cpn">'+esc(stuName(s))+' <span class="cpt '+p.cls+'">'+p.tag+'</span></div><div class="cpw">'+p.why+'</div></div>'+act+'</div>';
+  }).join('');
+}
+function coachFiltered(){
+  var q=(CV.q||'').trim().toLowerCase();
+  var arr=coachStudents().filter(function(s){
+    if(q&&(((s.first_name||'')+' '+(s.last_name||'')+' '+(s.email||'')).toLowerCase().indexOf(q)<0)) return false;
+    if(CV.filter==='all') return true;
+    if(CV.filter==='check') return s.lastMood==='tension'||s.lastMood==='hesitant';
+    if(CV.filter==='inact') return s.hasAccess&&s.lastActive!=null&&s.lastActive>=7;
+    if(CV.filter==='new') return !s.hasAccess;
+    if(CV.filter==='top') return s.hasAccess&&((s.stats&&s.stats.compl)||0)>=55&&(s.lastActive==null||s.lastActive<=2);
+    return true;
+  });
+  var rk={n:0,r:1,a:2,s:3,g:5},rankf=function(s){var v=rk[stuStatus(s).k];return v==null?4:v;};
+  arr.sort(function(a,b){
+    if(CV.sort==='alert') return rankf(a)-rankf(b)||(((b.stats&&b.stats.compl)||0)-((a.stats&&a.stats.compl)||0));
+    if(CV.sort==='activity') return (a.lastActive==null?999:a.lastActive)-(b.lastActive==null?999:b.lastActive);
+    if(CV.sort==='progress') return ((b.stats&&b.stats.compl)||0)-((a.stats&&a.stats.compl)||0);
+    if(CV.sort==='level') return ((b.stats&&b.stats.level)||1)-((a.stats&&a.stats.level)||1);
+    return 0;
+  });
+  return arr;
+}
+function coachFilCount(f){var bf=CV.filter,bq=CV.q;CV.filter=f;CV.q='';var n=coachFiltered().length;CV.filter=bf;CV.q=bq;return n;}
+function coachFilsHTML(){return [['all','Tous'],['check','À checker'],['inact','Inactifs'],['new','Nouveaux'],['top','Au top']].map(function(f){return '<span class="cfil'+(CV.filter===f[0]?' on':'')+'" onclick="coachFilter(\''+f[0]+'\')">'+f[1]+' '+coachFilCount(f[0])+'</span>';}).join('');}
+function allRowsHTML(){
+  var arr=coachFiltered();var ce=document.getElementById('ccount');if(ce)ce.textContent=arr.length+' élève'+(arr.length>1?'s':'');
+  if(!arr.length) return '<div class="cempty">Aucun élève pour ce filtre.</div>';
+  return arr.map(function(s){var st=stuStatus(s);var la=(s.lastActive==null)?'—':(s.lastActive===0?"vu aujourd'hui":(s.lastActive===1?'vu hier':(s.hasAccess?('vu il y a '+s.lastActive+'j'):'sans accès')));var lbl=(st.label==='au top'||st.label==='à surveiller')?'':' · '+st.label;var stt=s.stats||{level:1,compl:0};
+    return '<div class="crow" onclick="openFicheEleve('+s._i+')"><span class="cdot '+st.k+'"></span><div class="crav">'+esc(stuInit(s))+'</div><div class="cri"><div class="crn">'+esc(stuName(s))+'</div><div class="crs">'+esc(tierLabel(s.tier))+' · '+la+lbl+'</div></div><div class="cmini"><div class="p">'+stt.compl+'%</div><div class="l">Niv '+stt.level+'</div></div></div>';
+  }).join('');
+}
+function allHTML(){
+  return '<div class="csearch">🔍 <input id="cq" placeholder="Chercher un élève…" autocomplete="off" value="'+esc(CV.q)+'" oninput="coachSearch()"></div>'+
+    '<div class="cfils" id="cfils">'+coachFilsHTML()+'</div>'+
+    '<div class="csort"><span class="l" id="ccount"></span><select onchange="coachSort(this.value)">'+
+      [['alert','Priorité'],['activity','Activité récente'],['progress','Progression'],['level','Niveau']].map(function(o){return '<option value="'+o[0]+'"'+(CV.sort===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+
+    '</select></div><div id="crows">'+allRowsHTML()+'</div>';
+}
+function coachBody(){return CV.tab==='todo'?todoHTML():allHTML();}
+function renderCoachBody(){var b=document.getElementById('coach-body');if(b)b.innerHTML=coachBody();}
+function coachTab(t){CV.tab=t;var a=document.getElementById('ct-todo'),c=document.getElementById('ct-all');if(a)a.classList.toggle('on',t==='todo');if(c)c.classList.toggle('on',t==='all');renderCoachBody();}
+function coachFilter(f){CV.filter=f;var fl=document.getElementById('cfils');if(fl)fl.innerHTML=coachFilsHTML();var r=document.getElementById('crows');if(r)r.innerHTML=allRowsHTML();}
+function coachSort(v){CV.sort=v;var r=document.getElementById('crows');if(r)r.innerHTML=allRowsHTML();}
+function coachSearch(){var el=document.getElementById('cq');CV.q=(el&&el.value)||'';var r=document.getElementById('crows');if(r)r.innerHTML=allRowsHTML();}
+function openGrant(i){var s=(ST.students||[])[i];if(!s)return;setM('Donner l\'accès','<div class="card"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt" style="word-break:break-all">'+esc(s.email||'')+'</div><div class="mt" style="margin-top:10px;font-weight:600">Choisis son niveau d\'accès :</div><div class="acctiers" style="margin-top:8px">'+TIERS.map(function(t){return '<button class="jtag" onclick="grantStudent('+i+',\''+t[0]+'\')">+ '+t[1]+'</button>';}).join('')+'</div></div>');openModal();}
+function coachHTML(){
+  var st=coachStudents();
+  var active=st.filter(function(s){return s.hasAccess;});
+  var todo=coachTodo().length;
+  var inact=active.filter(function(s){return s.lastActive!=null&&s.lastActive>=7;}).length;
+  var avg=active.length?Math.round(active.reduce(function(a,s){return a+((s.stats&&s.stats.compl)||0);},0)/active.length):0;
+  var cockpit='<div class="ckpi four" onclick="openCoachDash()" style="cursor:pointer"><div class="ckc"><div class="ckk">Élèves</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">À traiter</div><div class="ckv" style="color:#dc2626">'+todo+'</div></div><div class="ckc"><div class="ckk">Progr. moy</div><div class="ckv">'+avg+'<span style="font-size:13px">%</span></div></div><div class="ckc"><div class="ckk">Inactifs</div><div class="ckv" style="color:#d97706">'+inact+'</div></div></div><div class="mt" style="text-align:right;color:var(--indigo);font-weight:800;font-size:12px;margin:-2px 2px 8px">Tableau de bord →</div>';
+  var tabs='<div class="seg"><button class="segb'+(CV.tab==='todo'?' on':'')+'" id="ct-todo" onclick="coachTab(\'todo\')">🎯 À traiter</button><button class="segb'+(CV.tab==='all'?' on':'')+'" id="ct-all" onclick="coachTab(\'all\')">👥 Tous</button></div>';
+  var gestion='<h3 class="sh">Gestion</h3>'+
+    '<div class="card"><div class="mt">Accès : suspendre, changer de niveau, ajouter un email à la main.</div><button class="cta" onclick="openAcces()">Gérer tous les accès</button></div>'+
+    '<div class="card"><div class="mt">Une ressource ajoutée apparaît chez tous tes élèves.</div><button class="cta" onclick="openAddRes()">+ Ajouter une ressource</button></div>';
+  return cockpit+tabs+'<div id="coach-body">'+coachBody()+'</div>'+gestion;
+}
+async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';closeModal();toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
 function filterEleves(){var q=(((document.getElementById('coachq')||{}).value)||'').toLowerCase();document.querySelectorAll('#eleves-list .eleve-row').forEach(function(r){r.style.display=(!q||(r.dataset.n||'').indexOf(q)>=0)?'':'none';});}
 function openCoachDash(){
   var st=ST.students||[];
