@@ -24,6 +24,9 @@
   .appbar{background:#fff;color:var(--ink);padding:calc(8px + env(safe-area-inset-top)) 18px 10px}
   .appbar .hi{font-size:21px;font-weight:800;letter-spacing:-.3px}
   .appbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .rolesw{display:flex;background:#eef0f6;border-radius:12px;padding:3px}
+  .rolesw-b{flex:1;text-align:center;padding:8px;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .rolesw-b.on{background:#fff;color:var(--indigo);box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .resume{background:linear-gradient(150deg,#3730a3,#4f46e5 60%,#6d63ff);border-radius:22px;padding:22px;color:#fff;box-shadow:0 14px 30px rgba(79,70,229,.28);cursor:pointer;margin-bottom:14px}
   .resume .rk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;opacity:.85}
   .resume .rt{font-size:22px;font-weight:800;line-height:1.15;margin-top:8px}
@@ -253,6 +256,7 @@
       <div><div class="hi" id="hi">Salut 👋</div><div class="sub">Ton parcours neurovente</div></div>
       <div class="profil-round" onclick="openProfil()"><div class="pr-circle" id="prcircle">•</div></div>
     </div>
+    <div id="coachtoggle" style="display:none;margin-top:12px"><div class="rolesw"><span class="rolesw-b on" id="rsw-c" onclick="setCoachView('coach')">🧑‍🏫 Mes élèves</span><span class="rolesw-b" id="rsw-e" onclick="setCoachView('eleve')">👤 Mon espace</span></div></div>
   </div>
   <div class="screen" id="screen"></div>
   <div class="tabbar" id="tabbar"></div>
@@ -341,7 +345,7 @@ async function loadUserData(){
 const KEY='persua_app_v1';
 let ST=JSON.parse(localStorage.getItem(KEY)||'{}');
 ST.done=ST.done||{}; ST.quiz=ST.quiz||{}; ST.gestes=ST.gestes||{}; ST.test=ST.test||false; ST.posts=ST.posts||[]; ST.eleve=ST.eleve||false; ST.bilans=ST.bilans||[]; ST.assist=ST.assist||{}; ST.rdv=ST.rdv||{}; ST.seen=ST.seen||false; ST.diagAns=ST.diagAns||{}; ST.diag=ST.diag||null; ST.diagDone=ST.diagDone||false; ST.streak=ST.streak||0; ST.lastDay=ST.lastDay||0; ST.exoDone=ST.exoDone||{};
-ST.checkins=ST.checkins||{}; ST.journal=ST.journal||[]; ST.resources=ST.resources||[]; ST.coach=ST.coach||false; ST.students=ST.students||[];
+ST.checkins=ST.checkins||{}; ST.journal=ST.journal||[]; ST.resources=ST.resources||[]; ST.coach=ST.coach||false; ST.students=ST.students||[]; ST.coachView=ST.coachView||'coach';
 ST.likes=ST.likes||{}; ST.comments=ST.comments||{}; ST.weekly=ST.weekly||null;
 function save(){localStorage.setItem(KEY,JSON.stringify(ST));if(isSupa)syncRemote();}
 /* Par défaut tout est ouvert (toi, aucun réglage). Le lien partagé à la communauté finit par #eleve : il active le mode élève (déblocage par niveau). #open pour revenir en accès complet. */
@@ -980,7 +984,12 @@ async function genAnalyse(){
 const SCREENS={accueil:accueilHTML,parcours:accueilHTML,suivi:suiviHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
 
 /* Navigation */
-function buildTabs(){var t=[["parcours","🎓","Formation"],["suivi","📊","Suivi"],["communaute","👥","Communauté"],["rdv","📅","Séances"],["assistant","🤖","Assistant"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
+function buildTabs(){
+  if(ST.coach&&ST.coachView!=='eleve') return [["coach","🧑‍🏫","Élèves"],["communaute","👥","Communauté"],["rdv","📅","Séances"],["assistant","🤖","Assistant"]];
+  return [["parcours","🎓","Formation"],["suivi","📊","Suivi"],["communaute","👥","Communauté"],["rdv","📅","Séances"],["assistant","🤖","Assistant"]];
+}
+function setCoachView(m){ST.coachView=m;save();var tab=(m==='eleve')?'parcours':'coach';renderTabs(tab);go(tab);}
+function updateCoachToggle(){var t=document.getElementById('coachtoggle');if(!t)return;t.style.display=ST.coach?'block':'none';var e=document.getElementById('rsw-e'),c=document.getElementById('rsw-c');if(e)e.classList.toggle('on',ST.coachView==='eleve');if(c)c.classList.toggle('on',ST.coachView!=='eleve');}
 var TABICONS={
  parcours:'<path d="M4 6h16M4 12h16M4 18h10"/>',
  suivi:'<path d="M4 4v16h16"/><path d="M8 14l3-3 2 2 4-5"/>',
@@ -989,7 +998,7 @@ var TABICONS={
  assistant:'<path d="M12 3l1.6 4L18 8.6l-4.4 1.6L12 15l-1.6-4.8L6 8.6l4.4-1.6zM18 14l.9 2.2L21 17l-2.1.8L18 20l-.9-2.2L15 17l2.1-.8z"/>',
  coach:'<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21c0-3.5 3-6 6-6s6 2.5 6 6M17 11l2 2 4-4"/>'
 };
-function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><svg class="i" viewBox="0 0 24 24">'+(TABICONS[t[0]]||'')+'</svg><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
+function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><svg class="i" viewBox="0 0 24 24">'+(TABICONS[t[0]]||'')+'</svg><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});updateCoachToggle();}
 renderTabs('parcours');
 function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);var _subs={parcours:"Prêt à progresser aujourd'hui ?",suivi:"Ta progression, tes graphs",communaute:"Entre vendeurs Persua",rdv:"Ton coaching avec Steven",assistant:"Ton coach de vente, dans ta poche",coach:"Tes élèves · vue coach"};var _subEl=document.querySelector('.appbar .sub');if(_subEl)_subEl.textContent=_subs[k]||'Ton parcours neurovente';refreshHeader();}
 
