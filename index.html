@@ -357,11 +357,11 @@ async function loadUserData(){
   try{ var rr=await sb.from('resources').select('id,title,description,icon,url,sort').order('sort'); if(rr.data) ST.resources=rr.data; }catch(e){}
   if(ST.coach){
     /* Vue coach : inscrits + agrégats humeur/journal + statut d'accès croisé */
-    var _sel='id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding,coach_id';
-    var rs=await sb.from('profiles').select(_sel).eq('role','eleve');
-    var _hasCoachCol=!rs.error;
-    if(rs.error){rs=await sb.from('profiles').select('id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding').eq('role','eleve');}
-    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,last_name:s.last_name||'',email:(s.email||''),streak:s.streak||0,created_at:s.created_at,ap:s.app_progress||{},positioning:s.positioning||null,onboarding:s.onboarding||{},coach_id:s.coach_id||null,lastMood:null,lastMoodDay:'',journalCount:0,bilans:[],bilansN:0,hasAccess:false,tier:null,asked:false};});
+    var _base='id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding';
+    var rs=await sb.from('profiles').select(_base+',coach_id,archived').eq('role','eleve');
+    var _hasCoachCol=true;
+    if(rs.error){rs=await sb.from('profiles').select(_base+',coach_id').eq('role','eleve');if(rs.error){_hasCoachCol=false;rs=await sb.from('profiles').select(_base).eq('role','eleve');}}
+    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,last_name:s.last_name||'',email:(s.email||''),streak:s.streak||0,created_at:s.created_at,ap:s.app_progress||{},positioning:s.positioning||null,onboarding:s.onboarding||{},coach_id:s.coach_id||null,archived:!!s.archived,lastMood:null,lastMoodDay:'',journalCount:0,bilans:[],bilansN:0,hasAccess:false,tier:null,asked:false};});
     var byId={},byEmail={}; students.forEach(function(s){byId[s.id]=s;if(s.email)byEmail[s.email.toLowerCase()]=s;});
     var ac=await sb.from('checkins').select('user_id,day,mood');
     (ac.data||[]).forEach(function(c){var s=byId[c.user_id];if(s&&(!s.lastMoodDay||c.day>s.lastMoodDay)){s.lastMoodDay=c.day;s.lastMood=c.mood;}});
@@ -928,6 +928,7 @@ function coachStudents(){var st=ST.students||[];st.forEach(function(s,i){s._i=i;
 function stuName(s){return (s.first_name||'')+(s.last_name?' '+s.last_name.charAt(0).toUpperCase()+'.':'')||s.email||'Élève';}
 function stuInit(s){return (s.first_name||s.email||'?').charAt(0).toUpperCase();}
 function stuStatus(s){
+  if(s.archived) return {k:'s',label:'archivé'};
   if(!s.hasAccess) return {k:'n',label:'nouveau'};
   if(s.lastMood==='tension'||s.lastMood==='hesitant') return {k:'r',label:'à checker'};
   if(s.lastActive!=null&&s.lastActive>=7) return {k:'s',label:'inactif'};
@@ -943,7 +944,7 @@ function stuPriority(s){
   if(s.lastActive!=null&&s.lastActive>=10) return {rank:6,tag:'inactif',cls:'amb',why:'😴 Inactif depuis '+s.lastActive+' jours',act:'voir'};
   return null;
 }
-function coachTodo(){return coachStudents().map(function(s){return {s:s,p:stuPriority(s)};}).filter(function(x){return x.p;}).sort(function(a,b){return a.p.rank-b.p.rank||((b.s.lastActive||0)-(a.s.lastActive||0));});}
+function coachTodo(){return coachStudents().map(function(s){return {s:s,p:stuPriority(s)};}).filter(function(x){return x.p&&!x.s.archived;}).sort(function(a,b){return a.p.rank-b.p.rank||((b.s.lastActive||0)-(a.s.lastActive||0));});}
 function todoHTML(){
   var list=coachTodo();
   if(!list.length) return '<div class="cdone">✅ Tout est sous contrôle.<br>Aucun élève à traiter aujourd\'hui.</div>';
@@ -958,6 +959,8 @@ function coachFiltered(){
   var q=(CV.q||'').trim().toLowerCase();
   var arr=coachStudents().filter(function(s){
     if(q&&(((s.first_name||'')+' '+(s.last_name||'')+' '+(s.email||'')).toLowerCase().indexOf(q)<0)) return false;
+    if(CV.filter==='arch') return s.archived;
+    if(s.archived) return false;
     if(CV.filter==='all') return true;
     if(CV.filter==='check') return s.lastMood==='tension'||s.lastMood==='hesitant';
     if(CV.filter==='inact') return s.hasAccess&&s.lastActive!=null&&s.lastActive>=7;
@@ -976,7 +979,7 @@ function coachFiltered(){
   return arr;
 }
 function coachFilCount(f){var bf=CV.filter,bq=CV.q;CV.filter=f;CV.q='';var n=coachFiltered().length;CV.filter=bf;CV.q=bq;return n;}
-function coachFilsHTML(){return [['all','Tous'],['check','À checker'],['inact','Inactifs'],['new','Nouveaux'],['top','Au top']].map(function(f){return '<span class="cfil'+(CV.filter===f[0]?' on':'')+'" onclick="coachFilter(\''+f[0]+'\')">'+f[1]+' '+coachFilCount(f[0])+'</span>';}).join('');}
+function coachFilsHTML(){return [['all','Tous'],['check','À checker'],['inact','Inactifs'],['new','Nouveaux'],['top','Au top'],['arch','Archivés']].map(function(f){return '<span class="cfil'+(CV.filter===f[0]?' on':'')+'" onclick="coachFilter(\''+f[0]+'\')">'+f[1]+' '+coachFilCount(f[0])+'</span>';}).join('');}
 function allRowsHTML(){
   var arr=coachFiltered();var ce=document.getElementById('ccount');if(ce)ce.textContent=arr.length+' élève'+(arr.length>1?'s':'');
   if(!arr.length) return '<div class="cempty">Aucun élève pour ce filtre.</div>';
@@ -1000,7 +1003,7 @@ function coachSearch(){var el=document.getElementById('cq');CV.q=(el&&el.value)|
 function openGrant(i){var s=(ST.students||[])[i];if(!s)return;setM('Donner l\'accès','<div class="card"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt" style="word-break:break-all">'+esc(s.email||'')+'</div><div class="mt" style="margin-top:10px;font-weight:600">Choisis son niveau d\'accès :</div><div class="acctiers" style="margin-top:8px">'+TIERS.map(function(t){return '<button class="jtag" onclick="grantStudent('+i+',\''+t[0]+'\')">+ '+t[1]+'</button>';}).join('')+'</div></div>');openModal();}
 function coachHTML(){
   var st=coachStudents();
-  var active=st.filter(function(s){return s.hasAccess;});
+  var active=st.filter(function(s){return s.hasAccess&&!s.archived;});
   var todo=coachTodo().length;
   var inact=active.filter(function(s){return s.lastActive!=null&&s.lastActive>=7;}).length;
   var avg=active.length?Math.round(active.reduce(function(a,s){return a+((s.stats&&s.stats.compl)||0);},0)/active.length):0;
@@ -1018,7 +1021,7 @@ function assignCoach(studentId,coachId){if(!isSupa)return;sb.rpc('assign_coach',
 function setCoachRole(id,mk){if(!isSupa)return;if(!confirm(mk?'Promouvoir cet élève en sous-coach ?':'Retirer ce coach (il redevient élève) ?'))return;sb.rpc('set_coach_role',{target:id,make_coach:mk}).then(function(r){if(r.error){toastMini('Échec : '+r.error.message);return;}toastMini(mk?'Promu sous-coach ✅':'Repassé élève');closeModal();loadUserData().then(function(){go('coach');},function(){go('coach');});},function(){toastMini('Échec');});}
 function openCoachDash(){
   var st=ST.students||[];
-  var active=st.filter(function(s){return s.hasAccess;});
+  var active=st.filter(function(s){return s.hasAccess&&!s.archived;});
   var pending=st.filter(function(s){return !s.hasAccess;});
   var check=active.filter(function(s){return s.lastMood==='tension'||s.lastMood==='hesitant';});
   var bt={academie:0,mentorat:0,immersion:0};active.forEach(function(s){var t=s.tier||'academie';if(bt[t]!==undefined)bt[t]++;});
@@ -1120,6 +1123,7 @@ function renderFicheEleve(){
   var repHTML=qa.length?'<h3 class="sh">Ses réponses</h3><details class="repdet"><summary>Voir ses '+qa.length+' réponses au diagnostic</summary><div class="card" style="margin-top:8px">'+qa.map(function(x){return '<div class="rr" style="border-bottom:1px solid #f2f3f8;padding:7px 0;display:block"><div class="mt" style="color:#2a2e3d;font-weight:600">'+esc(x.q)+'</div><div class="mt" style="color:var(--indigo);margin-top:2px">'+esc(String(x.a))+'</div></div>';}).join('')+'</div></details>':'';
   var assignHTML=window._isHead?'<div class="card"><div class="plabel">Coach référent</div><select class="jinp" onchange="assignCoach(\''+s.id+'\',this.value)"><option value="">— Non assigné</option>'+((window._coaches||[]).map(function(c){return '<option value="'+c.id+'"'+(((prof.coach_id||s.coach_id))===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join(''))+'</select><div class="mt" style="margin-top:6px">Cet élève apparaîtra dans la file du coach choisi.</div></div>':'';
   var promoteHTML=window._isHead?'<div class="card"><div class="plabel">Faire de cet élève un sous-coach</div><div class="mt" style="margin:4px 0 0">Il pourra suivre les élèves que tu lui assignes.</div><button class="cta" style="margin-top:10px;background:#eef0ff;color:#3730a3" onclick="setCoachRole(\''+s.id+'\',true)">🧑‍🏫 Promouvoir coach</button></div>':'';
+  var archHTML=isSupa?'<div class="card"><div class="plabel">'+(s.archived?'Élève archivé':'Archiver / désactiver')+'</div><div class="mt" style="margin:4px 0 0">'+(s.archived?'Masqué de tes listes, accès suspendu. Réversible.':'Il disparaît de tes listes et son accès est suspendu. Réversible.')+'</div><button class="cta" style="margin-top:10px;background:'+(s.archived?'#eef0ff;color:#3730a3':'#fee2e2;color:#991b1b')+'" onclick="archiveStudent(\''+s.id+'\','+(s.archived?'false':'true')+')">'+(s.archived?'Désarchiver':'Archiver cet élève')+'</button></div>':'';
   var apiNote=location.hostname.indexOf('github.io')>=0?'<div class="mt" style="margin-top:6px">La génération IA s\'active une fois l\'app déployée sur le domaine. Ici tu peux écrire l\'analyse à la main.</div>':'';
   setM('Fiche · '+esc(name),
     progHTML+assignHTML+promoteHTML+posHTML+bilanHTML+
@@ -1130,9 +1134,10 @@ function renderFicheEleve(){
     '<div class="card"><textarea id="ca-text" class="caform" rows="8" placeholder="Analyse du profil…">'+esc(FE.analysis)+'</textarea>'+
     (FE.analysisAt?'<div class="mt" style="margin-top:6px">Dernière MAJ : '+new Date(FE.analysisAt).toLocaleDateString('fr-FR')+'</div>':'')+apiNote+
     '<div style="display:flex;gap:8px;margin-top:12px"><button class="cta" style="background:#eef0ff;color:#3730a3" onclick="saveAnalyse()">Sauvegarder</button><button class="cta" onclick="genAnalyse()">⚡ Générer (IA)</button></div></div>'+
-    '<button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="closeModal()">← Retour</button>');
+    archHTML+'<button class="cta" style="margin-top:12px;background:#eef0ff;color:#3730a3" onclick="closeModal()">← Retour</button>');
   document.querySelector('#modal .ov-body').scrollTop=0;
 }
+function archiveStudent(id,val){if(!isSupa)return;if(!confirm(val?'Archiver cet élève ? Il sera masqué de tes listes et son accès suspendu (réversible).':'Désarchiver cet élève ?'))return;var em=(FE&&FE.s&&FE.s.email)||'';sb.rpc('set_archived',{target:id,val:val}).then(function(r){if(r.error){toastMini('Échec : '+r.error.message);return;}if(val&&em){sb.from('access_grants').update({active:false,updated_at:new Date().toISOString()}).eq('email',em.toLowerCase()).then(function(){},function(){});}toastMini(val?'Élève archivé ✅':'Élève désarchivé');closeModal();loadUserData().then(function(){go('coach');},function(){go('coach');});},function(){toastMini('Échec');});}
 function saveAnalyse(){
   var t=((document.getElementById('ca-text')||{}).value||'');FE.analysis=t;
   if(isSupa&&sb._uid)sb.from('coach_analyses').upsert({user_id:FE.s.id,analysis:t,updated_at:new Date().toISOString()}).then(function(r){toastMini(r&&r.error?'Échec sauvegarde':'Analyse sauvegardée ✅');},function(){toastMini('Échec sauvegarde');});
