@@ -9,7 +9,7 @@
   html,body{margin:0;height:100%}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
   .app{height:100svh;display:flex;flex-direction:column;max-width:520px;margin:0 auto}
-  .screen{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:calc(12px + env(safe-area-inset-top)) 18px 14px;display:none}
+  .screen{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:calc(12px + env(safe-area-inset-top)) 18px 14px;display:none}
   .screen.on{display:block}
   /* header */
   .top{display:flex;align-items:center;justify-content:space-between;padding:6px 0 16px}
@@ -101,6 +101,31 @@
   .prow .go{margin-left:auto;color:#c2c7d3}
   .seance{border:1px solid var(--line);border-radius:18px;padding:17px}
   .seance .t{font-size:16px;font-weight:800}.seance .s{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5}
+  /* coach */
+  .tg{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:800;opacity:.6}
+  .tg.on{background:rgba(255,255,255,.28);opacity:1}
+  .pend{border:1px solid #fcd34d;background:#fffbeb;border-radius:16px;padding:15px;margin-bottom:11px}
+  .pend .nm{font-size:15px;font-weight:800}.pend .em2{font-size:12px;color:#92400e;margin-top:2px}
+  .pend .row{display:flex;gap:7px;margin-top:11px}
+  .pill{flex:1;min-width:0;text-align:center;background:#fff;border:1px solid #e7d9a8;color:#8a6d1f;border-radius:11px;padding:10px 2px;font-size:11px;font-weight:800}
+  .manage .m{min-width:0}
+  .eleve{display:flex;align-items:center;gap:13px;padding:13px 4px;border-bottom:1px solid var(--line)}
+  .eleve .a{width:40px;height:40px;border-radius:50%;flex:none;background:#eef0fb;color:var(--indigo-d);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+  .eleve .t{font-size:15px;font-weight:700}.eleve .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .eleve .go{margin-left:auto;color:#c2c7d3}
+  .manage{display:flex;gap:11px;margin-top:16px}
+  .manage .m{flex:1;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;font-weight:800;font-size:13.5px}
+  .axrow{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .axrow .lb{width:92px;font-size:12.5px;font-weight:700;color:#2a2e3d}
+  .axrow .bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+  .axrow .bar i{display:block;height:100%;background:var(--indigo)}
+  .axrow .vv{width:40px;text-align:right;font-size:12px;font-weight:800;color:var(--muted)}
+  .card{border:1px solid var(--line);border-radius:16px;padding:15px;margin-top:12px}
+  .card .k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+  .card .li{font-size:13px;color:#2a2e3d;padding:6px 0;border-bottom:1px solid #f2f3f8;line-height:1.4}
+  .ia{background:#0e1020;color:#fff;border-radius:16px;padding:16px;margin-top:12px}
+  .ia .k{color:#a5b4fc}.ia .d{font-size:13px;color:#cdd0f2;margin-top:8px;line-height:1.55}
+  .ia .b{margin-top:13px;background:var(--indigo);color:#fff;border-radius:12px;padding:12px;text-align:center;font-weight:800;font-size:13px}
   /* tabbar */
   .tabbar{display:flex;border-top:1px solid var(--line);padding:9px 6px calc(8px + env(safe-area-inset-bottom));background:#fff}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:#a9afbf}
@@ -109,7 +134,7 @@
   .hint{position:fixed;top:0;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:#fff;background:#4f46e5;padding:5px;z-index:9}
 </style></head>
 <body>
-<div class="hint">Prototype de direction · rien n'est branché, c'est pour juger l'épure</div>
+<div class="hint">Aperçu&nbsp; <span class="tg on" id="tg-e" onclick="setRole('eleve')">👤 Élève</span> <span class="tg" id="tg-c" onclick="setRole('coach')">🧑‍🏫 Coach</span></div>
 <div class="app" style="padding-top:22px">
 
   <!-- FORMATION (home) -->
@@ -129,9 +154,9 @@
     </div>
     <div class="nudge"><span class="em">📊</span><span>Ton point de la semaine est prêt</span><span class="go">Faire →</span></div>
     <div class="h2">Ta formation</div>
-    <div class="mod"><div class="node n-done">✓</div><div><div class="t">Les fondements neuro</div><div class="s">terminé</div></div></div>
-    <div class="mod"><div class="node n-done">✓</div><div><div class="t">Lire ton interlocuteur</div><div class="s">terminé</div></div></div>
-    <div class="mod"><div class="node n-done">✓</div><div><div class="t">La découverte</div><div class="s">terminé</div></div></div>
+    <div class="mod" onclick="go('module','formation')"><div class="node n-done">✓</div><div><div class="t">Les fondements neuro</div><div class="s">terminé</div></div></div>
+    <div class="mod" onclick="go('module','formation')"><div class="node n-done">✓</div><div><div class="t">Lire ton interlocuteur</div><div class="s">terminé</div></div></div>
+    <div class="mod" onclick="go('module','formation')"><div class="node n-done">✓</div><div><div class="t">La découverte</div><div class="s">terminé</div></div></div>
     <div class="mod" onclick="go('module','formation')"><div class="node n-cur">4</div><div style="flex:1"><div class="t">Le prix et le closing</div><div class="s">Vidéo 3 sur 5 · en cours</div><div class="mini"><i style="width:60%"></i></div></div></div>
     <div class="mod"><div class="node n-lock">🔒</div><div><div class="t">L'expérience mémorable</div><div class="s">Se débloque au module 4 validé</div></div></div>
     <div class="mod" style="border:0"><div class="node n-lock">🔒</div><div><div class="t">Traiter les objections</div><div class="s">Bientôt</div></div></div>
@@ -219,12 +244,49 @@
     <div class="prow" style="border:0">↩︎ Se déconnecter<span class="go">›</span></div>
   </div>
 
-  <!-- TABBAR -->
-  <div class="tabbar">
+  <!-- COACH : élèves -->
+  <div class="screen" id="s-coach">
+    <div class="top"><div class="hi">Tes élèves<small>2 demandes · 14 actifs</small></div><div class="av" onclick="go('profil','')">S</div></div>
+    <div class="h2" style="margin-top:6px">🔔 Demandes d'accès</div>
+    <div class="pend"><div class="nm">Marie Dubois</div><div class="em2">marie.d@gmail.com · inscrite hier</div><div class="row"><div class="pill">+ Académie</div><div class="pill">+ Mentorat</div><div class="pill">+ Immersion</div></div></div>
+    <div class="pend"><div class="nm">Paul Mercier</div><div class="em2">p.mercier@pro.fr · inscrit il y a 2 j</div><div class="row"><div class="pill">+ Académie</div><div class="pill">+ Mentorat</div><div class="pill">+ Immersion</div></div></div>
+    <div class="h2">Tes élèves actifs</div>
+    <div class="eleve" onclick="go('coach-fiche','coach')"><div class="a">⚠️</div><div><div class="t">Karim B.</div><div class="s">Mentorat · 😣 sous tension · à checker</div></div><span class="go">›</span></div>
+    <div class="eleve" onclick="go('coach-fiche','coach')"><div class="a">V</div><div><div class="t">Valérie M.</div><div class="s">Académie · 🚀 au top · 5 entrées journal</div></div><span class="go">›</span></div>
+    <div class="eleve" onclick="go('coach-fiche','coach')"><div class="a">T</div><div><div class="t">Thomas C.</div><div class="s">Immersion · 🙂 posé</div></div><span class="go">›</span></div>
+    <div class="eleve" style="border:0" onclick="go('coach-fiche','coach')"><div class="a">N</div><div><div class="t">Nadia F.</div><div class="s">Académie · 😎 en confiance</div></div><span class="go">›</span></div>
+    <div class="manage"><div class="m">Gérer les accès</div><div class="m">Bibliothèque</div></div>
+  </div>
+
+  <!-- COACH : fiche élève -->
+  <div class="screen" id="s-coach-fiche">
+    <div class="top"><span class="back" onclick="go('coach','coach')">‹</span><div class="ttl">Karim B.</div><span style="width:34px"></span></div>
+    <div class="pf" style="padding-top:2px"><div class="bigav" style="width:70px;height:70px;font-size:26px">K</div><div class="nm" style="font-size:18px">Karim B.</div><div class="role">Mentorat · inscrit le 12 août</div></div>
+    <div class="card"><div class="k">Dernier bilan · 4 axes</div>
+      <div class="axrow"><span class="lb">Découverte</span><span class="bar"><i style="width:70%"></i></span><span class="vv">70%</span></div>
+      <div class="axrow"><span class="lb">Objections</span><span class="bar"><i style="width:45%"></i></span><span class="vv">45%</span></div>
+      <div class="axrow"><span class="lb">Closing</span><span class="bar"><i style="width:60%"></i></span><span class="vv">60%</span></div>
+      <div class="axrow"><span class="lb">CALME</span><span class="bar"><i style="width:40%"></i></span><span class="vv">40%</span></div>
+    </div>
+    <div class="card"><div class="k">Diagnostic</div><div style="font-size:14.5px;font-weight:800">Le Chasseur · ENTJ</div><div style="font-size:12.5px;color:var(--muted);margin-top:4px">DISC D/I · maillon faible : Closing</div></div>
+    <div class="card"><div class="k">Journal de vente · 5</div><div class="li">RDV DAF industrie — À relancer</div><div class="li">Relance devis — Signé ✅</div><div class="li" style="border:0">Prospect qui ghost — Perdu</div></div>
+    <div class="card"><div class="k">Humeurs récentes</div><div class="li">Lun 18 — 😣 sous tension</div><div class="li" style="border:0">Dim 17 — 😕 hésitant</div></div>
+    <div class="ia"><div class="k" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">🧠 Analyse IA · privée (l'élève ne la voit jamais)</div><div class="d">Karim performe en découverte mais lâche au closing par peur du non. En séance : travailler l'ancrage du coût et le silence après le prix. Vigilance : humeur en baisse cette semaine, un mot d'encouragement ne ferait pas de mal.</div><div class="b">Régénérer l'analyse</div></div>
+  </div>
+
+  <!-- TABBAR élève -->
+  <div class="tabbar" id="tabs-eleve">
     <div class="tab on" data-k="formation" onclick="go('formation','formation')"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Formation</div>
     <div class="tab" data-k="communaute" onclick="go('communaute','communaute')"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></svg>Communauté</div>
     <div class="tab" data-k="seances" onclick="go('seances','seances')"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Séances</div>
     <div class="tab" data-k="assistant" onclick="go('assistant','assistant')"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.6 4L18 8.6l-4.4 1.6L12 15l-1.6-4.8L6 8.6l4.4-1.6zM18 14l.9 2.2L21 17l-2.1.8L18 20l-.9-2.2L15 17l2.1-.8z"/></svg>Assistant</div>
+  </div>
+  <!-- TABBAR coach -->
+  <div class="tabbar" id="tabs-coach" style="display:none">
+    <div class="tab on" data-k="coach" onclick="go('coach','coach')"><svg class="i" viewBox="0 0 24 24"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21c0-3.5 3-6 6-6s6 2.5 6 6M17 11l2 2 4-4"/></svg>Élèves</div>
+    <div class="tab" data-k="communaute" onclick="go('communaute','communaute')"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></svg>Communauté</div>
+    <div class="tab" data-k="seances" onclick="go('seances','seances')"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Séances</div>
+    <div class="tab" data-k="assistant" onclick="go('assistant','assistant')"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.6 4L18 8.6l-4.4 1.6L12 15l-1.6-4.8L6 8.6l4.4-1.6z"/></svg>Assistant</div>
   </div>
 </div>
 <script>
@@ -232,6 +294,14 @@ function go(id,tab){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id==='s-'+id);});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.k===tab);});
   var sc=document.getElementById('s-'+id); if(sc) sc.scrollTop=0;
+}
+function setRole(r){
+  var coach=r==='coach';
+  document.getElementById('tabs-eleve').style.display=coach?'none':'flex';
+  document.getElementById('tabs-coach').style.display=coach?'flex':'none';
+  document.getElementById('tg-e').classList.toggle('on',!coach);
+  document.getElementById('tg-c').classList.toggle('on',coach);
+  go(coach?'coach':'formation', coach?'coach':'formation');
 }
 </script>
 </body></html>
