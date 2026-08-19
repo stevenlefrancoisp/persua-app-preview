@@ -13,8 +13,8 @@
 <title>Persua · mon parcours</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-  :root{--indigo:#4f46e5;--indigo-d:#3730a3;--ink:#0e1020;--muted:#54596b;--line:#eceef6;
-    --bg:#f6f7fb;--card:#fff;--green:#16a34a;--amber:#d97706;--red:#dc2626;--warm:#f59e0b;}
+  :root{--indigo:#4f46e5;--indigo-d:#3730a3;--ink:#12141c;--muted:#6b7280;--line:#eceef4;
+    --bg:#fff;--card:#fff;--green:#16a34a;--amber:#d97706;--red:#dc2626;--warm:#f59e0b;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0e1020;color:var(--ink)}
   .device{max-width:420px;height:100vh;height:100svh;margin:0 auto;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
@@ -107,8 +107,8 @@
   .rr:last-child{border-bottom:0}.rr .g{flex:1}.rr .rl{font-size:11px;color:var(--indigo);font-weight:700}
   .overlay{position:absolute;inset:0;background:var(--bg);z-index:20;transform:translateY(100%);transition:transform .28s ease;display:flex;flex-direction:column}
   .overlay.open{transform:translateY(0)}
-  .ov-bar{background:#0e1020;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:700}
-  .ov-bar .x{background:rgba(255,255,255,.15);border:0;color:#fff;width:30px;height:30px;border-radius:9px;font-size:16px;cursor:pointer}
+  .ov-bar{background:#fff;color:var(--ink);padding:calc(10px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:800;border-bottom:1px solid var(--line)}
+  .ov-bar .x{background:#f1f2f6;border:0;color:#6b7280;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer}
   .ov-body{flex:1;overflow-y:auto;padding:16px 16px calc(86px + env(safe-area-inset-bottom))}
   .pchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
   .pchip{background:#eef0ff;color:#3730a3;font-size:12px;font-weight:700;padding:6px 10px;border-radius:10px}
@@ -229,7 +229,6 @@
 </head>
 <body>
 <div class="device">
-  <div class="statusbar"><span>9:41</span><span>Persua</span><span>●●●● ▮</span></div>
   <div class="appbar">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
       <div><div class="hi" id="hi">Salut 👋</div><div class="sub">Ton parcours neurovente</div></div>
@@ -973,7 +972,7 @@ var TABICONS={
 };
 function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><svg class="i" viewBox="0 0 24 24">'+(TABICONS[t[0]]||'')+'</svg><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
 renderTabs('parcours');
-function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);refreshHeader();}
+function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);var _subs={parcours:"Prêt à progresser aujourd'hui ?",communaute:"Entre vendeurs Persua",rdv:"Ton coaching avec Steven",assistant:"Ton coach de vente, dans ta poche",coach:"Tes élèves · vue coach"};var _subEl=document.querySelector('.appbar .sub');if(_subEl)_subEl.textContent=_subs[k]||'Ton parcours neurovente';refreshHeader();}
 
 /* Modal */
 function openModal(){document.getElementById('modal').classList.add('open');document.querySelector('#modal .ov-body').scrollTop=0;}
