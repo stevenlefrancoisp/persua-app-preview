@@ -252,6 +252,8 @@
   .jbadge{display:inline-block;color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;margin-right:5px;margin-top:3px}
   .jbadge.tg{background:#eef0ff;color:#3730a3}
   .resitem{display:flex;align-items:center;gap:11px;cursor:pointer}.resitem .g{flex:1;min-width:0}.resico{font-size:24px;width:34px;text-align:center;flex:none}
+  .repdet summary{cursor:pointer;font-weight:700;color:var(--indigo);font-size:13px;padding:8px 2px;list-style:none}
+  .repdet summary::-webkit-details-marker{display:none}.repdet summary::before{content:"▸ "}.repdet[open] summary::before{content:"▾ "}
   .caform{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;background:#fff;font-family:inherit;line-height:1.5;resize:vertical}
   .toastmini{position:fixed;left:50%;bottom:96px;transform:translate(-50%,14px);background:#0e1020;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.28);opacity:0;transition:opacity .28s,transform .28s;z-index:999;max-width:82%;text-align:center}
   .toastmini.show{opacity:1;transform:translate(-50%,0)}
@@ -331,15 +333,18 @@ async function loadUserData(){
   try{ var rr=await sb.from('resources').select('id,title,description,icon,url,sort').order('sort'); if(rr.data) ST.resources=rr.data; }catch(e){}
   if(ST.coach){
     /* Vue coach : inscrits + agrégats humeur/journal + statut d'accès croisé */
-    var rs=await sb.from('profiles').select('id,first_name,email,streak,role,created_at').eq('role','eleve');
-    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,email:(s.email||''),streak:s.streak,created_at:s.created_at,lastMood:null,lastMoodDay:'',journalCount:0,hasAccess:false,tier:null};});
+    var rs=await sb.from('profiles').select('id,first_name,last_name,email,streak,role,created_at,app_progress,positioning,onboarding').eq('role','eleve');
+    var students=(rs.data||[]).map(function(s){return {id:s.id,first_name:s.first_name,last_name:s.last_name||'',email:(s.email||''),streak:s.streak||0,created_at:s.created_at,ap:s.app_progress||{},positioning:s.positioning||null,onboarding:s.onboarding||{},lastMood:null,lastMoodDay:'',journalCount:0,bilans:[],bilansN:0,hasAccess:false,tier:null};});
     var byId={},byEmail={}; students.forEach(function(s){byId[s.id]=s;if(s.email)byEmail[s.email.toLowerCase()]=s;});
     var ac=await sb.from('checkins').select('user_id,day,mood');
     (ac.data||[]).forEach(function(c){var s=byId[c.user_id];if(s&&(!s.lastMoodDay||c.day>s.lastMoodDay)){s.lastMoodDay=c.day;s.lastMood=c.mood;}});
     var aj=await sb.from('journal_entries').select('user_id,occurred_at');
     (aj.data||[]).forEach(function(j){var s=byId[j.user_id];if(s)s.journalCount++;});
+    var abl=await sb.from('bilans').select('user_id,taken_at,decouverte,objections,closing,calme').order('taken_at');
+    (abl.data||[]).forEach(function(b){var s=byId[b.user_id];if(s)s.bilans.push(b);});
     var ag=await sb.from('access_grants').select('email,active,tier');
     (ag.data||[]).forEach(function(g){var s=byEmail[(g.email||'').toLowerCase()];if(s){s.hasAccess=!!g.active;s.tier=g.tier||'academie';}});
+    students.forEach(function(s){s.bilansN=s.bilans.length;s.stats=studentStats(s.ap,s.bilansN);try{s.diag=(s.positioning&&Object.keys(s.positioning).length)?computeDiag(s.positioning):null;}catch(e){s.diag=null;}s.lastActive=s.stats.lastDay?Math.max(0,dayNum()-s.stats.lastDay):null;});
     ST.students=students;
   }else{
     /* Vue élève : son journal + ses check-ins */
@@ -372,6 +377,13 @@ const LV=[0,300,620,960,1280,1560,1820];   // XP TOTAL requis pour débloquer M1
 function xp(){return Object.keys(ST.done).length*25 + Object.keys(ST.quiz).length*100 + Object.keys(ST.gestes).filter(function(k){return ST.gestes[k];}).length*10 + Object.keys(ST.assist||{}).length*15 + (ST.bilans?ST.bilans.length*30:0) + Object.keys(ST.rdv||{}).length*40;}
 function levelOf(x){let n=1;for(let i=0;i<LV.length;i++){if(x>=LV[i])n=i+1;}return n;}
 function level(){return ST.levelForce||levelOf(xp());}
+function studentStats(ap,bilansN){
+  ap=ap||{};var done=ap.done||{},quiz=ap.quiz||{},gestes=ap.gestes||{},assist=ap.assist||{},rdv=ap.rdv||{},exoDone=ap.exoDone||{};
+  var xpv=Object.keys(done).length*25+Object.keys(quiz).length*100+Object.keys(gestes).filter(function(k){return gestes[k];}).length*10+Object.keys(assist).length*15+(bilansN||0)*30+Object.keys(rdv).length*40;
+  var totBlock=MOD.reduce(function(s,m){return s+reqV(m).length;},0),doneBlock=0,vids=0;
+  MOD.forEach(function(m){m.V.forEach(function(v){if(isBlocking(v)&&done[v.id])doneBlock++;if(iType(v)==='video'&&done[v.id])vids++;});});
+  return {level:ap.levelForce||levelOf(xpv),xp:xpv,compl:totBlock?Math.round(doneBlock/totBlock*100):0,vids:vids,quizN:Object.keys(quiz).length,exos:Object.keys(exoDone).length,lastDay:ap.lastDay||0};
+}
 function openLevelInfo(){
   var lv=level(),ia=lv>=5;
   setM('Ton niveau',
@@ -896,7 +908,11 @@ function coachHTML(){
   }).join(''):'<div class="card"><div class="mt">Aucune demande en attente.</div></div>';
   var act=active.length?active.map(function(s){
     var flag=(s.lastMood==='tension'||s.lastMood==='hesitant');
-    return '<div class="card resitem eleve-row" data-n="'+esc(((s.first_name||'')+' '+(s.email||'')).toLowerCase())+'" onclick="openFicheEleve('+s._i+')"><div class="resico">'+(flag?'⚠️':'🎓')+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+tierLabel(s.tier)+' · '+(s.journalCount||0)+' j. journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(flag?' · <b style="color:#dc2626">à checker</b>':'')+'</div></div><span class="rl">fiche →</span></div>';
+    var stt=s.stats||{level:1,compl:0};
+    var inact=(s.lastActive!=null&&s.lastActive>=7);
+    var sub1='Niv '+stt.level+' · '+stt.compl+'% formation · 🔥'+(s.streak||0)+'j';
+    var sub2=tierLabel(s.tier)+' · '+(s.journalCount||0)+' j. journal'+(s.lastMood?' · '+moodLabel(s.lastMood):'')+(inact?' · <b style="color:#d97706">inactif '+s.lastActive+'j</b>':'')+(flag?' · <b style="color:#dc2626">à checker</b>':'');
+    return '<div class="card resitem eleve-row" data-n="'+esc(((s.first_name||'')+' '+(s.last_name||'')+' '+(s.email||'')).toLowerCase())+'" onclick="openFicheEleve('+s._i+')"><div class="resico">'+(flag?'⚠️':(inact?'😴':'🎓'))+'</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+sub1+'</div><div class="mt" style="margin-top:1px">'+sub2+'</div></div><span class="rl">fiche →</span></div>';
   }).join(''):'<div class="card"><div class="mt">Aucun élève actif pour l\'instant.</div></div>';
   var checkC=active.filter(function(s){return s.lastMood==='tension'||s.lastMood==='hesitant';}).length;
   var head='<div class="ckpi" onclick="openCoachDash()" style="cursor:pointer"><div class="ckc"><div class="ckk">Actifs</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">En attente</div><div class="ckv" style="color:#d97706">'+pending.length+'</div></div><div class="ckc"><div class="ckk">À checker</div><div class="ckv" style="color:#dc2626">'+checkC+'</div></div></div><div class="mt" style="text-align:right;color:var(--indigo);font-weight:800;font-size:12px;margin:-2px 2px 4px">Voir mon tableau de bord →</div>';
@@ -921,13 +937,17 @@ function openCoachDash(){
   var bt={academie:0,mentorat:0,immersion:0};active.forEach(function(s){var t=s.tier||'academie';if(bt[t]!==undefined)bt[t]++;});
   var jr=st.reduce(function(a,s){return a+(s.journalCount||0);},0);
   var pc=function(n){return active.length?Math.round(n/active.length*100):0;};
+  var avgLvl=active.length?Math.round(active.reduce(function(a,s){return a+((s.stats&&s.stats.level)||1);},0)/active.length):0;
+  var avgCompl=active.length?Math.round(active.reduce(function(a,s){return a+((s.stats&&s.stats.compl)||0);},0)/active.length):0;
+  var inactifs=active.filter(function(s){return s.lastActive!=null&&s.lastActive>=7;}).sort(function(a,b){return b.lastActive-a.lastActive;});
   setM('Ton tableau de bord',
     '<div class="ckpi"><div class="ckc"><div class="ckk">Élèves actifs</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">En attente</div><div class="ckv" style="color:#d97706">'+pending.length+'</div></div><div class="ckc"><div class="ckk">À checker</div><div class="ckv" style="color:#dc2626">'+check.length+'</div></div></div>'+
     '<h3 class="sh">Répartition par niveau</h3><div class="card">'+
       '<div class="axrow"><span class="lb">Académie</span><span class="bar"><i style="width:'+pc(bt.academie)+'%"></i></span><span class="vv">'+bt.academie+'</span></div>'+
       '<div class="axrow"><span class="lb">Mentorat</span><span class="bar"><i style="width:'+pc(bt.mentorat)+'%"></i></span><span class="vv">'+bt.mentorat+'</span></div>'+
       '<div class="axrow"><span class="lb">Immersion</span><span class="bar"><i style="width:'+pc(bt.immersion)+'%"></i></span><span class="vv">'+bt.immersion+'</span></div></div>'+
-    '<h3 class="sh">Engagement</h3><div class="card"><div class="nm">'+jr+' entrées de journal</div><div class="mt">au total chez tes élèves</div></div>'+
+    '<h3 class="sh">Moyennes de la promo</h3><div class="ckpi"><div class="ckc"><div class="ckk">Niveau moyen</div><div class="ckv">'+avgLvl+'</div></div><div class="ckc"><div class="ckk">Formation moy.</div><div class="ckv">'+avgCompl+'<span style="font-size:14px">%</span></div></div><div class="ckc"><div class="ckk">Journal</div><div class="ckv">'+jr+'</div></div></div>'+
+    (inactifs.length?'<h3 class="sh">😴 Inactifs (7 j et +)</h3>'+inactifs.map(function(s){return '<div class="card resitem" onclick="closeModal();openFicheEleve('+s._i+')"><div class="resico">😴</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">inactif depuis '+s.lastActive+' j · Niv '+((s.stats&&s.stats.level)||1)+' · '+((s.stats&&s.stats.compl)||0)+'% formation</div></div><span class="rl">fiche →</span></div>';}).join(''):'<h3 class="sh">Activité</h3><div class="card"><div class="mt">Tous tes élèves sont actifs cette semaine 👍</div></div>')+
     (check.length?'<h3 class="sh">⚠️ À checker en priorité</h3>'+check.map(function(s){return '<div class="card resitem" onclick="closeModal();openFicheEleve('+s._i+')"><div class="resico">⚠️</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+moodLabel(s.lastMood)+' · '+tierLabel(s.tier)+'</div></div><span class="rl">fiche →</span></div>';}).join(''):'<div class="mt" style="text-align:center;padding:8px">Aucun élève en alerte 👍</div>')+
     '<button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="closeModal()">Fermer</button>');
   openModal();document.querySelector('#modal .ov-body').scrollTop=0;
@@ -967,26 +987,56 @@ async function openFicheEleve(i){
     var jr=await sb.from('journal_entries').select('*').eq('user_id',uid).order('occurred_at',{ascending:false});
     var ck=await sb.from('checkins').select('day,mood').eq('user_id',uid).order('day',{ascending:false});
     var bl=await sb.from('bilans').select('*').eq('user_id',uid).order('taken_at');
-    var pr=await sb.from('profiles').select('positioning,streak,onboarding,first_name').eq('id',uid).maybeSingle();
+    var pr=await sb.from('profiles').select('positioning,streak,onboarding,first_name,last_name,app_progress').eq('id',uid).maybeSingle();
     var an=await sb.from('coach_analyses').select('analysis,updated_at').eq('user_id',uid).maybeSingle();
     FE.journal=jr.data||[];FE.checkins=ck.data||[];FE.bilans=bl.data||[];FE.prof=pr.data||{};FE.analysis=(an.data&&an.data.analysis)||'';FE.analysisAt=(an.data&&an.data.updated_at)||'';
   }catch(e){}
   renderFicheEleve();
 }
 function renderFicheEleve(){
-  var s=FE.s;
-  var lastB=FE.bilans.length?FE.bilans[FE.bilans.length-1]:null;
+  var s=FE.s, prof=FE.prof||{}, ap=prof.app_progress||{};
+  var name=((prof.first_name||s.first_name||'')+' '+(prof.last_name||s.last_name||'')).trim()||s.email||'Élève';
   var LB={decouverte:'Découverte',objections:'Objections',closing:'Closing',calme:'CALME'};
-  var bilHTML=lastB?['decouverte','objections','closing','calme'].map(function(k){return '<div class="axrow"><span class="lb">'+LB[k]+'</span><span class="bar"><i style="width:'+(lastB[k]*10)+'%"></i></span><span class="vv">'+(lastB[k]*10)+'%</span></div>';}).join(''):'<div class="mt">Aucun bilan encore.</div>';
-  var jHTML=FE.journal.length?FE.journal.slice(0,6).map(function(e){var d=new Date(e.occurred_at);return '<div class="rr" style="border:0;padding:6px 0"><div class="g"><div class="nm" style="font-size:14px">'+esc(e.title)+'</div>'+(e.note?'<div class="mt">'+esc(e.note)+'</div>':'')+'</div><span class="mt" style="flex:none">'+d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})+'</span></div>';}).join(''):'<div class="mt">Aucune entrée.</div>';
+  var stats=studentStats(ap,FE.bilans.length);
+  var streak=(typeof prof.streak==='number'?prof.streak:(s.streak||0));
+  var lastTxt=stats.lastDay?((dayNum()-stats.lastDay)<=0?"aujourd'hui":((dayNum()-stats.lastDay)+' j')):'jamais';
+  var quizList=MOD.filter(function(m){return (ap.quiz||{})[m.id];}).map(function(m){return m.num;});
+  /* 1. Progression */
+  var progHTML='<h3 class="sh" style="margin-top:0">Progression</h3><div class="card"><div class="kgrid">'+
+    '<div class="kcard"><div class="klab">Niveau</div><div class="kbig">'+stats.level+'</div></div>'+
+    '<div class="kcard"><div class="klab">Formation</div><div class="kbig">'+stats.compl+'<span>%</span></div></div>'+
+    '<div class="kcard"><div class="klab">Quiz validés</div><div class="kbig">'+stats.quizN+'<span>/7</span></div></div>'+
+    '<div class="kcard"><div class="klab">Série</div><div class="kbig">'+streak+'<span> j</span></div></div>'+
+    '<div class="kcard"><div class="klab">Vidéos vues</div><div class="kbig" style="font-size:26px">'+stats.vids+'</div></div>'+
+    '<div class="kcard"><div class="klab">Exercices</div><div class="kbig" style="font-size:26px;color:#14b8a6">'+stats.exos+'</div></div>'+
+    '</div><div class="mt" style="margin-top:10px">Dernière activité : <b'+((stats.lastDay&&(dayNum()-stats.lastDay)>=7)?' style="color:#d97706"':'')+'>'+lastTxt+'</b> · Modules validés : '+(quizList.length?esc(quizList.join(', ')):'aucun')+'</div></div>';
+  /* 2. Positionnement (diagnostic) */
+  var posHTML='';
+  try{if(prof.positioning&&Object.keys(prof.positioning).length){var d=computeDiag(prof.positioning);
+    posHTML='<h3 class="sh">Positionnement</h3><div class="card"><div class="nm">'+esc(d.arch.name)+' · '+esc(d.type)+' '+esc(d.nickname)+'</div><div class="mt" style="margin-top:2px">DISC '+d.dom+'/'+d.sec+' ('+esc(d.disc.label)+') · moteur : '+esc(d.moteur)+'</div><div style="margin-top:11px">'+d.funnel.map(function(f){return '<div class="axrow"><span class="lb">'+f.label+'</span><span class="bar"><i style="width:'+(f.score*20)+'%"></i></span><span class="vv">'+(f.score*20)+'%</span></div>';}).join('')+'</div><div class="mt" style="margin-top:7px">Maillon faible : <b style="color:#dc2626">'+(d.weakest?esc(d.weakest.label)+' ('+d.weakest.score+'/5)':'n/a')+'</b></div></div>';
+  }}catch(e){}
+  /* 3. Bilans + évolution */
+  var bl=FE.bilans||[], lastB=bl.length?bl[bl.length-1]:null, prevB=bl.length>1?bl[bl.length-2]:null;
+  var bilanHTML;
+  if(lastB){
+    var cur={d:lastB.decouverte,o:lastB.objections,c:lastB.closing,m:lastB.calme};
+    var prev=prevB?{d:prevB.decouverte,o:prevB.objections,c:prevB.closing,m:prevB.calme}:null;
+    var bars=['decouverte','objections','closing','calme'].map(function(k){return '<div class="axrow"><span class="lb">'+LB[k]+'</span><span class="bar"><i style="width:'+(lastB[k]*10)+'%"></i></span><span class="vv">'+(lastB[k]*10)+'%</span></div>';}).join('');
+    var evo=bl.length>1?('<div class="plabel" style="margin-top:12px">Évolution</div>'+lineChart(bl.map(function(b){return {t:new Date(b.taken_at).getTime(),y:(b.decouverte+b.objections+b.closing+b.calme)/4};}),'#4f46e5',130)):'';
+    bilanHTML='<h3 class="sh">Bilans · '+bl.length+'</h3><div class="card">'+radarChart(cur,prev)+bars+evo+'</div>';
+  } else bilanHTML='<h3 class="sh">Bilans</h3><div class="card"><div class="mt">Aucun bilan encore.</div></div>';
+  /* 4. Journal + humeurs */
+  var jHTML=FE.journal.length?FE.journal.slice(0,8).map(function(e){var dd=new Date(e.occurred_at);var res=e.result?' <span class="mt" style="color:var(--indigo)">['+esc(e.result)+']</span>':'';return '<div class="rr" style="border-bottom:1px solid #f2f3f8;padding:7px 0"><div class="g"><div class="nm" style="font-size:14px">'+esc(e.title||'(sans titre)')+res+'</div>'+(e.note?'<div class="mt">'+esc(e.note)+'</div>':'')+'</div><span class="mt" style="flex:none">'+dd.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})+'</span></div>';}).join(''):'<div class="mt">Aucune entrée.</div>';
   var cHTML=FE.checkins.length?FE.checkins.slice(0,8).map(function(c){return '<div class="rr" style="border:0;padding:4px 0"><div class="g"><div class="mt">'+new Date(c.day).toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'})+'</div></div><span class="mt" style="flex:none">'+moodLabel(c.mood)+'</span></div>';}).join(''):'<div class="mt">Aucun check-in.</div>';
-  var diagHTML='';try{if(FE.prof.positioning&&Object.keys(FE.prof.positioning).length){var d=computeDiag(FE.prof.positioning);diagHTML='<div class="card"><div class="plabel">Diagnostic</div><div class="nm">'+esc(d.arch.name)+' · '+esc(d.type)+'</div><div class="mt">DISC '+d.dom+'/'+d.sec+' · maillon faible : '+(d.weakest?esc(d.weakest.label)+' ('+d.weakest.score+'/5)':'n/a')+'</div></div>';}}catch(e){}
+  /* 5. Réponses au diagnostic (data brute) */
+  var qa=[];try{var pos=prof.positioning||{};qa=POSQ.map(function(q){var v=pos[q.id];var a=v;if(q.kind!=='scale'&&q.options){var o=q.options.find(function(x){return x.tag===v;});a=o?o.label:v;}else if(q.kind==='scale'&&v)a=v+'/5';return {q:q.title,a:a};}).filter(function(x){return x.a!=null&&x.a!=='';});}catch(e){}
+  var repHTML=qa.length?'<h3 class="sh">Ses réponses</h3><details class="repdet"><summary>Voir ses '+qa.length+' réponses au diagnostic</summary><div class="card" style="margin-top:8px">'+qa.map(function(x){return '<div class="rr" style="border-bottom:1px solid #f2f3f8;padding:7px 0;display:block"><div class="mt" style="color:#2a2e3d;font-weight:600">'+esc(x.q)+'</div><div class="mt" style="color:var(--indigo);margin-top:2px">'+esc(String(x.a))+'</div></div>';}).join('')+'</div></details>':'';
   var apiNote=location.hostname.indexOf('github.io')>=0?'<div class="mt" style="margin-top:6px">La génération IA s\'active une fois l\'app déployée sur le domaine. Ici tu peux écrire l\'analyse à la main.</div>':'';
-  setM('Fiche · '+esc(s.first_name||s.email||'Élève'),
-    '<div class="card"><div class="plabel">Dernier bilan · 4 axes</div>'+bilHTML+'</div>'+
-    diagHTML+
+  setM('Fiche · '+esc(name),
+    progHTML+posHTML+bilanHTML+
     '<h3 class="sh">Journal de vente · '+FE.journal.length+'</h3><div class="card">'+jHTML+'</div>'+
     '<h3 class="sh">Humeurs récentes</h3><div class="card">'+cHTML+'</div>'+
+    repHTML+
     '<h3 class="sh">🧠 Analyse IA (privée · l\'élève ne la voit jamais)</h3>'+
     '<div class="card"><textarea id="ca-text" class="caform" rows="8" placeholder="Analyse du profil…">'+esc(FE.analysis)+'</textarea>'+
     (FE.analysisAt?'<div class="mt" style="margin-top:6px">Dernière MAJ : '+new Date(FE.analysisAt).toLocaleDateString('fr-FR')+'</div>':'')+apiNote+
