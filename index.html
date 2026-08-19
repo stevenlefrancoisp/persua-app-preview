@@ -171,9 +171,9 @@
   .vthumb-title{font-size:15px;font-weight:700;line-height:1.2;margin-top:2px}
   .vthumb-badge{font-size:11.5px;color:#dcdcf7;margin-top:6px;font-weight:600}
   .vthumb-done{position:absolute;top:10px;right:10px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;z-index:2}
-  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
-  .tab .e{font-size:20px;filter:grayscale(1);opacity:.72}
-  .tab.on{color:var(--indigo)}.tab.on .e{filter:none;opacity:1}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:#a9afbf;cursor:pointer;font-weight:700}
+  .tab .i{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tab.on{color:var(--indigo)}
   .pop{animation:slideUp .38s ease both}
   @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
   .bob{display:inline-block;animation:bob 1.9s ease-in-out infinite}
@@ -840,7 +840,7 @@ function coachHTML(){
   }).join(''):'<div class="card"><div class="mt">Aucun élève actif pour l\'instant.</div></div>';
   var checkC=active.filter(function(s){return s.lastMood==='tension'||s.lastMood==='hesitant';}).length;
   var head='<div class="top" style="padding:6px 0 14px"><div class="hi">Tes élèves<small>'+active.length+' actifs · '+pending.length+' en attente</small></div></div>'+
-    '<div class="ckpi"><div class="ckc"><div class="ckk">Actifs</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">En attente</div><div class="ckv" style="color:#d97706">'+pending.length+'</div></div><div class="ckc"><div class="ckk">À checker</div><div class="ckv" style="color:#dc2626">'+checkC+'</div></div></div>';
+    '<div class="ckpi" onclick="openCoachDash()" style="cursor:pointer"><div class="ckc"><div class="ckk">Actifs</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">En attente</div><div class="ckv" style="color:#d97706">'+pending.length+'</div></div><div class="ckc"><div class="ckk">À checker</div><div class="ckv" style="color:#dc2626">'+checkC+'</div></div></div><div class="mt" style="text-align:right;color:var(--indigo);font-weight:800;font-size:12px;margin:-2px 2px 4px">Voir mon tableau de bord →</div>';
   return head+
     (pending.length?'<h3 class="sh">🔔 Demandes d\'accès · '+pending.length+'</h3>'+pend:'')+
     '<h3 class="sh">🎓 Tes élèves · '+active.length+'</h3>'+
@@ -854,6 +854,25 @@ function coachHTML(){
 }
 async function grantStudent(i,tier){var s=(ST.students||[])[i];if(!s||!s.email){toastMini('Email manquant sur ce compte.');return;}var r=await sb.from('access_grants').upsert({email:s.email.toLowerCase(),active:true,tier:tier||'academie',source:'coach',updated_at:new Date().toISOString()});if(r.error){toastMini('Échec : '+r.error.message);return;}s.hasAccess=true;s.tier=tier||'academie';toastMini('Accès '+tierLabel(tier)+' donné à '+(s.first_name||s.email)+' ✅');go('coach');}
 function filterEleves(){var q=(((document.getElementById('coachq')||{}).value)||'').toLowerCase();document.querySelectorAll('#eleves-list .eleve-row').forEach(function(r){r.style.display=(!q||(r.dataset.n||'').indexOf(q)>=0)?'':'none';});}
+function openCoachDash(){
+  var st=ST.students||[];
+  var active=st.filter(function(s){return s.hasAccess;});
+  var pending=st.filter(function(s){return !s.hasAccess;});
+  var check=active.filter(function(s){return s.lastMood==='tension'||s.lastMood==='hesitant';});
+  var bt={academie:0,mentorat:0,immersion:0};active.forEach(function(s){var t=s.tier||'academie';if(bt[t]!==undefined)bt[t]++;});
+  var jr=st.reduce(function(a,s){return a+(s.journalCount||0);},0);
+  var pc=function(n){return active.length?Math.round(n/active.length*100):0;};
+  setM('Ton tableau de bord',
+    '<div class="ckpi"><div class="ckc"><div class="ckk">Élèves actifs</div><div class="ckv">'+active.length+'</div></div><div class="ckc"><div class="ckk">En attente</div><div class="ckv" style="color:#d97706">'+pending.length+'</div></div><div class="ckc"><div class="ckk">À checker</div><div class="ckv" style="color:#dc2626">'+check.length+'</div></div></div>'+
+    '<h3 class="sh">Répartition par niveau</h3><div class="card">'+
+      '<div class="axrow"><span class="lb">Académie</span><span class="bar"><i style="width:'+pc(bt.academie)+'%"></i></span><span class="vv">'+bt.academie+'</span></div>'+
+      '<div class="axrow"><span class="lb">Mentorat</span><span class="bar"><i style="width:'+pc(bt.mentorat)+'%"></i></span><span class="vv">'+bt.mentorat+'</span></div>'+
+      '<div class="axrow"><span class="lb">Immersion</span><span class="bar"><i style="width:'+pc(bt.immersion)+'%"></i></span><span class="vv">'+bt.immersion+'</span></div></div>'+
+    '<h3 class="sh">Engagement</h3><div class="card"><div class="nm">'+jr+' entrées de journal</div><div class="mt">au total chez tes élèves</div></div>'+
+    (check.length?'<h3 class="sh">⚠️ À checker en priorité</h3>'+check.map(function(s){return '<div class="card resitem" onclick="closeModal();openFicheEleve('+s._i+')"><div class="resico">⚠️</div><div class="g"><div class="nm">'+esc(s.first_name||s.email||'Élève')+'</div><div class="mt">'+moodLabel(s.lastMood)+' · '+tierLabel(s.tier)+'</div></div><span class="rl">fiche →</span></div>';}).join(''):'<div class="mt" style="text-align:center;padding:8px">Aucun élève en alerte 👍</div>')+
+    '<button class="cta" style="margin-top:14px;background:#eef0ff;color:#3730a3" onclick="closeModal()">Fermer</button>');
+  openModal();document.querySelector('#modal .ov-body').scrollTop=0;
+}
 function openAddRes(){
   setM('Ajouter une ressource',
     '<div class="card"><div class="plabel">Titre</div><input id="r-title" class="jinp" placeholder="Ex : Script d\'ancrage prix">'+
@@ -945,7 +964,14 @@ const SCREENS={accueil:accueilHTML,parcours:accueilHTML,rdv:rdvHTML,assistant:as
 
 /* Navigation */
 function buildTabs(){var t=[["parcours","🎓","Formation"],["communaute","👥","Communauté"],["rdv","📅","Séances"],["assistant","🤖","Assistant"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
-function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><span class="e">'+t[1]+'</span><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
+var TABICONS={
+ parcours:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+ communaute:'<path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>',
+ rdv:'<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ assistant:'<path d="M12 3l1.6 4L18 8.6l-4.4 1.6L12 15l-1.6-4.8L6 8.6l4.4-1.6zM18 14l.9 2.2L21 17l-2.1.8L18 20l-.9-2.2L15 17l2.1-.8z"/>',
+ coach:'<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21c0-3.5 3-6 6-6s6 2.5 6 6M17 11l2 2 4-4"/>'
+};
+function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><svg class="i" viewBox="0 0 24 24">'+(TABICONS[t[0]]||'')+'</svg><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
 renderTabs('parcours');
 function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);refreshHeader();}
 
