@@ -21,9 +21,22 @@
   @media(min-width:440px){body{display:flex;align-items:center;justify-content:center;padding:18px}
     .device{height:860px;border-radius:44px;border:11px solid #0b0c16;box-shadow:0 30px 80px rgba(0,0,0,.5)}}
   .statusbar{min-height:34px;padding-top:env(safe-area-inset-top);display:flex;align-items:center;justify-content:space-between;padding-left:20px;padding-right:20px;font-size:13px;font-weight:600;color:#fff;background:var(--indigo-d)}
-  .appbar{background:linear-gradient(135deg,var(--indigo-d),var(--indigo));color:#fff;padding:10px 18px 18px}
-  .appbar .hi{font-size:20px;font-weight:700;letter-spacing:-.3px}
-  .appbar .sub{font-size:12px;color:#cdd0f2}
+  .appbar{background:#fff;color:var(--ink);padding:calc(8px + env(safe-area-inset-top)) 18px 10px}
+  .appbar .hi{font-size:21px;font-weight:800;letter-spacing:-.3px}
+  .appbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .resume{background:linear-gradient(150deg,#3730a3,#4f46e5 60%,#6d63ff);border-radius:22px;padding:22px;color:#fff;box-shadow:0 14px 30px rgba(79,70,229,.28);cursor:pointer;margin-bottom:14px}
+  .resume .rk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;opacity:.85}
+  .resume .rt{font-size:22px;font-weight:800;line-height:1.15;margin-top:8px}
+  .resume .rs{font-size:13.5px;opacity:.9;margin-top:6px}
+  .resume .rbar{height:6px;border-radius:99px;background:rgba(255,255,255,.25);margin-top:16px;overflow:hidden}.resume .rbar i{display:block;height:100%;background:#fff;border-radius:99px}
+  .resume .rlab{font-size:11.5px;opacity:.85;margin-top:8px}
+  .resume .rbtn{margin-top:15px;background:#fff;color:var(--indigo-d);border-radius:13px;padding:13px;text-align:center;font-weight:800;font-size:14.5px}
+  .statrow{display:flex;align-items:center;gap:6px;padding:14px 15px;border:1px solid var(--line);border-radius:16px;cursor:pointer;margin-bottom:11px}
+  .statrow .grp{display:flex;gap:9px;align-items:center;color:var(--muted);font-size:13px;font-weight:600}.statrow .grp b{color:var(--ink)}
+  .statrow .grp .d{width:3px;height:3px;border-radius:50%;background:#cfd3de}
+  .statrow .go2{margin-left:auto;color:var(--indigo);font-weight:800;font-size:12.5px}
+  .nudge2{display:flex;align-items:center;gap:11px;padding:13px 15px;border:1px solid var(--line);border-radius:16px;margin-bottom:11px;cursor:pointer;font-size:13.5px}
+  .nudge2 .em{font-size:17px}.nudge2 .go2{margin-left:auto;color:var(--indigo);font-weight:800}
   .hdrrow{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
   .chip{background:rgba(255,255,255,.16);border-radius:12px;padding:8px 12px;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
   .chip b{font-size:15px}
@@ -94,7 +107,7 @@
   .scalebar .seg.on{background:var(--indigo);color:#fff;border-color:var(--indigo);transform:translateY(-2px)}
   .scaleends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:7px}
   .profil-round{text-align:center;cursor:pointer;flex:none}
-  .pr-circle{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;margin:0 auto;border:2px solid rgba(255,255,255,.4)}
+  .pr-circle{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--indigo-d),var(--indigo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;margin:0 auto;box-shadow:0 6px 14px rgba(79,70,229,.3)}
   .pr-lbl{font-size:10px;color:#cdd0f2;margin-top:3px;font-weight:700}
   .kgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
   .kwide{grid-column:1/-1}
@@ -206,11 +219,7 @@
   <div class="appbar">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
       <div><div class="hi" id="hi">Salut 👋</div><div class="sub">Ton parcours neurovente</div></div>
-      <div class="profil-round" onclick="openProfil()"><div class="pr-circle" id="prcircle">•</div><div class="pr-lbl">Profil</div></div>
-    </div>
-    <div class="hdrrow">
-      <div class="chip">🔥 <b id="streak">1</b> jours</div>
-      <div class="chip" style="cursor:pointer" onclick="openLevelInfo()">⭐ <span id="lvl">Niveau 1</span></div>
+      <div class="profil-round" onclick="openProfil()"><div class="pr-circle" id="prcircle">•</div></div>
     </div>
   </div>
   <div class="screen" id="screen"></div>
@@ -509,20 +518,16 @@ const GESTES=[
 
 /* Écrans */
 function accueilHTML(){
-  const c=conseilDuJour();
-  return `
-  <div class="hero-cta pop" onclick="go('parcours')"><div class="big">Continue ta formation</div><div class="sub">Ton parcours neurovente, module par module. C'est le cœur de ce que tu as rejoint.</div><div class="go">Ouvrir ma formation →</div></div>
-  ${moodWidget()}
-  ${bilanDue()&&ST.bilans.length?`<div class="card" style="background:#0e1020;color:#fff;cursor:pointer" onclick="openBilan()"><div class="nm" style="color:#fff">📊 Ton bilan de la semaine est prêt</div><div class="mt" style="color:#cdd0f2">5 min pour mesurer ton évolution.</div></div>`:''}
-  <div class="card geste pop" style="cursor:pointer" onclick="go('assistant')"><div class="k">💡 Conseil de la semaine · ${c.mod}</div>
-    <div class="txt">${c.emoji} ${c.titre}</div>
-    <div class="mt" style="margin-top:6px">${c.texte}</div></div>
-  <div class="card" style="cursor:pointer" onclick="openDashboard()"><div class="nm">📊 Ton tableau de bord</div><div class="mt">Score, progression, série, tes 4 axes. Tape pour voir.</div></div>
-  <div class="card" style="cursor:pointer" onclick="openJournal()"><div class="nm">📓 Ton journal de vente</div><div class="mt">Note tes RDV à chaud. C'est ce qui recâble ton cerveau, et Steven suit ta progression.</div></div>
-  <div class="card" style="cursor:pointer" onclick="openResources()"><div class="nm">📁 Tes ressources</div><div class="mt">Les documents et outils que Steven met à ta disposition.</div></div>
-  <div class="card"><div class="nm">Ta séance de coaching</div><div class="mt">Visio 45 min avec Steven, quand tu veux</div>
-    <button class="cta" onclick="go('rdv')">Réserver ma séance</button></div>
-  ${isSupa?`<div class="mt" style="text-align:center;padding:14px 0"><span onclick="logout()" style="color:var(--muted);cursor:pointer;text-decoration:underline">Déconnexion</span></div>`:''}`;
+  var ci=-1; for(var i=0;i<MOD.length;i++){ if(unlocked(i)&&!ST.quiz[MOD[i].id]){ci=i;break;} }
+  if(ci<0) ci=MOD.length-1;
+  var cm=MOD[ci], req=reqV(cm), vd=vDone(cm), pct=req.length?Math.round(vd/req.length*100):0;
+  var nv=cm.V.filter(function(v){return isBlocking(v)&&!ST.done[v.id];})[0]||cm.V[0];
+  var l=lastBilan(), sc=l?Math.round((l.d+l.o+l.c+l.m)/4*10):0;
+  var resume='<div class="resume" onclick="openModule(\''+cm.id+'\')"><div class="rk">Tu en étais là</div><div class="rt">'+esc(nv.title)+'</div><div class="rs">'+esc(cm.num+' · '+cm.t)+'</div><div class="rbar"><i style="width:'+pct+'%"></i></div><div class="rlab">'+esc(cm.num)+' — '+pct+' % terminé</div><div class="rbtn">Reprendre ma formation</div></div>';
+  var stat='<div class="statrow" onclick="openDashboard()"><div class="grp"><span>🔥 <b>'+(ST.streak||0)+'</b> j</span><span class="d"></span><span>Niv. <b>'+level()+'</b></span><span class="d"></span><span><b>'+sc+' %</b></span></div><span class="go2">Tableau de bord →</span></div>';
+  var bilan=(bilanDue()&&ST.bilans.length)?'<div class="nudge2" onclick="openBilan()"><span class="em">📊</span><span>Ton point de la semaine est prêt</span><span class="go2">Faire →</span></div>':'';
+  var mods=MOD.map(function(m,i){var done=!!ST.quiz[m.id],unl=unlocked(i);var rq=reqV(m),v2=vDone(m);var node=done?'<div class="node n-done">✓</div>':unl?'<div class="node n-cur">'+(i+1)+'</div>':'<div class="node n-lock">🔒</div>';var status=done?'terminé':unl?(v2+'/'+rq.length+' contenus'):lockReason(i);return '<div class="mod" '+(unl?'onclick="openModule(\''+m.id+'\')" style="cursor:pointer"':'')+'>'+node+'<div class="modc"><div class="t">'+esc(m.t)+'</div><div class="s">'+esc(status)+'</div>'+(unl&&!done?'<div class="pbar"><i style="width:'+(rq.length?Math.round(v2/rq.length*100):0)+'%"></i></div>':'')+'</div></div>';}).join('');
+  return resume+stat+bilan+'<h3 class="sh">Ta formation</h3>'+mods;
 }
 function parcoursHTML(){
   const head=!ST.eleve?`<h3 class="sh">Ta formation · tous les modules ouverts</h3>`
@@ -899,10 +904,10 @@ async function genAnalyse(){
   }catch(e){box.value=prev;toastMini('Génération indisponible ici.');}
 }
 
-const SCREENS={accueil:accueilHTML,parcours:parcoursHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
+const SCREENS={accueil:accueilHTML,parcours:accueilHTML,rdv:rdvHTML,assistant:assistantHTML,communaute:communauteHTML,coach:coachHTML};
 
 /* Navigation */
-function buildTabs(){var t=[["parcours","🎓","Formation"],["accueil","🏠","Accueil"],["rdv","📅","Séances"],["assistant","🤖","Assistant"],["communaute","👥","Communauté"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
+function buildTabs(){var t=[["parcours","🎓","Formation"],["communaute","👥","Communauté"],["rdv","📅","Séances"],["assistant","🤖","Assistant"]];if(ST.coach)t.unshift(["coach","🧑‍🏫","Élèves"]);return t;}
 function renderTabs(active){document.getElementById('tabbar').innerHTML=buildTabs().map(function(t){return '<div class="tab'+(t[0]===active?' on':'')+'" data-k="'+t[0]+'"><span class="e">'+t[1]+'</span><span>'+t[2]+'</span></div>';}).join('');document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){go(t.dataset.k);});});}
 renderTabs('parcours');
 function go(k){closeModal();document.getElementById('screen').innerHTML=SCREENS[k]();document.getElementById('screen').scrollTop=0;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));if(k==='rdv')setTimeout(mountCal,60);if(k==='communaute')setTimeout(loadCommunity,10);refreshHeader();}
