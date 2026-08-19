@@ -1,0 +1,237 @@
+<!doctype html><html lang="fr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Persua · prototype épuré</title>
+<style>
+  :root{--indigo:#4f46e5;--indigo-d:#3730a3;--ink:#12141c;--muted:#6b7280;--line:#eceef4;--bg:#fff}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .app{height:100svh;display:flex;flex-direction:column;max-width:520px;margin:0 auto}
+  .screen{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:calc(12px + env(safe-area-inset-top)) 18px 14px;display:none}
+  .screen.on{display:block}
+  /* header */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:6px 0 16px}
+  .hi{font-size:21px;font-weight:800;letter-spacing:-.3px}
+  .hi small{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-top:2px}
+  .ttl{font-size:16px;font-weight:800}
+  .back{font-size:22px;font-weight:700;color:var(--ink);width:34px;height:34px;display:flex;align-items:center;justify-content:center;margin-left:-8px}
+  .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--indigo-d),var(--indigo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;box-shadow:0 6px 14px rgba(79,70,229,.3);flex:none}
+  /* resume */
+  .resume{background:linear-gradient(150deg,#3730a3,#4f46e5 60%,#6d63ff);border-radius:24px;padding:22px;color:#fff;box-shadow:0 14px 30px rgba(79,70,229,.28)}
+  .resume .k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;opacity:.85}
+  .resume .t{font-size:23px;font-weight:800;line-height:1.15;margin-top:8px}
+  .resume .s{font-size:13.5px;opacity:.9;margin-top:6px}
+  .pbar{height:6px;border-radius:99px;background:rgba(255,255,255,.25);margin-top:18px;overflow:hidden}
+  .pbar i{display:block;height:100%;background:#fff;border-radius:99px}
+  .plabel{font-size:11.5px;opacity:.85;margin-top:8px}
+  .btn{margin-top:16px;background:#fff;color:var(--indigo-d);border-radius:14px;padding:14px;text-align:center;font-weight:800;font-size:14.5px}
+  .statrow{display:flex;align-items:center;gap:6px;margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:16px}
+  .statrow .grp{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13.5px;font-weight:600}
+  .statrow .grp b{color:var(--ink)}
+  .statrow .go{margin-left:auto;color:var(--indigo);font-weight:800;font-size:13px}
+  .dot{width:3px;height:3px;border-radius:50%;background:#cfd3de}
+  .nudge{display:flex;align-items:center;gap:11px;margin-top:13px;padding:14px 15px;border:1px solid var(--line);border-radius:16px;font-size:13.5px}
+  .nudge .em{font-size:18px}.nudge .go{margin-left:auto;color:var(--indigo);font-weight:800}
+  .h2{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:22px 2px 10px}
+  /* modules */
+  .mod{display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--line)}
+  .node{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+  .n-done{background:#eaf7ee;color:#1a8f45}.n-cur{background:var(--indigo);color:#fff;box-shadow:0 6px 14px rgba(79,70,229,.35)}.n-lock{background:#f1f2f6;color:#b7bcc9}
+  .mod .t{font-size:15.5px;font-weight:700}.mod .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .mod .mini{height:5px;border-radius:99px;background:var(--line);margin-top:8px;overflow:hidden}.mod .mini i{display:block;height:100%;background:var(--indigo)}
+  /* video */
+  .cur{background:#f4f5fb;border:1px solid #e3e5f4;border-radius:18px;padding:16px;margin:6px 0 4px}
+  .cur .k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--indigo)}
+  .cur .t{font-size:16px;font-weight:800;margin-top:6px}
+  .cur .acts{display:flex;gap:9px;margin-top:14px}
+  .cur .b{flex:1;text-align:center;border-radius:13px;padding:12px;font-weight:800;font-size:13.5px}
+  .b1{background:var(--indigo);color:#fff}.b2{background:#fff;color:var(--indigo-d);border:1px solid #d9dcf0}
+  .vid{display:flex;align-items:center;gap:13px;padding:12px 4px;border-bottom:1px solid var(--line)}
+  .thumb{width:58px;height:40px;border-radius:10px;flex:none;background:linear-gradient(135deg,#3730a3,#6d63ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px}
+  .vid .t{font-size:14.5px;font-weight:700}.vid .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .vid .st{margin-left:auto;font-size:13px;font-weight:800}
+  .extra{border:1px solid var(--line);border-radius:16px;padding:15px;margin-top:13px;display:flex;gap:13px;align-items:flex-start}
+  .extra .em{font-size:23px;flex:none}.extra .t{font-size:15px;font-weight:800}
+  .extra .s{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .fbul{font-size:12.5px;color:#2a2e3d;margin-top:6px;line-height:1.8}
+  .extra .lk{margin-top:9px;color:var(--indigo);font-weight:800;font-size:13px}
+  .quiz{margin-top:15px;border:1px dashed #cdd2e6;border-radius:16px;padding:16px;text-align:center}
+  .quiz .t{font-size:15px;font-weight:800}.quiz .s{font-size:12.5px;color:var(--muted);margin-top:4px}
+  /* dashboard */
+  .score{text-align:center;padding:10px 0 4px}
+  .score .big{font-size:58px;font-weight:800;line-height:1;letter-spacing:-1px}
+  .score .up{color:#1a8f45;font-size:13.5px;font-weight:700;margin-top:5px}
+  .score .lbl{color:var(--muted);font-size:13px;margin-top:3px}
+  .kgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:8px}
+  .kc{border:1px solid var(--line);border-radius:16px;padding:14px}
+  .kc .kk{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+  .kc .kv{font-size:24px;font-weight:800;margin-top:5px}.kc .kv span{font-size:13px;color:var(--muted);font-weight:700}
+  /* assistant */
+  .tip{background:#0e1020;color:#fff;border-radius:20px;padding:19px}
+  .tip .k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#a5b4fc}
+  .tip .t{font-size:17px;font-weight:800;margin-top:8px;line-height:1.3}
+  .tip .d{font-size:13.5px;color:#cdd0f2;margin-top:7px;line-height:1.5}
+  .bub{max-width:82%;padding:12px 15px;border-radius:16px;font-size:13.5px;line-height:1.42;margin-top:11px}
+  .bub.co{background:#f1f2f8;color:var(--ink);border-bottom-left-radius:5px}
+  .bub.me{background:var(--indigo);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
+  .ask{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:16px;padding:8px 8px 8px 16px;margin-top:16px;position:sticky;bottom:0;background:#fff}
+  .ask input{flex:1;border:0;outline:0;font-size:16px;background:transparent}
+  .ask .snd{width:40px;height:40px;border-radius:12px;background:var(--indigo);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+  /* communauté */
+  .composer{border:1px solid var(--line);border-radius:16px;padding:14px}
+  .composer input{width:100%;border:0;outline:0;font-size:16px}
+  .post{border:1px solid var(--line);border-radius:18px;padding:15px;margin-top:12px}
+  .ph{display:flex;align-items:center;gap:11px}
+  .pa{width:40px;height:40px;border-radius:50%;flex:none;background:#eef0fb;color:var(--indigo-d);display:flex;align-items:center;justify-content:center;font-weight:800}
+  .who{font-size:14px;font-weight:800}.when{font-size:11.5px;color:var(--muted)}
+  .pbody{font-size:14px;line-height:1.5;margin-top:10px}
+  .pacts{display:flex;gap:18px;margin-top:12px;color:var(--muted);font-size:13px;font-weight:700}
+  /* profil */
+  .pf{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:8px}
+  .bigav{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--indigo-d),var(--indigo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:36px;box-shadow:0 12px 26px rgba(79,70,229,.28)}
+  .pf .nm{font-size:22px;font-weight:800;margin-top:15px}.pf .role{font-size:13.5px;color:var(--muted);margin-top:3px}
+  .chips{display:flex;gap:9px;justify-content:center;margin-top:18px}
+  .chip{background:#f4f5fb;color:var(--indigo-d);border-radius:13px;padding:11px 15px;font-size:12.5px;font-weight:700;text-align:center}.chip b{display:block;font-size:17px}
+  .arch{margin-top:22px;border:1px solid var(--line);border-radius:18px;padding:17px;text-align:left;width:100%}
+  .arch .k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .arch .v{font-size:16px;font-weight:800;margin-top:4px}.arch .d{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5}
+  .prow{display:flex;align-items:center;gap:13px;padding:17px 4px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600}
+  .prow .go{margin-left:auto;color:#c2c7d3}
+  .seance{border:1px solid var(--line);border-radius:18px;padding:17px}
+  .seance .t{font-size:16px;font-weight:800}.seance .s{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5}
+  /* tabbar */
+  .tabbar{display:flex;border-top:1px solid var(--line);padding:9px 6px calc(8px + env(safe-area-inset-bottom));background:#fff}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:#a9afbf}
+  .tab.on{color:var(--indigo)}
+  .tab .i{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .hint{position:fixed;top:0;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:#fff;background:#4f46e5;padding:5px;z-index:9}
+</style></head>
+<body>
+<div class="hint">Prototype de direction · rien n'est branché, c'est pour juger l'épure</div>
+<div class="app" style="padding-top:22px">
+
+  <!-- FORMATION (home) -->
+  <div class="screen on" id="s-formation">
+    <div class="top"><div class="hi">Bonjour Steven<small>Prêt à progresser aujourd'hui ?</small></div><div class="av" onclick="go('profil','')">S</div></div>
+    <div class="resume" onclick="go('module','formation')">
+      <div class="k">Tu en étais là</div>
+      <div class="t">Le silence après le prix</div>
+      <div class="s">Module 4 · Le prix et le closing · Vidéo 3</div>
+      <div class="pbar"><i style="width:60%"></i></div>
+      <div class="plabel">Module 4 — 60 % terminé</div>
+      <div class="btn">Reprendre ma formation</div>
+    </div>
+    <div class="statrow" onclick="go('dashboard','formation')">
+      <div class="grp"><span>🔥 <b>12</b> j</span><span class="dot"></span><span>Niv. <b>4</b></span><span class="dot"></span><span><b>68 %</b></span></div>
+      <span class="go">Tableau de bord →</span>
+    </div>
+    <div class="nudge"><span class="em">📊</span><span>Ton point de la semaine est prêt</span><span class="go">Faire →</span></div>
+    <div class="h2">Ta formation</div>
+    <div class="mod"><div class="node n-done">✓</div><div><div class="t">Les fondements neuro</div><div class="s">terminé</div></div></div>
+    <div class="mod"><div class="node n-done">✓</div><div><div class="t">Lire ton interlocuteur</div><div class="s">terminé</div></div></div>
+    <div class="mod"><div class="node n-done">✓</div><div><div class="t">La découverte</div><div class="s">terminé</div></div></div>
+    <div class="mod" onclick="go('module','formation')"><div class="node n-cur">4</div><div style="flex:1"><div class="t">Le prix et le closing</div><div class="s">Vidéo 3 sur 5 · en cours</div><div class="mini"><i style="width:60%"></i></div></div></div>
+    <div class="mod"><div class="node n-lock">🔒</div><div><div class="t">L'expérience mémorable</div><div class="s">Se débloque au module 4 validé</div></div></div>
+    <div class="mod" style="border:0"><div class="node n-lock">🔒</div><div><div class="t">Traiter les objections</div><div class="s">Bientôt</div></div></div>
+  </div>
+
+  <!-- MODULE -->
+  <div class="screen" id="s-module">
+    <div class="top"><span class="back" onclick="go('formation','formation')">‹</span><div class="ttl">Module 4 · Le prix</div><span style="width:34px"></span></div>
+    <div class="cur">
+      <div class="k">▶ À reprendre</div>
+      <div class="t">Vidéo 3 · Le silence après le prix</div>
+      <div class="acts"><div class="b b1">Regarder</div><div class="b b2">3 exercices</div></div>
+    </div>
+    <div class="h2">Les vidéos du module</div>
+    <div class="vid"><div class="thumb">▶</div><div><div class="t">Les fondements du prix</div><div class="s">6 min · 2 exercices</div></div><span class="st" style="color:#1a8f45">✓</span></div>
+    <div class="vid"><div class="thumb">▶</div><div><div class="t">Ancrer la valeur</div><div class="s">8 min · 3 exercices</div></div><span class="st" style="color:#1a8f45">✓</span></div>
+    <div class="vid"><div class="thumb">▶</div><div><div class="t">Le silence après le prix</div><div class="s">7 min · 3 exercices</div></div><span class="st" style="color:var(--indigo)">en cours</span></div>
+    <div class="vid"><div class="thumb" style="opacity:.45">▶</div><div><div class="t" style="color:#9aa0b0">Traiter « c'est trop cher »</div><div class="s">5 min</div></div><span class="st">🔒</span></div>
+    <div class="extra"><span class="em">🧠</span><div style="flex:1"><div class="t">Fiche du module</div><div class="fbul">• Le cerveau compare, il n'évalue pas<br>• Ancre un chiffre haut en premier<br>• Le silence force la décision</div><div class="lk">Ouvrir la fiche →</div></div></div>
+    <div class="extra"><span class="em">🎥</span><div style="flex:1"><div class="t">Atelier 1:1 · ton cas réel</div><div class="s">On travaille ton cas concret en visio 45 min.</div><div class="lk">Réserver l'atelier →</div></div></div>
+    <div class="quiz"><div class="t">🎯 Quiz du module</div><div class="s">Valide-le pour débloquer le module 5</div></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="screen" id="s-dashboard">
+    <div class="top"><span class="back" onclick="go('formation','formation')">‹</span><div class="ttl">Ton tableau de bord</div><span style="width:34px"></span></div>
+    <div class="score"><div class="big">68 %</div><div class="up">▲ +6 % cette semaine</div><div class="lbl">Ta moyenne sur les 4 axes</div></div>
+    <svg width="100%" height="190" viewBox="0 0 200 195" style="display:block;margin:4px auto">
+      <polygon points="100,22 178,100 100,178 22,100" fill="none" stroke="#e7e9f1" stroke-width="1.5"/>
+      <polygon points="100,61 139,100 100,139 61,100" fill="none" stroke="#eef0f4" stroke-width="1"/>
+      <polygon points="100,46 146,100 100,153 69,100" fill="rgba(79,70,229,.18)" stroke="#4f46e5" stroke-width="2.5"/>
+      <text x="100" y="14" text-anchor="middle" font-size="10" fill="#6b7280" font-weight="700">Découverte</text>
+      <text x="186" y="103" text-anchor="start" font-size="10" fill="#6b7280" font-weight="700">Object.</text>
+      <text x="100" y="192" text-anchor="middle" font-size="10" fill="#6b7280" font-weight="700">Closing</text>
+      <text x="14" y="103" text-anchor="end" font-size="10" fill="#6b7280" font-weight="700">CALME</text>
+    </svg>
+    <div class="kgrid">
+      <div class="kc"><div class="kk">Série</div><div class="kv">12 <span>jours</span></div></div>
+      <div class="kc"><div class="kk">Parcours</div><div class="kv">3<span>/7 modules</span></div></div>
+      <div class="kc"><div class="kk">Vidéos vues</div><div class="kv">18</div></div>
+      <div class="kc"><div class="kk">Exercices</div><div class="kv">24</div></div>
+    </div>
+    <div class="h2">Ton évolution</div>
+    <svg width="100%" height="90" viewBox="0 0 300 90"><polyline points="0,70 60,58 120,62 180,40 240,34 300,20" fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round"/><circle cx="300" cy="20" r="5" fill="#84cc16"/></svg>
+  </div>
+
+  <!-- ASSISTANT -->
+  <div class="screen" id="s-assistant">
+    <div class="top"><div class="hi">Ton assistant<small>Ton coach de vente, dans ta poche</small></div><div class="av" onclick="go('profil','')">S</div></div>
+    <div class="tip"><div class="k">💡 Conseil de la semaine</div><div class="t">Le silence après le prix</div><div class="d">Annonce ton prix, puis tais-toi. C'est lui qui doit parler en premier.</div></div>
+    <div class="bub co">Salut Steven. Dis-moi qui tu as en face pour ton prochain RDV.</div>
+    <div class="bub me">Un DAF très analytique qui coupe tout le temps.</div>
+    <div class="bub co">Profil Système 2 : il veut du mécanisme. Pose une question précise puis tais-toi, son besoin d'analyser remplira le silence.</div>
+    <div class="ask"><input placeholder="Pose ta question au coach…"><div class="snd">➤</div></div>
+  </div>
+
+  <!-- COMMUNAUTE -->
+  <div class="screen" id="s-communaute">
+    <div class="top"><div class="hi">Communauté<small>Entre vendeurs Persua</small></div><div class="av" onclick="go('profil','')">S</div></div>
+    <div class="composer"><input placeholder="Partage une victoire, une question…"></div>
+    <div class="post"><div class="ph"><div class="pa" style="background:#0e1020;color:#fff">S</div><div><div class="who">Steven · Coach 📌</div><div class="when">Épinglé · il y a 2 h</div></div></div><div class="pbody">Cette semaine on travaille le « je vais réfléchir ». Postez ce que ça donne 👇</div><div class="pacts"><span>👍 24</span><span>💬 8</span></div></div>
+    <div class="post"><div class="ph"><div class="pa">K</div><div><div class="who">Karim B.</div><div class="when">il y a 2 h · 🏆 Victoire</div></div></div><div class="pbody">jai signé mon premier gros deal, le silence apres le prix ca marche de ouf 🔥</div><div class="pacts"><span>👍 19</span><span>💬 3</span></div></div>
+  </div>
+
+  <!-- SEANCES -->
+  <div class="screen" id="s-seances">
+    <div class="top"><div class="hi">Séances<small>Ton coaching avec Steven</small></div><div class="av" onclick="go('profil','')">S</div></div>
+    <div class="seance"><div class="t">Réserver une séance</div><div class="s">Visio 45 min. Choisis ton créneau, tu reçois ton lien par email.</div><div class="btn" style="background:var(--indigo);color:#fff;margin-top:14px">Voir les créneaux</div></div>
+    <div class="h2">Ta dernière séance · 12 août</div>
+    <div class="seance"><div class="t">Traiter « je vais réfléchir »</div><div class="s">1. Demande quelle info manque, puis silence.<br>2. Ancre le coût du problème avant le prix.<br>3. Une question, puis tais-toi.</div></div>
+  </div>
+
+  <!-- PROFIL -->
+  <div class="screen" id="s-profil">
+    <div class="top"><span class="back" onclick="go('formation','formation')">‹</span><div class="ttl">Mon profil</div><span style="width:34px"></span></div>
+    <div class="pf">
+      <div class="bigav">S</div>
+      <div class="nm">Steven Lefrançois</div>
+      <div class="role">Dirigeant · Persua</div>
+      <div class="chips"><div class="chip">Niveau<b>4</b></div><div class="chip">Série<b>12 j</b></div><div class="chip">Bilans<b>3</b></div></div>
+      <div class="arch"><div class="k">Ton archétype de vendeur</div><div class="v">Le Conseiller</div><div class="d">Tu crées la confiance par l'écoute. Ton angle mort : conclure trop tard. DISC · S dominant.</div></div>
+    </div>
+    <div class="prow">✏️ Modifier mon compte<span class="go">›</span></div>
+    <div class="prow">🎯 Mon positionnement terrain<span class="go">›</span></div>
+    <div class="prow" style="border:0">↩︎ Se déconnecter<span class="go">›</span></div>
+  </div>
+
+  <!-- TABBAR -->
+  <div class="tabbar">
+    <div class="tab on" data-k="formation" onclick="go('formation','formation')"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Formation</div>
+    <div class="tab" data-k="communaute" onclick="go('communaute','communaute')"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></svg>Communauté</div>
+    <div class="tab" data-k="seances" onclick="go('seances','seances')"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Séances</div>
+    <div class="tab" data-k="assistant" onclick="go('assistant','assistant')"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.6 4L18 8.6l-4.4 1.6L12 15l-1.6-4.8L6 8.6l4.4-1.6zM18 14l.9 2.2L21 17l-2.1.8L18 20l-.9-2.2L15 17l2.1-.8z"/></svg>Assistant</div>
+  </div>
+</div>
+<script>
+function go(id,tab){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id==='s-'+id);});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.k===tab);});
+  var sc=document.getElementById('s-'+id); if(sc) sc.scrollTop=0;
+}
+</script>
+</body></html>
